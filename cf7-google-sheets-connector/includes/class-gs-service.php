@@ -14,11 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Gs_Connector_Service {
 
-	private $allowed_tags = array( 'text', 'email', 'url', 'tel', 'number', 'range', 'date', 'textarea', 'select', 'checkbox', 'radio', 'acceptance', 'quiz', 'file', 'hidden' );
+    private $allowed_tags = array( 'text', 'email', 'url', 'tel', 'number', 'range', 'date', 'textarea', 'select', 'checkbox', 'radio', 'acceptance', 'quiz', 'file', 'hidden' );
 
-	private $special_mail_tags = array( 'date', 'time', 'serial_number', 'remote_ip', 'user_agent', 'url', 'post_id', 'post_name', 'post_title', 'post_url', 'post_author', 'post_author_email', 'site_title', 'site_description', 'site_url', 'site_admin_email', 'user_login', 'user_email', 'user_display_name' ); 
-	
-	protected $gs_uploads   = array();
+    private $special_mail_tags = array( 'date', 'time', 'serial_number', 'remote_ip', 'user_agent', 'url', 'post_id', 'post_name', 'post_title', 'post_url', 'post_author', 'post_author_email', 'site_title', 'site_description', 'site_url', 'site_admin_email', 'user_login', 'user_email', 'user_display_name' ); 
+    
+    protected $gs_uploads   = array();
    
    /**
     *  Set things up.
@@ -492,21 +492,21 @@ class Gs_Connector_Service {
     */
    public function save_uploaded_files_local() {
        $form = WPCF7_Submission::get_instance();
-	if ( $form ) {
-	    $files		 = $form->uploaded_files();
-	    $uploads_stored	 = array();
+    if ( $form ) {
+        $files       = $form->uploaded_files();
+        $uploads_stored  = array();
 
-	    foreach ( $files as $field_name => $file_path ) {
-		if ( ! isset( $_FILES[ $field_name ] ) ) {
-		    continue;
-		}
-		
-		$file_details = $_FILES[ $field_name ];
-		$file_name = $file_details['name'];
-		$uploads_stored[ $field_name ] = $file_name; 
-	    }
-	    $this->gs_uploads = $uploads_stored;
-	}
+        foreach ( $files as $field_name => $file_path ) {
+        if ( ! isset( $_FILES[ $field_name ] ) ) {
+            continue;
+        }
+        
+        $file_details = $_FILES[ $field_name ];
+        $file_name = $file_details['name'];
+        $uploads_stored[ $field_name ] = $file_name; 
+        }
+        $this->gs_uploads = $uploads_stored;
+    }
    }
 
    /**
@@ -526,7 +526,7 @@ class Gs_Connector_Service {
       // if contact form sheet name and tab name is not empty than send data to spreedsheet
       if ( $submission && (! empty( $form_data[0]['sheet-name'] ) ) && (! empty( $form_data[0]['sheet-tab-name'] ) ) ) {
          $posted_data = $submission->get_posted_data();
-	 
+     
          // make sure the form ID matches the setting otherwise don't do anything
          try {
             include_once( GS_CONNECTOR_ROOT . "/lib/google-sheets.php" );
@@ -543,11 +543,11 @@ class Gs_Connector_Service {
             foreach ( $special_mail_tags as $smt ) {
                 $tagname = sprintf( '_%s', $smt );
 
-		$mail_tag = new WPCF7_MailTag(
-			sprintf( '[%s]', $tagname ),
-			$tagname,
-			''
-		);
+        $mail_tag = new WPCF7_MailTag(
+            sprintf( '[%s]', $tagname ),
+            $tagname,
+            ''
+        );
                 
                $meta[$smt] = apply_filters( 'wpcf7_special_mail_tags', '', $tagname, false, $mail_tag );
 
@@ -580,26 +580,26 @@ class Gs_Connector_Service {
             }
 
             foreach ( $posted_data as $key => $value ) {
-		// exclude the default wpcf7 fields in object
-		if ( strpos( $key, '_wpcf7' ) !== false || strpos( $key, '_wpnonce' ) !== false ) {
-		    // do nothing
-		} else {
-		    // Get file name array
-		    $uploaded_file = $this->gs_uploads;
-		    if ( array_key_exists( $key, $uploaded_file ) || isset( $uploaded_file[ $key ] ) ) {
-			$data[ $key ] = sanitize_file_name( $uploaded_file[ $key ] );
-			continue;
-		    }
+        // exclude the default wpcf7 fields in object
+        if ( strpos( $key, '_wpcf7' ) !== false || strpos( $key, '_wpnonce' ) !== false ) {
+            // do nothing
+        } else {
+            // Get file name array
+            $uploaded_file = $this->gs_uploads;
+            if ( array_key_exists( $key, $uploaded_file ) || isset( $uploaded_file[ $key ] ) ) {
+            $data[ $key ] = sanitize_file_name( $uploaded_file[ $key ] );
+            continue;
+            }
 
-		    // handle strings and array elements
-		    if ( is_array( $value ) ) {
-			$data[ $key ] = sanitize_text_field( implode( ', ', $value ) );
-		    } else {
+            // handle strings and array elements
+            if ( is_array( $value ) ) {
+            $data[ $key ] = sanitize_text_field( implode( ', ', $value ) );
+            } else {
           //$data[$key] = sanitize_text_field(stripcslashes($value));//Old Code
           $data[$key] = sanitize_textarea_field(stripcslashes($value));//Line Break in textarea issue resolved. 
-		    }
-		}
-	    }
+            }
+        }
+        }
         if(!empty($data)){
            foreach ($data as $key => $value) {
            // Check if the value starts with one of the specified characters and remove it if it does
@@ -665,28 +665,21 @@ class Gs_Connector_Service {
       ?>
      
 
-        <ul id="contact-form-editor-tabs" role="tablist"
-        class="ui-tabs-nav ui-corner-all ui-helper-reset ui-helper-clearfix ui-widget-header">
-        <li id="form-panel-tab" role="tab" tabindex="-1"
-            class="ui-tabs-tab ui-corner-top ui-state-default ui-tab cf7-sub-tab-active cf7-sub-tab-single-li"
-            aria-controls="form-panel" aria-labelledby="ui-id-1" aria-selected="false" aria-expanded="false"
-            onClick="sigle_multi_tab('cf7-sub-tab-single')">
-            <a href="#form-panel" tabindex="-1" style='box-shadow: 0 0 0 0px #fff  !important;
-             outline: 0px solid transparent !important;' class="ui-tabs-anchor"
-                id="cf7-sub-tab-single"><?php echo esc_html( __('Single
-                Sheet Connection', 'gsconnector' ) ); ?></a>
-        </li>
-        <li id="form-panel-tab" role="tab" tabindex="-1"
-            class="ui-tabs-tab ui-corner-top ui-state-default ui-tab cf7-sub-tab-multi-li" aria-controls="form-panel"
-            aria-labelledby="ui-id-1" aria-selected="false" aria-expanded="false"
-            onClick="sigle_multi_tab('cf7-sub-tab-multi')"><a href="#form-panel-multi" tabindex="-1"
-               style=' box-shadow: 0 0 0 0px #fff  !important;
-  outline: 0px solid transparent !important;' class="ui-tabs-anchor" id="cf7-sub-tab-multi"><?php echo esc_html( __('Multi Sheet
-                Connection', 'gsconnector' ) ); ?> <span class="pro"><?php echo esc_html( __('Pro', 'gsconnector' ) ); ?></span></a>
+       <ul id="contact-form-editor-tabs" class="ui-tabs-nav">
+    <li class="ui-tab cf7-sub-tab-single-li cf7-sub-tab-active">
+        <a href="javascript:void(0);" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-single">
+            <?php esc_html_e('Single Sheet Connection', 'gsconnector'); ?>
+        </a>
+    </li>
+    <li class="ui-tab cf7-sub-tab-multi-li">
+        <a href="javascript:void(0);" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-multi">
+            <?php esc_html_e('Multi Sheet Connection', 'gsconnector'); ?>
+            <span class="pro"><?php esc_html_e('Pro', 'gsconnector'); ?></span>
+        </a>
+    </li>
+</ul>
 
-        </li>
-    </ul>
-	
+    
     
     
      
@@ -704,7 +697,7 @@ class Gs_Connector_Service {
 
                <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html( __( 'Where do i get Sheet Name?', 'gsconnector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Go to your google account and click on"Google apps" icon and than click "Sheets". Select the name of the appropriate sheet you want to link your contact form or create new sheet.', 'gsconnector' ) ); ?> </span></a>
             </p>
-			<p>
+            <p>
                   <label><?php echo esc_html(__('Google Sheet ID', 'gsconnector')); ?></label>
                   <input type="text" name="cf7-gs[sheet-id]" id="gs-sheet-id"
                          value="<?php echo ( isset($form_data[0]['sheet-id']) ) ? esc_attr($form_data[0]['sheet-id']) : ''; ?>"/>
@@ -716,28 +709,28 @@ class Gs_Connector_Service {
                       value="<?php echo ( isset( $form_data[0]['sheet-tab-name'] ) ) ? esc_attr( $form_data[0]['sheet-tab-name'] ) : ''; ?>"/>
                <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html( __( 'Where do i get Tab Name?', 'gsconnector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Open your Google Sheet with which you want to link your contact form . You will notice a tab names at bottom of the screen. Copy the tab name where you want to have an entry of contact form.', 'gsconnector' ) ); ?></span></a>
             </p>
-		     <p>
+             <p>
                   <label><?php echo esc_html(__('Google Tab ID', 'gsconnector')); ?></label>
                   <input type="text" name="cf7-gs[tab-id]" id="gs-tab-id"
                          value="<?php echo ( isset($form_data[0]['tab-id']) ) ? esc_attr($form_data[0]['tab-id']) : ''; ?>"/>
                   <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html(__('Google Tab Id?', 'gsconnector')); ?><span class='hover-data'><?php echo esc_html(__('you can get tab id from your sheet URL', 'gsconnector')); ?></span></a>
                </p>
-			   
-			   <?php if((isset( $form_data[0]['sheet-name'] )) && !empty($form_data[0]['sheet-name']) && (isset($form_data[0]['sheet-id'])) && (!empty($form_data[0]['sheet-id'])) &&  (isset( $form_data[0]['sheet-tab-name']))  && (!empty($form_data[0]['sheet-tab-name'])) && (isset($form_data[0]['tab-id']))) {
-				$link = "https://docs.google.com/spreadsheets/d/".$form_data[0]['sheet-id']."/edit#gid=".$form_data[0]['tab-id']; 
-				   ?>
-			  <p>
-				<a href="<?php echo $link; ?>" target="_blank" class="cf7_gs_link" >Google Sheet Link</a>
-			  </p>
-			  <?php } ?>
+               
+               <?php if((isset( $form_data[0]['sheet-name'] )) && !empty($form_data[0]['sheet-name']) && (isset($form_data[0]['sheet-id'])) && (!empty($form_data[0]['sheet-id'])) &&  (isset( $form_data[0]['sheet-tab-name']))  && (!empty($form_data[0]['sheet-tab-name'])) && (isset($form_data[0]['tab-id']))) {
+                $link = "https://docs.google.com/spreadsheets/d/".$form_data[0]['sheet-id']."/edit#gid=".$form_data[0]['tab-id']; 
+                   ?>
+              <p>
+                <a href="<?php echo $link; ?>" target="_blank" class="cf7_gs_link" >Google Sheet Link</a>
+              </p>
+              <?php } ?>
          </div> 
         </form>
         
      <div id="opener">
        
       <?php
-	  	  	
-		
+            
+        
         include( GS_CONNECTOR_PATH . "includes/pages/gs-field-list.php" );
         
         include( GS_CONNECTOR_PATH . "includes/pages/gs-special-mailtags.php" );
@@ -749,46 +742,26 @@ class Gs_Connector_Service {
         include( GS_CONNECTOR_PATH . "includes/pages/gs-custom-ordering.php");
       
         include( GS_CONNECTOR_PATH . "includes/pages/gs-miscellaneous-features.php" );
-
-        //include( GS_CONNECTOR_PATH . "includes/pages/gs-demo-details.php" );
-		 
-		
-
-       
-        }
+         }
        ?>
-      
-
+    <!-- Single sheet connection END -->
        
-		  
-     <!-- Single sheet connection END -->
-	   
         </div> 
-        </div> <!-- #end #end -->
+        </div> <!-- #end -->
        
       <!-- Multi sheet connection START-->
-       <div class="cf7-sub-tab-multi cf7-sub-tab" style="display:none">
-       	<div id="opener2">
+       <div class="cf7-sub-tab-multi cf7-sub-tab multisheetcf7">
+        <div id="opener2">
         <?php
+         include( GS_CONNECTOR_PATH . "includes/pages/multisheet-sheets-connection.php" );
         
-        include( GS_CONNECTOR_PATH . "includes/pages/multisheet-sheets-connection.php" );
-		
           ?>
           </div>
       </div> 
-      
-     
-      <!-- Multi sheet connection END-->
-     
-      		
-	    
-      
+    <!-- Multi sheet connection END-->
+    <?php include( GS_CONNECTOR_PATH . "includes/pages/pro-popup.php" ) ;  ?>
 
-	<?php include( GS_CONNECTOR_PATH . "includes/pages/pro-popup.php" ) ;  ?>
-
-	
-
-<?php }
+    <?php }
    
    /**
     * Function - fetch contact form list that is connected with google sheet
@@ -843,7 +816,7 @@ class Gs_Connector_Service {
             ?>
                <li>
                   <div class="input-field">
-                     <!-- <input type="checkbox" checked="checked" disabled="disabled" class="check-toggle-cf7" name="gs-custom-ck[<?php echo $count; ?>]" value="1" <?php echo $checked; ?> > -->
+                    
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
                   <div class="label"><?php echo $v; ?> : </div>
@@ -913,7 +886,7 @@ class Gs_Connector_Service {
                $placeholder = str_replace( '_', '-', $tag_name );
             echo '<li>';
                echo '<div class="input-field">
-               <!--<input type="checkbox" disabled="disabled" name="gs-st-ck['. $i . ']" value="1">-->
+              
                <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                             </div>';
                echo '<div class="special-tags label">[_' . $tag_name . '] </div>';
@@ -928,9 +901,9 @@ class Gs_Connector_Service {
    }
    
    function display_form_custom_tag( $form_id ){
-		$custom_mail_tags = array();
-		$num_of_cols = 2;
-	   
+        $custom_mail_tags = array();
+        $num_of_cols = 2;
+       
       if ( has_filter( "gscf7_special_mail_tags" ) ) {
          // Filter hook for custom mail tags
          $custom_tags = apply_filters( "gscf7_special_mail_tags", $custom_mail_tags, $form_id );
@@ -976,7 +949,7 @@ class Gs_Connector_Service {
       <?php 
       } else {
          echo '<p><span class="gs-info">' . __( 'No custom mail tags available.','gsconnector' ) . '</span></p>';
-      } 	   
+      }        
    }
 
    function display_form_conditional_logic( $form_id, $post ){ ?>
@@ -1055,7 +1028,3 @@ class Gs_Connector_Service {
 }
 
 $gs_connector_service = new Gs_Connector_Service();
-
- 
-
-

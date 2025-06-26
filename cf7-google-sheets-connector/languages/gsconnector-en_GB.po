@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: CF7 Google Sheet Connector\n"
-"POT-Creation-Date: 2025-04-22 18:45+0530\n"
-"PO-Revision-Date: 2025-04-22 18:46+0530\n"
+"POT-Creation-Date: 2025-06-26 21:07+0530\n"
+"PO-Revision-Date: 2025-06-26 21:07+0530\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en_GB\n"
@@ -363,10 +363,8 @@ msgid "Affiliate Program"
 msgstr "Programa de Afiliados"
 
 #: google-sheet-connector.php:910
-#, fuzzy
-#| msgid "CF7 Google Sheet Connector"
 msgid "Get CF7 Google Sheet Pro"
-msgstr "CF7 Google Sheet Connector"
+msgstr "CF7 - Google Sheet Integration"
 
 #: google-sheet-connector.php:930
 msgid "<img style='width:30px;margin-right: 10px;' src='"
@@ -390,42 +388,38 @@ msgstr ""
 "Google Account</a> along with Google Drive and Google Sheets Permissions in "
 "order to enable the settings for configuration."
 
+#: includes/class-gs-service.php:671
+msgid "Single Sheet Connection"
+msgstr ""
+"Single\n"
+"                Sheet Connection"
+
 #: includes/class-gs-service.php:676
-msgid ""
-"Single\n"
-"                Sheet Connection"
-msgstr ""
-"Single\n"
-"                Sheet Connection"
-
-#: includes/class-gs-service.php:684
-msgid ""
-"Multi Sheet\n"
-"                Connection"
+msgid "Multi Sheet Connection"
 msgstr ""
 "Multi Sheet\n"
 "                Connection"
 
-#: includes/class-gs-service.php:685 includes/pages/gs-custom-ordering.php:5
+#: includes/class-gs-service.php:677 includes/pages/gs-custom-ordering.php:5
 #: includes/pages/gs-field-list.php:5
 #: includes/pages/gs-miscellaneous-features.php:4
 #: includes/pages/gs-special-mailtags.php:5
 msgid "Pro"
 msgstr "Pro"
 
-#: includes/class-gs-service.php:698
+#: includes/class-gs-service.php:691
 msgid "Google Sheet Settings"
 msgstr "EDD Google Sheet Settings"
 
-#: includes/class-gs-service.php:698
+#: includes/class-gs-service.php:691
 msgid "( Fetch your sheets automatically using PRO )"
 msgstr "( Fetch your sheets automatically using PRO )"
 
-#: includes/class-gs-service.php:700
+#: includes/class-gs-service.php:693
 msgid "Google Sheet Name"
 msgstr "Google Sheet Name"
 
-#: includes/class-gs-service.php:705
+#: includes/class-gs-service.php:698
 msgid ""
 "Go to your google account and click on\"Google apps\" icon and than click "
 "\"Sheets\". Select the name of the appropriate sheet you want to link your "
@@ -435,19 +429,19 @@ msgstr ""
 "\"Sheets\". Select the name of the appropriate sheet you want to link your "
 "contact form or create new sheet."
 
-#: includes/class-gs-service.php:708
+#: includes/class-gs-service.php:701
 msgid "Google Sheet ID"
 msgstr "Google Sheet ID"
 
-#: includes/class-gs-service.php:711
+#: includes/class-gs-service.php:704
 msgid "you can get sheet id from your sheet URL"
 msgstr "you can get sheet id from your sheet URL"
 
-#: includes/class-gs-service.php:714
+#: includes/class-gs-service.php:707
 msgid "Google Sheet Tab Name"
 msgstr "Google Sheet Tab Name"
 
-#: includes/class-gs-service.php:717
+#: includes/class-gs-service.php:710
 msgid ""
 "Open your Google Sheet with which you want to link your contact form . You "
 "will notice a tab names at bottom of the screen. Copy the tab name where you "
@@ -457,19 +451,19 @@ msgstr ""
 "will notice a tab names at bottom of the screen. Copy the tab name where you "
 "want to have an entry of contact form."
 
-#: includes/class-gs-service.php:720
+#: includes/class-gs-service.php:713
 msgid "Google Tab ID"
 msgstr "Google Tab ID"
 
-#: includes/class-gs-service.php:723
+#: includes/class-gs-service.php:716
 msgid "you can get tab id from your sheet URL"
 msgstr "you can get tab id from your sheet URL"
 
-#: includes/class-gs-service.php:862
+#: includes/class-gs-service.php:835
 msgid "No mail tags available."
 msgstr "No mail tags available."
 
-#: includes/class-gs-service.php:903
+#: includes/class-gs-service.php:876
 msgid ""
 "Map special mail tags with custom header name and save automatically to "
 "google sheet. "
@@ -477,15 +471,15 @@ msgstr ""
 "Map special mail tags with custom header name and save automatically to "
 "google sheet. "
 
-#: includes/class-gs-service.php:978
+#: includes/class-gs-service.php:951
 msgid "No custom mail tags available."
 msgstr "No custom mail tags available."
 
-#: includes/class-gs-service.php:990
+#: includes/class-gs-service.php:963
 msgid "Conditional Logic"
 msgstr "Conditional logic"
 
-#: includes/class-gs-service.php:996
+#: includes/class-gs-service.php:969
 msgid ""
 "The Enable Conditional Logic option in the field settings allows you to "
 "create rules to dynamically display or hide the submission to google sheet "

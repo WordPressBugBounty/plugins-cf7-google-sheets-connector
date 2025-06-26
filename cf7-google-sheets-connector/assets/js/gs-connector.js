@@ -1,175 +1,189 @@
+jQuery(document).ready(function ($) {
+    // Single and multisheet connection tab toggle
+   $('.cf7gs-tab-toggle').on('click', function () {
+        var tabClass = $(this).data('tab');
 
-// single and multisheet connection tab show and hide function
-function sigle_multi_tab(tab) {
-    jQuery('.cf7-sub-tab').hide();
-    jQuery('.' + tab).show();
+        // Toggle tab content visibility
+        $('.cf7-sub-tab').hide();
+        $('.' + tabClass).show();
 
-    if (tab == 'cf7-sub-tab-multi') {
-        jQuery('.cf7-sub-tab-single-li').removeClass("cf7-sub-tab-active");
-        jQuery('.cf7-sub-tab-multi-li').addClass("cf7-sub-tab-active");
-    } else {
-        jQuery('.cf7-sub-tab-single-li').addClass("cf7-sub-tab-active");
-        jQuery('.cf7-sub-tab-multi-li').removeClass("cf7-sub-tab-active");
-    }
-}
+        // Toggle active tab styling
+        if (tabClass === 'cf7-sub-tab-multi') {
+            $('.cf7-sub-tab-single-li').removeClass('cf7-sub-tab-active');
+            $('.cf7-sub-tab-multi-li').addClass('cf7-sub-tab-active');
+        } else {
+            $('.cf7-sub-tab-multi-li').removeClass('cf7-sub-tab-active');
+            $('.cf7-sub-tab-single-li').addClass('cf7-sub-tab-active');
+        }
+    });
 
-jQuery(document).ready(function () {
- /**
-     * verify the api code
-     * @since 1.0
-     */
-    jQuery(document).on('click', '#save-gs-code', function () {
-        jQuery(".loading-sign").addClass("loading");
+    // Optional: Ensure single tab is shown by default
+    $('.cf7-sub-tab').hide();
+    $('.cf7-sub-tab-single').show();
+
+    // Verify API code
+    $(document).on('click', '#save-gs-code', function () {
+        $(".loading-sign").addClass("loading");
         var data = {
             action: 'verify_gs_integation',
-            code: jQuery('#gs-code').val(),
-            security: jQuery('#gs-ajax-nonce').val()
+            code: $('#gs-code').val(),
+            security: $('#gs-ajax-nonce').val()
         };
-        jQuery.post(ajaxurl, data, function (response) {
+        $.post(ajaxurl, data, function (response) {
+            $(".loading-sign").removeClass("loading");
+            $("#gs-validation-message").empty();
             if (!response.success) {
-                jQuery(".loading-sign").removeClass("loading");
-                jQuery("#gs-validation-message").empty();
-                jQuery("<span class='error-message'>Access code Can't be blank</span>").appendTo('#gs-validation-message');
+                $("<span class='error-message'>Access code Can't be blank</span>").appendTo('#gs-validation-message');
             } else {
-                jQuery(".loading-sign").removeClass("loading");
-                jQuery("#gs-validation-message").empty();
-                jQuery("<span class='gs-valid-message'>Your Google Access Code is Authorized and Saved.</span>").appendTo('#gs-validation-message');
+                $("<span class='gs-valid-message'>Your Google Access Code is Authorized and Saved.</span>").appendTo('#gs-validation-message');
                 setTimeout(function () {
-                    window.location.href = jQuery("#redirect_auth").val();
+                    window.location.href = $("#redirect_auth").val();
                 }, 1000);
             }
         });
-
     });
 
-    /**
-     * deactivate the api code
-     * @since 4.2
-     */
-    jQuery(document).on('click', '#deactivate-log', function () {
-        jQuery(".loading-sign-deactive").addClass("loading");
-        var txt;
-        var r = confirm("Are You sure you want to deactivate Google Integration ?");
-        if (r == true) {
+    // Deactivate API code
+    $(document).on('click', '#deactivate-log', function () {
+        $(".loading-sign-deactive").addClass("loading");
+        if (confirm("Are You sure you want to deactivate Google Integration ?")) {
             var data = {
                 action: 'deactivate_gs_integation',
-                security: jQuery('#gs-ajax-nonce').val()
+                security: $('#gs-ajax-nonce').val()
             };
-            jQuery.post(ajaxurl, data, function (response) {
-                if (response == -1) {
-                    return false; // Invalid nonce
-                }
+            $.post(ajaxurl, data, function (response) {
+                if (response == -1) return false;
+                $(".loading-sign-deactive").removeClass("loading");
+                $("#deactivate-message").empty();
 
                 if (!response.success) {
                     alert('Error while deactivation');
-                    jQuery(".loading-sign-deactive").removeClass("loading");
-                    jQuery("#deactivate-message").empty();
-
                 } else {
-                    jQuery(".loading-sign-deactive").removeClass("loading");
-                    jQuery("#deactivate-message").empty();
-                    jQuery("<span class='gs-valid-message'>Your account is removed. Reauthenticate again to integrate Contact Form with Google Sheet.</span>").appendTo('#deactivate-message');
-                    setTimeout(function () {
-                        location.reload();
-                    }, 1000);
+                    $("<span class='gs-valid-message'>Your account is removed. Reauthenticate again to integrate Contact Form with Google Sheet.</span>").appendTo('#deactivate-message');
+                    setTimeout(() => location.reload(), 1000);
                 }
             });
         } else {
-            jQuery(".loading-sign-deactive").removeClass("loading");
+            $(".loading-sign-deactive").removeClass("loading");
         }
-
-
-
     });
 
-    /**
-     * Clear debug
-     */
-    jQuery(document).on('click', '.debug-clear', function () {
-        jQuery(".clear-loading-sign").addClass("loading");
-        var data = {
+    // Clear debug logs
+    $(document).on('click', '.debug-clear', function () {
+        $(".clear-loading-sign").addClass("loading");
+        $.post(ajaxurl, {
             action: 'gs_clear_log',
-            security: jQuery('#gs-ajax-nonce').val()
-        };
-        jQuery.post(ajaxurl, data, function (response) {
-            var clear_msg = response.data;
+            security: $('#gs-ajax-nonce').val()
+        }, function (response) {
             if (response.success) {
-                jQuery(".clear-loading-sign").removeClass("loading");
-                jQuery("#gs-validation-message").empty();
-                jQuery("<span class='gs-valid-message'>"+clear_msg+"</span>").appendTo('#gs-validation-message');
-                setTimeout(function () {
-                        location.reload();
-                    }, 1000);
-
+                $(".clear-loading-sign").removeClass("loading");
+                $("#gs-validation-message").html(`<span class='gs-valid-message'>${response.data}</span>`);
+                setTimeout(() => location.reload(), 1000);
             }
         });
     });
-/**
-    * Clear debug for system status tab
-    */
-   jQuery(document).on('click', '.clear-content-logs-cf7', function () {
 
-      jQuery(".clear-loading-sign-logs-cf7").addClass("loading");
-      var data = {
-         action: 'cf7_clear_debug_log',
-         security: jQuery('#gs-ajax-nonce').val()
-      };
-      jQuery.post(ajaxurl, data, function ( response ) {
-         if (response == -1) {
-            return false; // Invalid nonce
-         }
-         
-         if (response.success) {
-            jQuery(".clear-loading-sign-logs-cf7").removeClass("loading");
-            jQuery('.clear-content-logs-msg-cf7').html('Logs are cleared.');
-            setTimeout(function () {
-                        location.reload();
-                    }, 1000);
-         }
-      });
-   });
-   /**
-     * Display Error logs
-     */
-    jQuery(document).on('click', '.closeView', function () {
-    jQuery('.closeView').text("View").removeClass('closeView');
-    jQuery('button').addClass('gsc-cf7free-logs');
-    jQuery('.system-error-cf7free-logs').hide(); // Corrected from toggle to hide
-});
-
-jQuery(document).on('click', '.gsc-cf7free-logs', function () {
-    jQuery('.gsc-cf7free-logs').text("Close").addClass('closeView'); // Changed from .gsc-cf7pro-logs to .gsc-cf7free-logs
-    jQuery('button').removeClass('gsc-cf7free-logs');
-    jQuery('.system-error-cf7free-logs').show(); // Corrected from toggle to show
-});
-
-jQuery(document).ready(function ($) {
-    // Hide .system-error-cf7free-logs initially
-    $('.system-error-cf7free-logs').hide();
-
-    // Prevent system-error-cf7free-logs from toggling when clicking the div itself
-    $('.system-error-cf7free-logs').on('click', function (e) {
-        e.stopPropagation(); // Prevents the click event from propagating further
+    // Clear system status logs
+    $(document).on('click', '.clear-content-logs-cf7', function () {
+        $(".clear-loading-sign-logs-cf7").addClass("loading");
+        $.post(ajaxurl, {
+            action: 'cf7_clear_debug_log',
+            security: $('#gs-ajax-nonce').val()
+        }, function (response) {
+            if (response.success) {
+                $(".clear-loading-sign-logs-cf7").removeClass("loading");
+                $('.clear-content-logs-msg-cf7').html('Logs are cleared.');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
     });
-});
 
+    // Toggle error log view
+    $(document).on('click', '.closeView', function () {
+        $('.closeView').text("View").removeClass('closeView');
+        $('button').addClass('gsc-cf7free-logs');
+        $('.system-error-cf7free-logs').hide();
+    });
 
+    $(document).on('click', '.gsc-cf7free-logs', function () {
+        $('.gsc-cf7free-logs').text("Close").addClass('closeView');
+        $('button').removeClass('gsc-cf7free-logs');
+        $('.system-error-cf7free-logs').show();
+    });
 
+    $('.system-error-cf7free-logs').hide().on('click', function (e) {
+        e.stopPropagation();
+    });
 
-    // Check if the message has already been hidden by looking in localStorage
+    // Handle localStorage for Google Drive message
     if (localStorage.getItem('googleDriveMsgHidden') === 'true') {
-        jQuery('#google-drive-msg').hide(); // Hide the message if it's already hidden
+        $('#google-drive-msg').hide();
+    }
+    $('.button_cf7formgsc').on('click', function () {
+        $('#google-drive-msg').hide();
+        localStorage.setItem('googleDriveMsgHidden', 'true');
+    });
+    $('#deactivate-log').on('click', function () {
+        $('#google-drive-msg').show();
+        localStorage.removeItem('googleDriveMsgHidden');
+    });
+
+    // FAQ behavior
+    const faqTrigger = $('.cd-faq-trigger');
+    faqTrigger.on('click', function (event) {
+        event.preventDefault();
+        const dataid = $(this).attr('data-id');
+        for (let i = 1; i <= 5; i++) {
+            if (i != dataid && i != 5) {
+                $('.cd-faq-content' + i).hide(200);
+            }
+        }
+        $(this).next('.cd-faq-content' + dataid).slideToggle(200).end().parent('li').toggleClass('content-visible');
+    });
+
+    // PRO feature popup logic
+    const opener = document.getElementById('opener');
+    const opener2 = document.getElementById('opener2');
+    const popup = document.getElementById('popup-gs');
+    const popup2 = document.getElementById('popup-gs2');
+    const closeButton = document.getElementById('closeButton');
+    const closeButton2 = document.getElementById('closeButton2');
+    const popupOuter = document.getElementById('popup-outer-gs');
+    const popupOuter2 = document.getElementById('popup-outer-gs2');
+
+    if (opener) opener.addEventListener('click', () => fadeIn(popup));
+    if (opener2) opener2.addEventListener('click', () => fadeIn(popup2));
+    if (closeButton) closeButton.addEventListener('click', () => fadeOut(popup));
+    if (closeButton2) closeButton2.addEventListener('click', () => fadeOut(popup2));
+    if (popupOuter) popupOuter.addEventListener('click', e => { if (e.target === popupOuter) fadeOut(popup); });
+    if (popupOuter2) popupOuter2.addEventListener('click', e => { if (e.target === popupOuter2) fadeOut(popup2); });
+
+    function fadeIn(element) {
+        if (!element) return;
+        let opacity = 0;
+        element.style.opacity = opacity;
+        element.style.display = 'block';
+        const fadeInInterval = setInterval(() => {
+            if (opacity < 1) {
+                opacity += 0.1;
+                element.style.opacity = opacity;
+            } else {
+                clearInterval(fadeInInterval);
+            }
+        }, 50);
     }
 
-    // On button click, hide the #google-drive-msg div and store the hidden state in localStorage
-    jQuery('.button_cf7formgsc').on('click', function() {
-        jQuery('#google-drive-msg').hide(); // Hide the message
-        localStorage.setItem('googleDriveMsgHidden', 'true'); // Save the hidden state in localStorage
-    });
-
-    // On #deactivate-log click, show the #google-drive-msg div and clear localStorage
-    jQuery('#deactivate-log').on('click', function() {
-        jQuery('#google-drive-msg').show(); // Show the message
-        localStorage.removeItem('googleDriveMsgHidden'); // Remove the hidden state from localStorage
-    });
+    function fadeOut(element) {
+        if (!element) return;
+        let opacity = 1;
+        const fadeOutInterval = setInterval(() => {
+            if (opacity > 0) {
+                opacity -= 0.1;
+                element.style.opacity = opacity;
+            } else {
+                clearInterval(fadeOutInterval);
+                element.style.display = 'none';
+            }
+        }, 50);
+    }
 });

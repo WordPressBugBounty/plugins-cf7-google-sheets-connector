@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: CF7 Google Sheet Connector\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/cf7-google-sheets-"
 "connector\n"
-"POT-Creation-Date: 2025-04-22 18:45+0530\n"
+"POT-Creation-Date: 2025-06-26 21:06+0530\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -291,90 +291,71 @@ msgid ""
 "order to enable the settings for configuration."
 msgstr ""
 
-#: includes/class-gs-service.php:676
-msgid ""
-"Single\n"
-"                Sheet Connection"
-msgstr ""
-
-#: includes/class-gs-service.php:684
-msgid ""
-"Multi Sheet\n"
-"                Connection"
-msgstr ""
-
-#: includes/class-gs-service.php:685 includes/pages/gs-custom-ordering.php:5
-#: includes/pages/gs-field-list.php:5
-#: includes/pages/gs-miscellaneous-features.php:4
-#: includes/pages/gs-special-mailtags.php:5
-msgid "Pro"
-msgstr ""
-
-#: includes/class-gs-service.php:698
+#: includes/class-gs-service.php:691
 msgid "Google Sheet Settings"
 msgstr ""
 
-#: includes/class-gs-service.php:698
+#: includes/class-gs-service.php:691
 msgid "( Fetch your sheets automatically using PRO )"
 msgstr ""
 
-#: includes/class-gs-service.php:700
+#: includes/class-gs-service.php:693
 msgid "Google Sheet Name"
 msgstr ""
 
-#: includes/class-gs-service.php:705
+#: includes/class-gs-service.php:698
 msgid ""
 "Go to your google account and click on\"Google apps\" icon and than click "
 "\"Sheets\". Select the name of the appropriate sheet you want to link your "
 "contact form or create new sheet."
 msgstr ""
 
-#: includes/class-gs-service.php:708
+#: includes/class-gs-service.php:701
 msgid "Google Sheet ID"
 msgstr ""
 
-#: includes/class-gs-service.php:711
+#: includes/class-gs-service.php:704
 msgid "you can get sheet id from your sheet URL"
 msgstr ""
 
-#: includes/class-gs-service.php:714
+#: includes/class-gs-service.php:707
 msgid "Google Sheet Tab Name"
 msgstr ""
 
-#: includes/class-gs-service.php:717
+#: includes/class-gs-service.php:710
 msgid ""
 "Open your Google Sheet with which you want to link your contact form . You "
 "will notice a tab names at bottom of the screen. Copy the tab name where you "
 "want to have an entry of contact form."
 msgstr ""
 
-#: includes/class-gs-service.php:720
+#: includes/class-gs-service.php:713
 msgid "Google Tab ID"
 msgstr ""
 
-#: includes/class-gs-service.php:723
+#: includes/class-gs-service.php:716
 msgid "you can get tab id from your sheet URL"
 msgstr ""
 
-#: includes/class-gs-service.php:862
+#: includes/class-gs-service.php:835
 msgid "No mail tags available."
 msgstr ""
 
-#: includes/class-gs-service.php:903
+#: includes/class-gs-service.php:876
 msgid ""
 "Map special mail tags with custom header name and save automatically to "
 "google sheet. "
 msgstr ""
 
-#: includes/class-gs-service.php:978
+#: includes/class-gs-service.php:951
 msgid "No custom mail tags available."
 msgstr ""
 
-#: includes/class-gs-service.php:990
+#: includes/class-gs-service.php:963
 msgid "Conditional Logic"
 msgstr ""
 
-#: includes/class-gs-service.php:996
+#: includes/class-gs-service.php:969
 msgid ""
 "The Enable Conditional Logic option in the field settings allows you to "
 "create rules to dynamically display or hide the submission to google sheet "
@@ -500,6 +481,12 @@ msgstr ""
 
 #: includes/pages/gs-custom-ordering.php:5
 msgid "Custom Ordering - "
+msgstr ""
+
+#: includes/pages/gs-custom-ordering.php:5 includes/pages/gs-field-list.php:5
+#: includes/pages/gs-miscellaneous-features.php:4
+#: includes/pages/gs-special-mailtags.php:5
+msgid "Pro"
 msgstr ""
 
 #: includes/pages/gs-custom-ordering.php:9

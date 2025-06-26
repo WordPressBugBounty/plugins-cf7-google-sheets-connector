@@ -18,7 +18,7 @@
                         </ul>
 
                         <?php 
-if(isset($form_id) && !empty($form_id)){
+                      if(isset($form_id) && !empty($form_id)){
 
                         $saved_mail_tags = get_post_meta( $form_id, 'gs_map_mail_tags' );
       
@@ -53,7 +53,7 @@ if(isset($form_id) && !empty($form_id)){
             ?>
                <li>
                   <div class="input-field">
-                     <!-- <input type="checkbox" checked="checked" disabled="disabled" name="gs-custom-ck[<?php echo $count; ?>]" value="1" <?php echo $checked; ?>> -->
+                   
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
                   <div class="label"><?php echo $v; ?> : </div>
@@ -74,14 +74,3 @@ if(isset($form_id) && !empty($form_id)){
 </li>
 </ul>
 </div>
-
-
-
-
-
-
-
-
-
-              
-   

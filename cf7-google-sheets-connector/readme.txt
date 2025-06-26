@@ -7,7 +7,7 @@ Tested up to: 6.7.1
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.0.20
+Stable tag: 5.0.21
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -104,6 +104,9 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.0.21 (26-06-2025) =
+* Fixed: Compatible with Contact Form 7 version 6.1 (latest version).
 
 = 5.0.20 (22-04-2025) =
 * Added: Moved saving of credentials to database for Auto API Integration.
