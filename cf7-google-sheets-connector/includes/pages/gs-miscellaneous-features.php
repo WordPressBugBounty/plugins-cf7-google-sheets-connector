@@ -10,16 +10,17 @@
                    
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo __('Freeze Header Row', 'gsconnector'); ?>  
+                  <div class="label"><?php echo esc_html__( 'Freeze Header Row', 'gsconnector' ); ?>
+  
 
                  </div>
                  <div class="field-input">
                  	 <span class="tooltip" style="display: inline !important;">
                         <img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon">
-                        <span
-                            class="tooltiptext tooltip-right-msg"><?php echo __("Freeze First Header Row.", "gsconnector"); ?>
-                            	
-                         </span>
+                        <span class="tooltiptext tooltip-right-msg">
+                     <?php echo esc_html__( 'Freeze First Header Row.', 'gsconnector' ); ?>
+                      </span>
+
                     </span>
                 </div>
                  </li>
@@ -29,14 +30,15 @@
                    
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo __('Colors', 'gsconnector'); ?>
-
-                 </div>
+                  <div class="label"><?php echo esc_html__( 'Colors', 'gsconnector' ); ?>
+                   </div>
                  <div class="field-input">
                  	<span class="tooltip" style="display: inline !important;">
                         <img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon">
-                        <span
-                            class="tooltiptext tooltip-right-msg"><?php echo __("Coloring of header, odd, even rows", "gsconnector"); ?></span>
+                        <span class="tooltiptext tooltip-right-msg">
+                      <?php echo esc_html__( 'Coloring of header, odd, even rows', 'gsconnector' ); ?>
+                      </span>
+
                     </span>
                  </div>
                  </li>
@@ -46,13 +48,16 @@
                    
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo __('Sheet Sorting', 'gsconnector'); ?>  
+                  <div class="label"><?php echo esc_html__( 'Sheet Sorting', 'gsconnector' ); ?>
+  
                  </div>
                 <div class="field-input">
                  	<span class="tooltip" style="display: inline !important;">
                         <img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon">
-                        <span
-                            class="tooltiptext tooltip-right-msg"><?php echo __("Sort sheet by column name.", "gsconnector"); ?></span>
+                        <span class="tooltiptext tooltip-right-msg">
+                     <?php echo esc_html__( 'Sort sheet by column name.', 'gsconnector' ); ?>
+                       </span>
+
                     </span>
 
                  </div>

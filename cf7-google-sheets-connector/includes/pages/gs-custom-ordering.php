@@ -56,7 +56,7 @@
                    
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo $v; ?> : </div>
+                  <div class="label"><?php echo $v; ?> </div>
                   <div class="field-input">
                      <input type="text" name="gs-custom-header[<?php echo $count; ?>]" value="<?php echo $saved_val; ?>" placeholder="<?php echo $placeholder; ?>" disabled>
                   </div>

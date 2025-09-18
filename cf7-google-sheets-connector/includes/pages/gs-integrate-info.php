@@ -27,8 +27,12 @@ $Gs_Connector_Service = new Gs_Connector_Service();
         <button class="clear-content-logs-cf7"><?php echo esc_html( __('Clear', 'gsconnector' ) ); ?></button>
         <span class="clear-loading-sign-logs-cf7">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
         <div class="clear-content-logs-msg-cf7"></div>
-        <input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"
-                        value="<?php echo wp_create_nonce( 'gs-ajax-nonce' ); ?>" />
+        <input 
+    type="hidden" 
+    name="gs-ajax-nonce" 
+    id="gs-ajax-nonce"
+    value="<?php echo esc_attr( wp_create_nonce( 'gs-ajax-nonce' ) ); ?>" />
+
         <!-- <button onclick="clearErrorLog()" class="clearlogs">Clear</button>  -->
         <div class="copy-message" style="display: none;"><?php echo esc_html( __('Copied', 'gsconnector' ) ); ?></div> <!-- Add a hidden div for the copy message -->
         <?php echo $Gs_Connector_Service->display_error_cf7_log(); ?>

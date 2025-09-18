@@ -7,13 +7,27 @@
     <div class="popup-content align-center">
     <i class="fa fa-lock popup-icon" aria-hidden="true"></i>
     <h2 class="inner-title"><?php echo esc_html( __( 'GSheetConnector for CF7 GSheetConnector PRO Features', 'gsconnector' ) ); ?></h2>
-    <p><?php echo __('This features is available in the PRO version of the plugin. To <strong>Enable the options Upgrade to the PRO</strong> version to unlock all these awesome features.', 'gsconnector'); ?>
-    </p>
+    <p>
+    <?php 
+    echo wp_kses_post( __(
+        'This features is available in the PRO version of the plugin. To <strong>Enable the options Upgrade to the PRO</strong> version to unlock all these awesome features.', 
+        'gsconnector'
+    ) ); 
+    ?>
+</p>
+
     <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="popup-btn-normal">
     <?php echo esc_html( __( 'Upgrade To PRO', 'gsconnector' ) ); ?></a>
     </div>
-    <p class="note"><?php echo __('Bonus: GSheetConnector for CF7 Lite users will get <strong>Special Discounts</strong> for unlimited site licence, automatically applied at checkout.', 'gsconnector'); ?>
-    </p>
+   <p class="note">
+    <?php 
+    echo wp_kses_post( __(
+        'Bonus: GSheetConnector for CF7 Lite users will get <strong>Special Discounts</strong> for unlimited site licence, automatically applied at checkout.', 
+        'gsconnector'
+    ) ); 
+    ?>
+</p>
+
     </div>
 </div>
 
@@ -27,12 +41,26 @@
     <div class="popup-content align-center">
     <i class="fa fa-lock popup-icon" aria-hidden="true"></i>
     <h2 class="inner-title"><?php echo esc_html( __( 'GSheetConnector for CF7 GSheetConnector PRO Features', 'gsconnector' ) ); ?></h2>
-    <p><?php echo __('This features is available in the PRO version of the plugin. To <strong>Enable the options Upgrade to the PRO</strong> version to unlock all these awesome features.', 'gsconnector'); ?>
-    </p>
+    <p>
+    <?php 
+    echo wp_kses_post( __(
+        'This features is available in the PRO version of the plugin. To <strong>Enable the options Upgrade to the PRO</strong> version to unlock all these awesome features.', 
+        'gsconnector'
+    ) ); 
+    ?>
+</p>
+
     <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="popup-btn-normal">
     <?php echo esc_html( __( 'Upgrade To PRO', 'gsconnector' ) ); ?></a>
     </div>
-    <p class="note"><?php echo __('Bonus: GSheetConnector for CF7 Lite users will get <strong>Special Discounts</strong> for unlimited site licence, automatically applied at checkout.', 'gsconnector'); ?>
-    </p>
+   <p class="note">
+    <?php 
+    echo wp_kses_post( __(
+        'Bonus: GSheetConnector for CF7 Lite users will get <strong>Special Discounts</strong> for unlimited site licence, automatically applied at checkout.', 
+        'gsconnector'
+    ) ); 
+    ?>
+</p>
+
     </div>
 </div>

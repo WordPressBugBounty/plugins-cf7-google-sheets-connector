@@ -103,6 +103,7 @@ class Gs_Connector_Service {
         $system_info .= '<div id="info-container" class="info-content" style="display:none;">';
         $system_info .= '<h3>GSheetConnector</h3>';
         $system_info .= '<table>';
+        $system_info .= '<tr><td>Plugin Name</td><td>CF7 GSheetConnector</td></tr>';
         $system_info .= '<tr><td>Plugin Version</td><td>' . esc_html($plugin_version) . '</td></tr>';
         $system_info .= '<tr><td>Plugin Subscription Plan</td><td>' . esc_html($subscription_plan) . '</td></tr>';
         $system_info .= '<tr><td>Connected Email Account</td><td>' . $connected_email . '</td></tr>';
@@ -637,7 +638,7 @@ class Gs_Connector_Service {
        $authenticated = get_option('gs_token');
       
        $per = get_option('gs_verify');
-       $per_msg = __( 'invalid-auth', 'gsconnector' );
+       $per_msg = esc_html__( 'invalid-auth', 'gsconnector' );
        // check user is authenticated when save existing api method
       $show_setting = 0;
           
@@ -646,13 +647,16 @@ class Gs_Connector_Service {
     }
     else{
      ?>
-     <p class="gs-display-note">
-            <?php 
-            echo __( '<strong>Authentication Required:</strong>
-                  You must have to <a href="admin.php?page=wpcf7-google-sheet-config&tab=integration" target="_blank">Authenticate using your Google Account</a> along with Google Drive and Google Sheets Permissions in order to enable the settings for configuration.', 'gsconnector' );
-            ?>
-           
-        </p>
+    <p class="gs-display-note">
+    <?php 
+    echo wp_kses_post( __(
+        '<strong>Authentication Required:</strong> 
+        You must <a href="admin.php?page=wpcf7-google-sheet-config&tab=integration" target="_blank">Authenticate using your Google Account</a> along with Google Drive and Google Sheets Permissions in order to enable the settings for configuration.', 
+        'gsconnector' 
+    ) );
+    ?>
+</p>
+
      <?php 
    }
    if($show_setting == 1){
@@ -688,7 +692,8 @@ class Gs_Connector_Service {
         <!-- Single sheet connection START -->
          <form method="post" >
          <div class="gs-fields" >
-            <h2 class="inner-title"><span><?php echo esc_html( __( 'Google Sheet Settings', 'gsconnector' ) ); ?></span><span class="gs-info"><?php echo __( '( Fetch your sheets automatically using PRO )', 'gsconnector'); ?> </span></h2>
+            <h2 class="inner-title"><span><?php echo esc_html( __( 'Google Sheet Settings', 'gsconnector' ) ); ?></span><span class="gs-info"><?php echo esc_html__( '( Fetch your sheets automatically using PRO )', 'gsconnector' ); ?>
+                 </span></h2>
              <p>
                <label><?php echo esc_html( __( 'Google Sheet Name', 'gsconnector' ) ); ?></label>
                <input type="text" name="cf7-gs[sheet-name]" id="gs-sheet-name" 
@@ -819,7 +824,7 @@ class Gs_Connector_Service {
                     
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo $v; ?> : </div>
+                  <div class="label"><?php echo $v; ?> </div>
                   <div class="field-input">
                      <input type="text" name="gs-custom-header[<?php echo $count; ?>]" value="<?php echo $saved_val; ?>" placeholder="<?php echo $placeholder; ?>" disabled>
                   </div>
@@ -831,9 +836,10 @@ class Gs_Connector_Service {
       ?>
       </ul>
       <?php
-      } else {
-         echo '<p><span class="gs-info">' . __( 'No mail tags available.','gsconnector' ) . '</span></p>';
-      }
+      }else {
+    echo '<p><span class="gs-info">' . esc_html__( 'No mail tags available.', 'gsconnector' ) . '</span></p>';
+    }
+
    }
    
    public function get_contact_form_fields( $meta ) {
@@ -948,8 +954,9 @@ class Gs_Connector_Service {
          </ul>
       <?php 
       } else {
-         echo '<p><span class="gs-info">' . __( 'No custom mail tags available.','gsconnector' ) . '</span></p>';
-      }        
+    echo '<p><span class="gs-info">' . esc_html__( 'No custom mail tags available.', 'gsconnector' ) . '</span></p>';
+      }
+    
    }
 
    function display_form_conditional_logic( $form_id, $post ){ ?>
@@ -960,15 +967,18 @@ class Gs_Connector_Service {
                         <input type="checkbox" name="cf7-gs[enable_conditional_logic]" id="enable-conditional-logic" value="1"
                              style="display: none;">
                         <label for="enable-conditional-logic" class="button-woo-toggle-cf7" id="conditional-toggle"></label>
-                        <?php echo __('Conditional Logic', 'gsconnector'); ?>
+                        <?php echo esc_html__( 'Conditional Logic', 'gsconnector' ); ?>
                     </label>
 
                     <span class="tooltip" style="display: inline !important;">
                         <img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon">
-                        <span
-                            class="tooltiptext tooltip-right-msg"><?php echo __("The Enable Conditional Logic option in the field settings allows you to create rules to dynamically display or hide the submission to google sheet based on values.", "gsconnector"); ?>
-                              
-                      </span>
+                        <span class="tooltiptext tooltip-right-msg">
+                        <?php echo esc_html__( 
+                    "The Enable Conditional Logic option in the field settings allows you to create rules to dynamically display or hide the submission to Google Sheet based on values.", 
+                    "gsconnector" 
+               ); ?>
+              </span>
+
                     </span>
                 </div>
         <?php

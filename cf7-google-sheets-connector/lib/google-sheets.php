@@ -72,8 +72,7 @@ class CF7GSC_googlesheet
                 if ((in_array("https://www.googleapis.com/auth/drive.metadata.readonly", $permission)) && (in_array("https://www.googleapis.com/auth/spreadsheets", $permission))) {
                     update_option('gs_verify', 'valid');
                 } else {
-                    // update_option('gs_verify', 'Something went wrong! It looks you have not given the permission of Google Drive and Google Sheets from your google account.Please Deactivate Auth and Re-Authenticate again with the permissions.');
-                    update_option('gs_verify', 'invalid-auth');
+                update_option('gs_verify', 'invalid-auth');
                 }
             }
             $tokenJson = json_encode($tokenData);
@@ -445,17 +444,13 @@ class CF7GSC_googlesheet
     public function gsheet_print_google_account_email()
     {
         try {
-            // $google_account = get_option("cf7gf_email_account");
-            // if ($google_account) {
-            //     return $google_account;
-            // } else {
-
+          
             $google_sheet = new CF7GSC_googlesheet();
             $google_sheet->auth();
             $email = $google_sheet->gsheet_get_google_account_email();
             update_option('cf7gf_email_account', $email);
             return $email;
-            // }
+           
         } catch (Exception $e) {
             Gs_Connector_Free_Utility::gs_debug_log( $e->getMessage() );
             return false;

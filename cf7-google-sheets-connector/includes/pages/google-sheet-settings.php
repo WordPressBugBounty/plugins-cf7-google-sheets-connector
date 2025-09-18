@@ -39,33 +39,43 @@ elseif($active_tab ==  'system-status'){
 			<div class="gsheet-logo">
 				<a href="https://www.gsheetconnector.com/"><i></i></a></div>
 			<h1 class="gsheet-logo-text"><span><?php echo esc_html( __('CF7 GSheetConnector', 'gsconnector' ) ); ?></span> <small><?php echo esc_html( __('Version :', 'gsconnector' ) ); ?> <?php echo esc_html($plugin_version,'gsconnector'); ?> </small></h1>
-			<a href="https://support.gsheetconnector.com/kb" title="gsheet Knowledge Base" target="_blank" class="button gsheet-help"><i class="dashicons dashicons-editor-help"></i></a>
+			
+	<ul> 
+		<li><a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector/introduction" title="Document" target="_blank"><i class="fa-regular fa-file-lines"></i></a></li>
+		<li><a href="https://www.gsheetconnector.com/support" title="Support" target="_blank"><i class="fa-regular fa-life-ring"></i></a></li>
+		<li><a href="https://wordpress.org/plugins/cf7-google-sheets-connector/#developers" title="Changelog" target="_blank"><i class="fa-solid fa-bullhorn"></i></a></li>
+	</ul>
+	
+	
 		</div>
+
+<div class="breadcrumb">
     <span class="dashboard-gsc"><?php echo esc_html( __('DASHBOARD', 'gsconnector' ) ); ?></span>
 
     <span class="divider-gsc"> / </span>
 
     <span class="modules-gsc"> <?php echo esc_html( __($active_tab_name, 'gsconnector' ) ); ?></span>
-<div class="wrap">
+</div>
+
 	<?php
-       $tabs = array(  
-        'integration' => __( 'Integration', 'gsconnector' ),
-        'settings' => __('Role Settings', 'gsconnector'),
-        'cf7_db' => __('CF7 Database', 'gsconnector'),
-		    'beta_version' => __('Beta Version', 'gsconnector'),
-        // 'faq' => __( 'FAQ', 'gsconnector' ),
-        // 'demos' => __( 'Demos', 'gsconnector' ),
-         'system-status' => __( 'System Status', 'gsconnector' ),
-         );
+    $tabs = array(  
+    'integration'   => esc_html__( 'Integration', 'gsconnector' ),
+    'settings'      => esc_html__( 'Role Settings', 'gsconnector' ),
+    'cf7_db'        => esc_html__( 'CF7 Database', 'gsconnector' ),
+    'beta_version'  => esc_html__( 'Beta Version', 'gsconnector' ),
+    // 'faq'        => esc_html__( 'FAQ', 'gsconnector' ),
+    // 'demos'      => esc_html__( 'Demos', 'gsconnector' ),
+    'system-status' => esc_html__( 'System Status', 'gsconnector' ),
+);
+
        echo '<div id="icon-themes" class="icon32"><br></div>';
-       echo '<h2 class="nav-tab-wrapper inner-title">';
+       echo '<div class="nav-tab-wrapper">';
        foreach( $tabs as $tab => $name ){
            $class = ( $tab == $active_tab ) ? ' nav-tab-active' : '';
-           echo "<a class='nav-tab$class' href='?page=wpcf7-google-sheet-config&tab=$tab' style=' box-shadow: 0 0 0 0px #fff  !important;
-  outline: 0px solid transparent !important;'>$name</a>";
+           echo "<a class='nav-tab$class' href='?page=wpcf7-google-sheet-config&tab=$tab'>$name</a>";
 
        }
-       echo '</h2>';
+       echo '</div><div class="wrap-gsc">';
    	switch ( $active_tab ){
         case 'integration' :
    		   $gs_intigrate = new Gs_Connector_Free_Init();

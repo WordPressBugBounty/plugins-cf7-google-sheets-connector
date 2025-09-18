@@ -15,10 +15,22 @@
                 </label>
                 <label><strong style="font-size: 16px;"><?php echo esc_html( __('Enable Beta Version', 'gsconnector' ) ); ?></strong></label>
                 <p><?php echo esc_html( __('Get updates for pre-release versions', 'gsconnector' ) ); ?></p>
-                <input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce" value="cbfd5fce66">
+                <input 
+    type="hidden" 
+    name="gs-ajax-nonce" 
+    id="gs-ajax-nonce" 
+    value="<?php echo esc_attr( wp_create_nonce( 'gs-ajax-nonce' ) ); ?>">
+
+               
                 <div class="select-info" style="margin-top:10px;">
                     <p class="beta-content-msg-cf7gsc" style="color:#479C4B;"></p>
-                    <input type="button" class="button button-primary button-large beta-save" name="gsc_pro_beta_settings" value="Save" id="beta-save">
+                   <input 
+    type="button" 
+    class="button button-primary button-large beta-save" 
+    name="gsc_pro_beta_settings" 
+    value="<?php echo esc_attr__( 'Save', 'gsconnector' ); ?>" 
+    id="beta-save">
+
                     <span class="beta-loading-sign-cf7gsc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 
                 </div>

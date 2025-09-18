@@ -3,11 +3,11 @@ Contributors: westerndeal, abdullah17, gsheetconnector
 Donate link: https://www.paypal.me/WesternDeal
 Author URL: https://www.gsheetconnector.com/
 Tags: cf7, contact form 7, contact form 7 integrations, contact forms, google sheets integrations
-Tested up to: 6.7.1
+Tested up to: 6.8
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.0.21
+Stable tag: 5.0.22
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,16 +15,22 @@ Send your Contact Form 7 data directly to your Google Sheets spreadsheet.
 
 == Description ==
 
-CF7 Google Sheet Connector is an addon plugin, A bridge between your [WordPress](https://wordpress.org/) based [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) forms and [Google Sheets](https://www.google.com/sheets/about/). ** 🚀 A Most Popular WordPress Plugin.**
+### CF7 Google Sheet Connector ###
+
+### 🚀 A Most Popular WordPress Plugin. ###
+★★★★★<br>
+
+CF7 Google Sheet Connector is an addon plugin, A bridge between your [WordPress](https://wordpress.org/) based [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) forms and [Google Sheets](https://www.google.com/sheets/about/).
 
 When a visitor submits his/her data on your website via a Contact Form 7 form, upon form submission, such data are also sent to Google Sheets.
 
-[Homepage](https://www.gsheetconnector.com/) | [Documentation](https://www.gsheetconnector.com/docs) | [Support](https://www.gsheetconnector.com/support) | [Demo](https://cf7demo.gsheetconnector.com/) | [Premium Version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
+[Homepage](https://www.gsheetconnector.com/) | [Documentation](https://www.gsheetconnector.com/docs) | [Support](https://www.gsheetconnector.com/docs/cf7-gsheetconnector/introduction) | [Demo](https://cf7demo.gsheetconnector.com/) | [Premium Version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
 
 = 📝 CF7 ➜ ✍️Google Sheet=
 Get rid of making mistakes while adding the sheet settings or adding the headers ( Mail Tags ) to the sheet column. We have Launched the [Googlesheet Connector PRO version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo) with more automated features.
 
-= ✨[PRO Features](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)✨ =
+
+## <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo" target="_blank">✔ PRO Features</a> ##
 ➜ Custom Google API Integration Settings
 ➜ Allowing to Create a New Sheet from Plugin Settings
 ➜ Custom Ordering Feature / Manage Fields to Display in Sheet using Enable-Disable / Edit the Fields/ Headers Name to display in Google Sheet.
@@ -35,12 +41,12 @@ Get rid of making mistakes while adding the sheet settings or adding the headers
 Refer to the features and benefits page for more detailed information on the features of the [WPForms Google Sheet PRO Addon Plugin](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
 
 
-= ⚡️ Check Live Demo =
+## ⚡️ Check Live Demo ##
 [Demo URL: CF7 Google Sheet](https://cf7demo.gsheetconnector.com)
 
 [Google Sheet URL to Check submitted Data](https://docs.google.com/spreadsheets/d/1ooBdX0cgtk155ww9MmdMTw8kDavIy5J1m76VwSrcTSs/)
 
-= ⚡️ How to Use this Plugin =
+## ⚡️ How to Use this Plugin ##
 
 * **Step: 1 - [In Google Sheets](https://sheets.google.com/)** 
 ➜ Log into your Google Account and visit Google Sheets.  
@@ -104,6 +110,11 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.0.22 (18-09-2025) =
+* Updated: Readme file updated.
+* Fixed: UI improvements.
+* Fixed: Debug log display moved to the uploads folder directory.
 
 = 5.0.21 (26-06-2025) =
 * Fixed: Compatible with Contact Form 7 version 6.1 (latest version).

@@ -83,7 +83,13 @@
     <label style="margin-left:10px;"><?php echo esc_html( __( 'Shop manager', 'gsconnector' ) ); ?></label>
     <span class="spacer"></span> <br>
     <div class="select-info">
-      <input type="submit" class="button button-primary button-large" name="gs_settings" value="Save" id="roleSettingsSave">
+     <input 
+    type="submit" 
+    class="button button-primary button-large" 
+    name="gs_settings" 
+    value="<?php echo esc_attr__( 'Save', 'gsconnector' ); ?>" 
+    id="roleSettingsSave">
+
     </div>
   </div>
 </div>

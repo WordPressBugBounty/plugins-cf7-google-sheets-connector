@@ -163,58 +163,45 @@ class Gs_Connector_Free_Utility
     */
    public static function gs_debug_log($error)
    {
-      try {
-         if (!is_dir(GS_CONNECTOR_PATH . 'logs')) {
-            mkdir(GS_CONNECTOR_PATH . 'logs', 0755, true);
-         }
-      } catch (Exception $e) {
+       if ( ! function_exists( 'WP_Filesystem' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+        global $wp_filesystem;
+        WP_Filesystem();
 
-      }
-      try {
-         // check if debug log file exists or not
-         $logFilePathToDelete = GS_CONNECTOR_PATH . "logs/log.txt";
-         // Check if the log file exists before attempting to delete
-         if (file_exists($logFilePathToDelete)) {
-            unlink($logFilePathToDelete);
-         }
-         // check if debug unique log file exists or not
-         $existDebugFile = get_option('gs_debug_log_file');
-         if (!empty($existDebugFile) && file_exists($existDebugFile)) {
-            $log = fopen($existDebugFile, 'a');
-            if (is_array($error)) {
-               fwrite($log, print_r(date_i18n('j F Y H:i:s', current_time('timestamp')) . " \t PHP " . phpversion(), TRUE));
-               fwrite($log, print_r($error, TRUE));
-            } else {
-               $result = fwrite($log, print_r(date_i18n('j F Y H:i:s', current_time('timestamp')) . " \t PHP " . phpversion() . " \t $error \r\n", TRUE));
-            }
-            fclose($log);
-         } else {
-            // if unique log file not exists then create new file code
-            // Your log content (you can customize this)
-            $unique_log_content = "Log created at " . date('Y-m-d H:i:s');
-            // Create the log file
-            $logfileName = 'log-' . uniqid() . '.txt';
-            // Define the file path
-            $logUniqueFile = GS_CONNECTOR_PATH . "logs/" . $logfileName;
-            if (file_put_contents($logUniqueFile, $unique_log_content)) {
-               // save debug unique file in table
-               update_option('gs_debug_log_file', $logUniqueFile);
-               // Success message
-               // echo "Log file created successfully: " . $logUniqueFile;
-               $log = fopen($logUniqueFile, 'a');
-               if (is_array($error)) {
-                  fwrite($log, print_r(date_i18n('j F Y H:i:s', current_time('timestamp')) . " \t PHP " . phpversion(), TRUE));
-                  fwrite($log, print_r($error, TRUE));
-               } else {
-                  $result = fwrite($log, print_r(date_i18n('j F Y H:i:s', current_time('timestamp')) . " \t PHP " . phpversion() . " \t $error \r\n", TRUE));
-               }
-               fclose($log);
+        $upload_dir = wp_upload_dir();
+        $log_dir = trailingslashit( $upload_dir['basedir'] ) . 'cf7-gsheetconnector-logs/';
+        $log_file = get_option( 'gs_debug_log_file' );
+        $timestamp = gmdate( 'Y-m-d H:i:s' ) . "\t PHP " . phpversion() . "\t";
 
-            } else {
-               // Error message
-               echo "Error - Not able to create Log File.";
+
+      try {
+          if ( ! $wp_filesystem->is_dir( $log_dir ) ) {
+                $wp_filesystem->mkdir( $log_dir, FS_CHMOD_DIR );
             }
-         }
+
+            $old_file = $log_dir . 'log.txt';
+            if ( $wp_filesystem->exists( $old_file ) ) {
+                wp_delete_file( $old_file );
+            }
+            $log_message = is_array( $error ) || is_object( $error )
+                ? $timestamp . wp_json_encode( $error ) . "\r\n"
+                : $timestamp . $error . "\r\n";
+
+         if ( ! empty( $log_file ) && $wp_filesystem->exists( $log_file ) ) {
+                $existing = $wp_filesystem->get_contents( $log_file );
+                $wp_filesystem->put_contents( $log_file, $existing . $log_message, FS_CHMOD_FILE );
+            } else {
+                $new_log_file = $log_dir . 'log-' . uniqid() . '.txt';
+                $log_content = "Log created at " . gmdate( 'Y-m-d H:i:s' ) . "\r\n" . $log_message;
+
+                if ( $wp_filesystem->put_contents( $new_log_file, $log_content, FS_CHMOD_FILE ) ) {
+                    update_option( 'gs_debug_log_file', $new_log_file );
+                } else {
+                    
+                }
+            }
+
 
       } catch (Exception $e) {
 

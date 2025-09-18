@@ -45,10 +45,26 @@
 	<button class="collapsible"><?php echo esc_html( __('How do I get the Google Access Code required in step 3 of Installation?')); ?></button>
 	<div class="content">
 		<ol>
-			<li><?php echo __('On the&nbsp;<code>Admin Panel &gt; Contact form 7 &gt; Google Sheets</code>&nbsp;screen, click the “Get Code” button.'); ?></li>
+			<li>
+    <?php 
+    echo wp_kses_post( __(
+        'On the&nbsp;<code>Admin Panel &gt; Contact form 7 &gt; Google Sheets</code>&nbsp;screen, click the “Get Code” button.',
+        'gsconnector'
+    ) );
+    ?>
+</li>
+
 			<li><?php echo esc_html( __('In a popup Google will ask you to authorize the plugin to connect to your Google Sheets. Authorize it – you may have to log in to your Google account if you aren’t already logged in.')); ?></li>
 			<li><?php echo esc_html( __('On the next screen, you should receive the Access Code. Copy it.')); ?></li>
-			<li><?php echo __('Now you can paste this code back on the&nbsp;<code>Admin Panel &gt; Contact form 7 &gt; Google Sheets</code>&nbsp;screen.'); ?></li>
+			<li>
+    <?php 
+    echo wp_kses_post( __(
+        'Now you can paste this code back on the&nbsp;<code>Admin Panel &gt; Contact form 7 &gt; Google Sheets</code>&nbsp;screen.',
+        'gsconnector'
+    ) );
+    ?>
+</li>
+
 		</ol>
 	</div>
 </div>

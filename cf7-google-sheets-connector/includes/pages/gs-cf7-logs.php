@@ -16,12 +16,12 @@
 				</div>
 			</form>
  
-<div class="wrap"  style="opeacity:0.75; margin-top:30px;">
+<div class="database-table"  style="opeacity:0.75; margin-top:30px;">
 			<div id="icon-users" class="icon32"></div>
 			<h2 class="inner-title"><?php echo esc_html( __('Contact Forms List', 'gsconnector' ) ); ?></h2>
 		 
 		  
-	</div>
+	
 		<table style="opacity:0.75;" class="wp-list-table widefat fixed striped table-view-list contact_page_wpcf7-google-sheet-config">
 			<thead>
 	<tr>
@@ -37,6 +37,9 @@
 	</tfoot>
 
 </table>
+	
+	
+	
 <div class="tablenav bottom">
 
 <div class="alignleft actions bulkactions">
@@ -49,8 +52,10 @@
 <span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span></span></div>
 		<br class="clear">
 </div>
+	
+	</div>
 </div>
-</div>
+
 
 
 <?php include( GS_CONNECTOR_PATH . "includes/pages/pro-popup.php" ) ;?>
