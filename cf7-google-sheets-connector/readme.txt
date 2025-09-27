@@ -1,4 +1,4 @@
-=== CF7 Google Sheets Connector ===
+=== Google Sheets Connector for CF7 ===
 Contributors: westerndeal, abdullah17, gsheetconnector
 Donate link: https://www.paypal.me/WesternDeal
 Author URL: https://www.gsheetconnector.com/
@@ -7,7 +7,7 @@ Tested up to: 6.8
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.0.22
+Stable tag: 5.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,16 +15,16 @@ Send your Contact Form 7 data directly to your Google Sheets spreadsheet.
 
 == Description ==
 
-### CF7 Google Sheet Connector ###
+### Google Sheets Connector for CF7 ###
 
 ### 🚀 A Most Popular WordPress Plugin. ###
 ★★★★★<br>
 
-CF7 Google Sheet Connector is an addon plugin, A bridge between your [WordPress](https://wordpress.org/) based [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) forms and [Google Sheets](https://www.google.com/sheets/about/).
+Google Sheets Connector for CF7 is an addon plugin, A bridge between your [WordPress](https://wordpress.org/) based [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) forms and [Google Sheets](https://www.google.com/sheets/about/).
 
 When a visitor submits his/her data on your website via a Contact Form 7 form, upon form submission, such data are also sent to Google Sheets.
 
-[Homepage](https://www.gsheetconnector.com/) | [Documentation](https://www.gsheetconnector.com/docs) | [Support](https://www.gsheetconnector.com/docs/cf7-gsheetconnector/introduction) | [Demo](https://cf7demo.gsheetconnector.com/) | [Premium Version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
+[Homepage](https://www.gsheetconnector.com/) | [Documentation](https://www.gsheetconnector.com/docs/cf7-gsheetconnector/) | [Support](https://www.gsheetconnector.com/support/) | [Demo](https://demo.gsheetconnector.com/cf7-google-sheet-connector-pro/) | [Premium Version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
 
 = 📝 CF7 ➜ ✍️Google Sheet=
 Get rid of making mistakes while adding the sheet settings or adding the headers ( Mail Tags ) to the sheet column. We have Launched the [Googlesheet Connector PRO version](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo) with more automated features.
@@ -38,13 +38,13 @@ Get rid of making mistakes while adding the sheet settings or adding the headers
 ➜ Syncronize Existing Entries for WPForms PRO users
 ➜ Freeze Header Settings
 ➜ Header Color and Row Odd/Even Colors.
-Refer to the features and benefits page for more detailed information on the features of the [WPForms Google Sheet PRO Addon Plugin](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro?wp-repo)
+Refer to the features and benefits page for more detailed information on the features and free vs pro of the [CF7 Google Sheet Connector PRO Addon Plugin](https://www.gsheetconnector.com/cf7-google-sheet-connector-pro#compare)
 
 
 ## ⚡️ Check Live Demo ##
-[Demo URL: CF7 Google Sheet](https://cf7demo.gsheetconnector.com)
+[Demo URL: Google Sheets Connector for CF7](https://demo.gsheetconnector.com/cf7-google-sheet-connector-pro/)
 
-[Google Sheet URL to Check submitted Data](https://docs.google.com/spreadsheets/d/1ooBdX0cgtk155ww9MmdMTw8kDavIy5J1m76VwSrcTSs/)
+[Google Sheet URL to Check submitted Data](https://docs.google.com/spreadsheets/d/1Ftht9knBeuzcvZlzM4Wz6L8qsV4PiDU5ukFlFq9M6PU/edit#gid=0)
 
 ## ⚡️ How to Use this Plugin ##
 
@@ -62,7 +62,7 @@ Refer to the features and benefits page for more detailed information on the fea
 ➜ In the Google sheets tab, provide column names in row 1. The first column should be "date". For each further column, copy paste mail tags from the Contact Form 7 form (e.g. "your-name", "your-email", "your-subject", "your-message", etc).  
 ➜ Test your form submit and verify that the data shows up in your Google Sheet.
 
-= 🔥 Videos to help you get started with CF7 Google Sheets Connector =
+= 🔥 Videos to help you get started with Google Sheets Connector for CF7 =
 
 🚀How to Install, Authenticate and Integrate Contact Form with your Google Sheet.
 
@@ -110,6 +110,9 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.1.0 (27-09-2025) =
+* Updated: The plugin name from "CF7 Google Sheet Connector" to "Google Sheet Connector for CF7".
 
 = 5.0.22 (18-09-2025) =
 * Updated: Readme file updated.
