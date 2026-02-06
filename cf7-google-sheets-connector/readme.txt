@@ -1,13 +1,14 @@
-=== Google Sheets Connector for CF7 ===
+=== GSheetConnector for CF7 – Connect Contact Form 7 to Google Sheets and Send Form Submissions in Real Time ===
 Contributors: westerndeal, abdullah17, gsheetconnector
 Donate link: https://www.paypal.me/WesternDeal
 Author URL: https://www.gsheetconnector.com/
 Tags: cf7, contact form 7, contact form 7 integrations, contact forms, google sheets integrations
-Tested up to: 6.8
+Docs: https://www.gsheetconnector.com/docs/cf7-gsheetconnector
+Tested up to: 6.9.1
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.1.0
+Stable tag: 5.1.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,9 +16,9 @@ Send your Contact Form 7 data directly to your Google Sheets spreadsheet.
 
 == Description ==
 
-### Google Sheets Connector for CF7 ###
+### GSheetConnector for CF7 ###
 
-### 🚀 A Most Popular WordPress Plugin. ###
+**🚀 A Most Popular WordPress Plugin.**
 ★★★★★<br>
 
 Google Sheets Connector for CF7 is an addon plugin, A bridge between your [WordPress](https://wordpress.org/) based [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) forms and [Google Sheets](https://www.google.com/sheets/about/).
@@ -84,12 +85,11 @@ Enjoy!
 == Screenshots ==
 
 1. Google Sheet Integration Shown with Authentication along with Permissions. 
-2. How to Enter Sheet Name and Tab Name is shown
-3. Entering the Field Header Names Manually in the Connected Sheet and Submitting the form.
-4. Role Settings.
-5. CF7 Database.
-6. Beta Version.
-7. System Status.
+2. How to Enter Sheet Name and Tab Name is shown and Entering the Field Header Names Manually in the Connected Sheet and Submitting the form.
+3. Role Settings.
+4. CF7 Database.
+5. Beta Version.
+6. System Status.
 
 == Frequently Asked Questions ==
 
@@ -110,6 +110,25 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.1.5 (04-02-2026) =
+* Fixed: Admin notices not getting closed and showing error.
+
+= 5.1.4 (26-12-2025) =
+* Fixed: OAuth authentication failure caused by API request timeout and PHP 8.2 compatibility issues when saving API credentials.
+* Fixed: Permission issues with the plugin settings page by switching to the "manage_options" capability.
+* Improved: code compatibility based on WordPress guidelines.
+
+= 5.1.3 (28-11-2025) =
+* Updated: Made few performance tweaks to minimize unnecessary API calls and lower the overall quota usage.
+
+= 5.1.2 (14-11-2025) =
+* Fixed: Updated the text domain name.
+* Fixed: Improved responsive CSS.
+* Updated: Updated the header logo and the dashboard widget logo.
+
+= 5.1.1 (13-10-2025) =
+* Updated: The plugin name from "Google Sheet Connector for CF7" to "GSheetConnector for CF7".
 
 = 5.1.0 (27-09-2025) =
 * Updated: The plugin name from "CF7 Google Sheet Connector" to "Google Sheet Connector for CF7".

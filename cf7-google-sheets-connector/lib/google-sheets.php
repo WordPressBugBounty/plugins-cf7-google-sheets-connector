@@ -51,9 +51,10 @@ class CF7GSC_googlesheet
         $client = new Google_Client();
         $client->setClientId($clientId);
         $client->setClientSecret($clientSecret);
-        $client->setRedirectUri('https://oauth.gsheetconnector.com');
+        $client->setRedirectUri('https://oauth.gsheetconnector.com/auth-api.php');
         $client->setScopes(Google_Service_Sheets::SPREADSHEETS);
-        $client->setScopes(Google_Service_Drive::DRIVE_METADATA_READONLY);
+        // $client->setScopes(Google_Service_Drive::DRIVE_METADATA_READONLY);
+        $client->addScope( Google_Service_Drive::DRIVE_FILE );
         $client->setScopes(Google_Service_Oauth2::USERINFO_EMAIL);
         $client->setAccessType('offline');
         $client->fetchAccessTokenWithAuthCode($access_code);
@@ -69,7 +70,7 @@ class CF7GSC_googlesheet
         try {
             if (isset($tokenData['scope'])) {
                 $permission = explode(" ", $tokenData['scope']);
-                if ((in_array("https://www.googleapis.com/auth/drive.metadata.readonly", $permission)) && (in_array("https://www.googleapis.com/auth/spreadsheets", $permission))) {
+               if ( ( in_array("https://www.googleapis.com/auth/drive.metadata.readonly",$permission ) || in_array( 'https://www.googleapis.com/auth/drive.file', $permission ) ) && ( in_array( 'https://www.googleapis.com/auth/spreadsheets', $permission ) ) ) {
                     update_option('gs_verify', 'valid');
                 } else {
                 update_option('gs_verify', 'invalid-auth');
@@ -107,9 +108,10 @@ class CF7GSC_googlesheet
             $client->setClientId($clientId);
             $client->setClientSecret($clientSecret);
 
-            $client->setScopes(Google_Service_Sheets::SPREADSHEETS);
-            $client->setScopes(Google_Service_Drive::DRIVE_METADATA_READONLY);
-            $client->setScopes(Google_Service_Oauth2::USERINFO_EMAIL);
+            // $client->setScopes(Google_Service_Sheets::SPREADSHEETS);
+            // $client->setScopes(Google_Service_Drive::DRIVE_METADATA_READONLY);
+            // $client->setScopes(Google_Service_Oauth2::USERINFO_EMAIL);
+            $client->setScopes([Google_Service_Sheets::SPREADSHEETS, Google_Service_Drive::DRIVE_FILE]);
             $client->refreshToken($tokenData['refresh_token']);
             $client->setAccessType('offline');
             CF7GSC_googlesheet::updateToken($tokenData);
@@ -117,7 +119,7 @@ class CF7GSC_googlesheet
             self::setInstance($client);
         } catch (Exception $e) {
             Gs_Connector_Free_Utility::gs_debug_log( $e->getMessage() );
-            throw new LogicException("Auth, Error fetching OAuth2 access token, message: " . $e->getMessage());
+            // throw new LogicException("Auth, Error fetching OAuth2 access token, message: " . $e->getMessage());
             exit();
         }
     }
@@ -381,11 +383,37 @@ class CF7GSC_googlesheet
                 $worksheet_id = $this->getWorkTabId();
                 if ($sheet_id == $worksheet_id) {
                     $worksheet_title = $properties->getTitle();
-                    $field_tag = isset($_POST['gf-custom-ck']) ? $_POST['gf-custom-ck'] : array();
-                    $field_tag_key = isset($_POST['gf-custom-header-key']) ? $_POST['gf-custom-header-key'] : "";
-                    $field_tag_placeholder = isset($_POST['gf-custom-header-placeholder']) ? $_POST['gf-custom-header-placeholder'] : "";
-                    $field_tag_column = isset($_POST['gf-custom-header']) ? $_POST['gf-custom-header'] : "";
-                    if (!empty($field_tag)) {
+                 $field_tag = [];
+$field_tag_key = '';
+$field_tag_placeholder = '';
+$field_tag_column = '';
+
+if ( isset( $_POST['gf-custom-ck'] ) ) {
+    $field_tag = array_map(
+        'sanitize_text_field',
+        wp_unslash( (array) $_POST['gf-custom-ck'] )
+    );
+}
+
+if ( isset( $_POST['gf-custom-header-key'] ) ) {
+    $field_tag_key = sanitize_text_field(
+        wp_unslash( $_POST['gf-custom-header-key'] )
+    );
+}
+
+if ( isset( $_POST['gf-custom-header-placeholder'] ) ) {
+    $field_tag_placeholder = sanitize_text_field(
+        wp_unslash( $_POST['gf-custom-header-placeholder'] )
+    );
+}
+
+
+if ( isset( $_POST['gf-custom-header'] ) ) {
+    $field_tag_column = sanitize_text_field(
+        wp_unslash( $_POST['gf-custom-header'] )
+    );
+}
+    if (!empty($field_tag)) {
                         foreach ($field_tag as $key => $value) {
                             $gf_key = $field_tag_key[$key];
                             $gf_val = (!empty($field_tag_column[$key])) ? $field_tag_column[$key] : $field_tag_placeholder[$key];

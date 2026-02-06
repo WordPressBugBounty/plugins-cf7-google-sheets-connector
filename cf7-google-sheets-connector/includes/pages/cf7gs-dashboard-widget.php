@@ -18,7 +18,7 @@ $forms_list = $gs_connector_service->get_forms_connected_to_sheet();
     <div class="main-content">
        <div>
           <h3>
-           <?php echo esc_html__( "Contact Forms (CF7) connected with Google Sheets.", "gsconnector" ); ?>
+           <?php echo esc_html__( "Contact Forms (CF7) connected with Google Sheets.", "cf7-google-sheets-connector" ); ?>
           </h3>
 
           <ul class="contact-form-list">
@@ -39,7 +39,7 @@ $forms_list = $gs_connector_service->get_forms_connected_to_sheet();
                }
             } else { ?>
             <li>
-    <span><?php echo esc_html__( "No Contact Forms (CF7) is connected with Google Sheets.", "gsconnector" ); ?></span>
+    <span><?php echo esc_html__( "No Contact Forms (CF7) is connected with Google Sheets.", "cf7-google-sheets-connector" ); ?></span>
 </li>
 
             <?php

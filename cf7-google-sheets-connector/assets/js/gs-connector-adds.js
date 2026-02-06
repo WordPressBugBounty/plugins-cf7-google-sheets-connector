@@ -5,10 +5,13 @@ jQuery(document).ready(function () {
       jQuery(".submit").css("display", "none");
     }
 
-   jQuery('.set-adds-interval').click(function () {
+   jQuery(document).on('click', '.set-adds-interval', function (e) {
+    e.preventDefault();
+    var notice = jQuery(this).closest('.gs-adds-notice');
+    var nonce  = notice.data('nonce');
       var data = {
          action: 'set_adds_interval',
-         security: jQuery('#gs_adds_ajax_nonce').val()
+         security: nonce
       };
 
       jQuery.post(ajaxurl, data, function (response) {
@@ -18,10 +21,15 @@ jQuery(document).ready(function () {
       });
    });
    
-   jQuery('.close-adds-interval').click(function () {
+   jQuery(document).on('click', '.close-adds-interval', function (e) {
+    e.preventDefault();
+
+    var notice = jQuery(this).closest('.gs-adds-notice');
+    var nonce  = notice.data('nonce');
+
       var data = {
          action: 'close_adds_interval',
-         security: jQuery('#gs_adds_ajax_nonce').val()
+         security: nonce
       };
 
       jQuery.post(ajaxurl, data, function (response) {
@@ -33,10 +41,15 @@ jQuery(document).ready(function () {
    
 
 
-   jQuery('.set-auth-expired-adds-interval').click(function () {
+   jQuery(document).on('click', '.set-auth-expired-adds-interval', function (e) {
+    e.preventDefault();
+
+    var notice = jQuery(this).closest('.gs-auth-expired-adds-notice');
+    var nonce  = notice.data('nonce');
+
       var data = {
          action: 'set_auth_expired_adds_interval',
-         security: jQuery('#gs_auth_expired_adds_ajax_nonce').val()
+         security: nonce
       };
 
       jQuery.post(ajaxurl, data, function (response) {
@@ -46,10 +59,15 @@ jQuery(document).ready(function () {
       });
    });
 
- jQuery('.close-auth-expired-adds-interval').click(function () {
+ jQuery(document).on('click', '.close-auth-expired-adds-interval', function (e) {
+    e.preventDefault();  
+
+    var notice = jQuery(this).closest('.gs-auth-expired-adds-notice');
+    var nonce  = notice.data('nonce');
+
       var data = {
          action: 'close_auth_expired_adds_interval',
-         security: jQuery('#gs_auth_expired_adds_ajax_nonce').val()
+         security: nonce
       };
 
       jQuery.post(ajaxurl, data, function (response) {

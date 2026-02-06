@@ -11,20 +11,25 @@ $Gs_Connector_Service = new Gs_Connector_Service();
 
 <div class="system-statuswc">
    <div class="info-container">
-      <h2 class="systemifo inner-title"><?php echo esc_html( __('System Info', 'gsconnector' ) ); ?></h2>
-        <button onclick="copySystemInfo()" class="copy"><?php echo esc_html( __('Copy System Info to Clipboard', 'gsconnector' ) ); ?></button>
-        <?php echo $Gs_Connector_Service->get_cf7gs_system_info(); ?>
+      <h2 class="systemifo inner-title"><?php echo esc_html( __('System Info', 'cf7-google-sheets-connector' ) ); ?></h2>
+        <button onclick="copySystemInfo()" class="copy"><?php echo esc_html( __('Copy System Info to Clipboard', 'cf7-google-sheets-connector' ) ); ?></button>
+        <?php
+echo wp_kses_post(
+    $Gs_Connector_Service->get_cf7gs_system_info()
+);
+?>
+
    </div>
 </div>
 
 
 <div class="system-Error">
     <div class="error-container">
-        <h2 class="systemerror inner-title"><?php echo esc_html( __('Error Log', 'gsconnector' ) ); ?></h2>
+        <h2 class="systemerror inner-title"><?php echo esc_html( __('Error Log', 'cf7-google-sheets-connector' ) ); ?></h2>
 
-        <p><?php echo esc_html( __('If you have', 'gsconnector' ) ); ?> <a href="https://www.gsheetconnector.com/how-to-enable-debugging-in-wordpress" target="_blank"><?php echo esc_html( __('WP_DEBUG_LOG', 'gsconnector' ) ); ?></a><?php echo esc_html( __('enabled, errors are stored in a log file. Here you can find the last 100 lines in reversed order so that you or the GSheetConnector support team can view it easily. The file cannot be edited here.', 'gsconnector' ) ); ?> </p>
-        <button onclick="copyErrorLog()" class="copy"><?php echo esc_html( __('Copy Error Log to Clipboard', 'gsconnector' ) ); ?></button>
-        <button class="clear-content-logs-cf7"><?php echo esc_html( __('Clear', 'gsconnector' ) ); ?></button>
+        <p><?php echo esc_html( __('If you have', 'cf7-google-sheets-connector' ) ); ?> <a href="https://www.gsheetconnector.com/how-to-enable-debugging-in-wordpress" target="_blank"><?php echo esc_html( __('WP_DEBUG_LOG', 'cf7-google-sheets-connector' ) ); ?></a><?php echo esc_html( __('enabled, errors are stored in a log file. Here you can find the last 100 lines in reversed order so that you or the GSheetConnector support team can view it easily. The file cannot be edited here.', 'cf7-google-sheets-connector' ) ); ?> </p>
+        <button onclick="copyErrorLog()" class="copy"><?php echo esc_html( __('Copy Error Log to Clipboard', 'cf7-google-sheets-connector' ) ); ?></button>
+        <button class="clear-content-logs-cf7"><?php echo esc_html( __('Clear', 'cf7-google-sheets-connector' ) ); ?></button>
         <span class="clear-loading-sign-logs-cf7">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
         <div class="clear-content-logs-msg-cf7"></div>
         <input 
@@ -34,8 +39,13 @@ $Gs_Connector_Service = new Gs_Connector_Service();
     value="<?php echo esc_attr( wp_create_nonce( 'gs-ajax-nonce' ) ); ?>" />
 
         <!-- <button onclick="clearErrorLog()" class="clearlogs">Clear</button>  -->
-        <div class="copy-message" style="display: none;"><?php echo esc_html( __('Copied', 'gsconnector' ) ); ?></div> <!-- Add a hidden div for the copy message -->
-        <?php echo $Gs_Connector_Service->display_error_cf7_log(); ?>
+        <div class="copy-message" style="display: none;"><?php echo esc_html( __('Copied', 'cf7-google-sheets-connector' ) ); ?></div> <!-- Add a hidden div for the copy message -->
+       <?php $log_html = $Gs_Connector_Service->display_error_cf7_log();
+
+if ( ! empty( $log_html ) ) {
+    echo wp_kses_post( $log_html );
+} ?>
+
     </div>
 </div>
 

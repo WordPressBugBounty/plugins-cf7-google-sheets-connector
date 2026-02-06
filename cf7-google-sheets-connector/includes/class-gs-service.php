@@ -103,7 +103,7 @@ class Gs_Connector_Service {
         $system_info .= '<div id="info-container" class="info-content" style="display:none;">';
         $system_info .= '<h3>GSheetConnector</h3>';
         $system_info .= '<table>';
-        $system_info .= '<tr><td>Plugin Name</td><td>CF7 GSheetConnector</td></tr>';
+        $system_info .= '<tr><td>Plugin Name</td><td>GSheetConnector for CF7</td></tr>';
         $system_info .= '<tr><td>Plugin Version</td><td>' . esc_html($plugin_version) . '</td></tr>';
         $system_info .= '<tr><td>Plugin Subscription Plan</td><td>' . esc_html($subscription_plan) . '</td></tr>';
         $system_info .= '<tr><td>Connected Email Account</td><td>' . $connected_email . '</td></tr>';
@@ -136,7 +136,14 @@ class Gs_Connector_Service {
         $system_info .= '<tr><td>Is this site discouraging search engines?</td><td>' . (get_option('blog_public') ? 'No' : 'Yes') . '</td></tr>';
         $system_info .= '<tr><td>Default comment status</td><td>' . get_option('default_comment_status') . '</td></tr>';
 
-        $server_ip = $_SERVER['REMOTE_ADDR'];
+        $server_ip = '';
+
+         if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
+            $server_ip = sanitize_text_field(
+               wp_unslash( $_SERVER['REMOTE_ADDR'] )
+            );
+         }
+
         if ($server_ip == '127.0.0.1' || $server_ip == '::1') {
             $environment_type = 'localhost';
         } else {
@@ -240,7 +247,16 @@ class Gs_Connector_Service {
         $system_info .= '<p>The options shown below relate to your server setup. If changes are required, you may need your web host’s assistance.</p>';
         // Add Server information
         $system_info .= '<tr><td>Server Architecture</td><td>' . esc_html(php_uname('s')) . '</td></tr>';
-        $system_info .= '<tr><td>Web Server</td><td>' . esc_html($_SERVER['SERVER_SOFTWARE']) . '</td></tr>';
+    $server_software = '';
+
+if ( isset( $_SERVER['SERVER_SOFTWARE'] ) ) {
+    $server_software = sanitize_text_field(
+        wp_unslash( $_SERVER['SERVER_SOFTWARE'] )
+    );
+}
+
+$system_info .= '<tr><td>Web Server</td><td>' . esc_html( $server_software ) . '</td></tr>';
+
         $system_info .= '<tr><td>PHP Version</td><td>' . esc_html(phpversion()) . '</td></tr>';
         $system_info .= '<tr><td>PHP SAPI</td><td>' . esc_html(php_sapi_name()) . '</td></tr>';
         $system_info .= '<tr><td>PHP Max Input Variables</td><td>' . esc_html(ini_get('max_input_vars')) . '</td></tr>';
@@ -253,10 +269,18 @@ class Gs_Connector_Service {
         $system_info .= '<tr><td>Is SUHOSIN Installed?</td><td>' . (extension_loaded('suhosin') ? 'Yes' : 'No') . '</td></tr>';
         $system_info .= '<tr><td>Is the Imagick Library Available?</td><td>' . (extension_loaded('imagick') ? 'Yes' : 'No') . '</td></tr>';
         $system_info .= '<tr><td>Are Pretty Permalinks Supported?</td><td>' . (get_option('permalink_structure') ? 'Yes' : 'No') . '</td></tr>';
-        $system_info .= '<tr><td>.htaccess Rules</td><td>' . esc_html(is_writable('.htaccess') ? 'Writable' : 'Non Writable') . '</td></tr>';
+       $htaccess_path = ABSPATH . '.htaccess';
+
+$system_info .= sprintf(
+    '<tr><td>%s</td><td>%s</td></tr>',
+    esc_html__( '.htaccess Rules', 'cf7-google-sheets-connector' ),
+    esc_html( wp_is_writable( $htaccess_path ) ? 'Writable' : 'Non Writable' )
+);
+
         $system_info .= '<tr><td>Current Time</td><td>' . esc_html(current_time('mysql')) . '</td></tr>';
         $system_info .= '<tr><td>Current UTC Time</td><td>' . esc_html(current_time('mysql', true)) . '</td></tr>';
-        $system_info .= '<tr><td>Current Server Time</td><td>' . esc_html(date('Y-m-d H:i:s')) . '</td></tr>';
+        $system_info .= '<tr><td>Current Server Time</td><td>' . esc_html( gmdate( 'Y-m-d H:i:s' ) ) .'</td></tr>';
+
         $system_info .= '</table>';
         $system_info .= '</div>';
 
@@ -331,11 +355,43 @@ class Gs_Connector_Service {
         $system_info .= '<p>Shows whether WordPress is able to write to the directories it needs access to.</p>';
         $system_info .= '<table>';
         // Filesystem Permission information
-        $system_info .= '<tr><td>The main WordPress directory</td><td>' . esc_html(ABSPATH) . '</td><td>' . (is_writable(ABSPATH) ? 'Writable' : 'Not Writable') . '</td></tr>';
-        $system_info .= '<tr><td>The wp-content directory</td><td>' . esc_html(WP_CONTENT_DIR) . '</td><td>' . (is_writable(WP_CONTENT_DIR) ? 'Writable' : 'Not Writable') . '</td></tr>';
-        $system_info .= '<tr><td>The uploads directory</td><td>' . esc_html(wp_upload_dir()['basedir']) . '</td><td>' . (is_writable(wp_upload_dir()['basedir']) ? 'Writable' : 'Not Writable') . '</td></tr>';
-        $system_info .= '<tr><td>The plugins directory</td><td>' . esc_html(WP_PLUGIN_DIR) . '</td><td>' . (is_writable(WP_PLUGIN_DIR) ? 'Writable' : 'Not Writable') . '</td></tr>';
-        $system_info .= '<tr><td>The themes directory</td><td>' . esc_html(get_theme_root()) . '</td><td>' . (is_writable(get_theme_root()) ? 'Writable' : 'Not Writable') . '</td></tr>';
+        $upload_dir = wp_upload_dir();
+
+         $system_info .= sprintf(
+            '<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
+            esc_html__( 'The main WordPress directory', 'cf7-google-sheets-connector' ),
+            esc_html( ABSPATH ),
+            esc_html( wp_is_writable( ABSPATH ) ? 'Writable' : 'Not Writable' )
+         );
+
+         $system_info .= sprintf(
+            '<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
+            esc_html__( 'The wp-content directory', 'cf7-google-sheets-connector' ),
+            esc_html( WP_CONTENT_DIR ),
+            esc_html( wp_is_writable( WP_CONTENT_DIR ) ? 'Writable' : 'Not Writable' )
+         );
+
+         $system_info .= sprintf(
+            '<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
+            esc_html__( 'The uploads directory', 'cf7-google-sheets-connector' ),
+            esc_html( $upload_dir['basedir'] ),
+            esc_html( wp_is_writable( $upload_dir['basedir'] ) ? 'Writable' : 'Not Writable' )
+         );
+
+         $system_info .= sprintf(
+            '<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
+            esc_html__( 'The plugins directory', 'cf7-google-sheets-connector' ),
+            esc_html( WP_PLUGIN_DIR ),
+            esc_html( wp_is_writable( WP_PLUGIN_DIR ) ? 'Writable' : 'Not Writable' )
+         );
+
+         $system_info .= sprintf(
+            '<tr><td>%s</td><td>%s</td><td>%s</td></tr>',
+            esc_html__( 'The themes directory', 'cf7-google-sheets-connector' ),
+            esc_html( get_theme_root() ),
+            esc_html( wp_is_writable( get_theme_root() ) ? 'Writable' : 'Not Writable' )
+         );
+
 
         $system_info .= '</table>';
         $system_info .= '</div>';
@@ -383,7 +439,14 @@ class Gs_Connector_Service {
       check_ajax_referer( 'gs-ajax-nonce', 'security' );
 
       /* sanitize incoming data */
-      $Code = sanitize_text_field( $_POST["code"] );
+    $Code = '';
+
+if ( isset( $_POST['code'] ) ) {
+    $Code = sanitize_text_field(
+        wp_unslash( $_POST['code'] )
+    );
+}
+
 
       update_option( 'gs_access_code', $Code );
 
@@ -410,6 +473,10 @@ class Gs_Connector_Service {
          $accesstoken = get_option( 'gs_token' );
          $client = new CF7GSC_googlesheet();
          $client->revokeToken_auto($accesstoken);
+
+        // Fetch and save the API credentails.
+        Gs_Connector_Free_Utility::instance()->save_api_credentials();
+
          delete_option('gs_token');
          delete_option('gs_access_code');
          delete_option('gs_verify');
@@ -425,36 +492,48 @@ class Gs_Connector_Service {
     * @since 2.1
     */
    public function gs_clear_logs() {
-      // nonce check
+
+      // Nonce check
       check_ajax_referer( 'gs-ajax-nonce', 'security' );
-      $existDebugFile = get_option('gs_debug_log_file');
-      $clear_file_msg ='';
-      // check if debug unique log file exist or not then exists to clear file
-      if (!empty($existDebugFile) && file_exists($existDebugFile)) {
-       
-         $handle = fopen ( $existDebugFile, 'w');
-        
-        fclose( $handle );
-        $clear_file_msg ='Logs are cleared.';
-       }
-       else{
-        $clear_file_msg = 'No log file exists to clear logs.';
-       }
-     
-      
-      wp_send_json_success($clear_file_msg);
+
+      $existDebugFile = get_option( 'gs_debug_log_file' );
+      $clear_file_msg = '';
+
+      if ( ! empty( $existDebugFile ) && file_exists( $existDebugFile ) ) {
+
+         // WordPress-approved way to delete files
+         wp_delete_file( $existDebugFile );
+
+         $clear_file_msg = esc_html__( 'Logs are cleared.', 'cf7-google-sheets-connector' );
+
+      } else {
+
+         $clear_file_msg = esc_html__( 'No log file exists to clear logs.', 'cf7-google-sheets-connector' );
+      }
+
+      wp_send_json_success( $clear_file_msg );
    }
+
      /**
     * AJAX function - clear log file for system status tab
     * @since 2.1
     */
-    public function cf7_clear_debug_logs() {
-    // nonce check
-    check_ajax_referer('gs-ajax-nonce', 'security');
-    $handle = fopen(WP_CONTENT_DIR . '/debug.log', 'w');
-    fclose($handle);
-    wp_send_json_success();
-}
+   public function cf7_clear_debug_logs() {
+
+      // Nonce check
+      check_ajax_referer( 'gs-ajax-nonce', 'security' );
+
+      $debug_log = WP_CONTENT_DIR . '/debug.log';
+
+      if ( file_exists( $debug_log ) ) {
+         wp_delete_file( $debug_log );
+      }
+
+      wp_send_json_success(
+         esc_html__( 'Debug log cleared successfully.', 'cf7-google-sheets-connector' )
+      );
+   }
+
    
    /**
     * Add new tab to contact form 7 editors panel
@@ -463,7 +542,7 @@ class Gs_Connector_Service {
    public function cf7_gs_editor_panels( $panels ) {
       if ( current_user_can( 'wpcf7_edit_contact_forms' ) ) {
          $panels['google_sheets'] = array(
-            'title' => __( 'Google Sheets', 'contact-form-7' ),
+            'title' => __( 'Google Sheets', 'cf7-google-sheets-connector' ),
             'callback' => array( $this, 'cf7_editor_panel_google_sheet' )
          );
       }
@@ -482,7 +561,15 @@ class Gs_Connector_Service {
           "tab-id" => ""
           
       );
-      $sheet_data = isset( $_POST['cf7-gs'] ) ? $_POST['cf7-gs'] : $default;
+     $sheet_data = $default;
+
+if ( isset( $_POST['cf7-gs'] ) ) {
+    $sheet_data = array_map(
+        'sanitize_text_field',
+        wp_unslash( (array) $_POST['cf7-gs'] )
+    );
+}
+
       update_post_meta( $post->id(), 'gs_settings', $sheet_data );
      
    }
@@ -502,7 +589,14 @@ class Gs_Connector_Service {
             continue;
         }
         
-        $file_details = $_FILES[ $field_name ];
+    $file_details = [
+    'name'     => sanitize_file_name( wp_unslash( $_FILES[ $field_name ]['name'] ) ),
+    'type'     => sanitize_mime_type( wp_unslash( $_FILES[ $field_name ]['type'] ) ),
+    'tmp_name' => wp_unslash( $_FILES[ $field_name ]['tmp_name'] ),
+    'error'    => absint( $_FILES[ $field_name ]['error'] ),
+    'size'     => absint( $_FILES[ $field_name ]['size'] ),
+];
+
         $file_name = $file_details['name'];
         $uploads_stored[ $field_name ] = $file_name; 
         }
@@ -600,6 +694,7 @@ class Gs_Connector_Service {
           $data[$key] = sanitize_textarea_field(stripcslashes($value));//Line Break in textarea issue resolved. 
             }
         }
+        
         }
         if(!empty($data)){
            foreach ($data as $key => $value) {
@@ -638,8 +733,8 @@ class Gs_Connector_Service {
        $authenticated = get_option('gs_token');
       
        $per = get_option('gs_verify');
-       $per_msg = esc_html__( 'invalid-auth', 'gsconnector' );
-       // check user is authenticated when save existing api method
+      
+    // check user is authenticated when save existing api method
       $show_setting = 0;
           
      if ((!empty($authenticated) && $per == "valid") ) {
@@ -652,7 +747,7 @@ class Gs_Connector_Service {
     echo wp_kses_post( __(
         '<strong>Authentication Required:</strong> 
         You must <a href="admin.php?page=wpcf7-google-sheet-config&tab=integration" target="_blank">Authenticate using your Google Account</a> along with Google Drive and Google Sheets Permissions in order to enable the settings for configuration.', 
-        'gsconnector' 
+        'cf7-google-sheets-connector' 
     ) );
     ?>
 </p>
@@ -662,7 +757,14 @@ class Gs_Connector_Service {
    if($show_setting == 1){
     $form_data = "";
     if(isset($_GET['post'])){
-      $form_id = sanitize_text_field( $_GET['post'] );
+   $form_id = '';
+
+if ( isset( $_GET['post'] ) ) {
+    $form_id = sanitize_text_field(
+        wp_unslash( $_GET['post'] )
+    );
+}
+
       $form_data = get_post_meta( $form_id, 'gs_settings' );
     }
     
@@ -671,14 +773,14 @@ class Gs_Connector_Service {
 
        <ul id="contact-form-editor-tabs" class="ui-tabs-nav">
     <li class="ui-tab cf7-sub-tab-single-li cf7-sub-tab-active">
-        <a href="javascript:void(0);" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-single">
-            <?php esc_html_e('Single Sheet Connection', 'gsconnector'); ?>
+        <a href="#" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-single">
+            <?php esc_html_e('Single Sheet Connection', 'cf7-google-sheets-connector'); ?>
         </a>
     </li>
     <li class="ui-tab cf7-sub-tab-multi-li">
-        <a href="javascript:void(0);" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-multi">
-            <?php esc_html_e('Multi Sheet Connection', 'gsconnector'); ?>
-            <span class="pro"><?php esc_html_e('Pro', 'gsconnector'); ?></span>
+        <a href="#" class="cf7gs-tab-toggle" data-tab="cf7-sub-tab-multi">
+            <?php esc_html_e('Multi Sheet Connection', 'cf7-google-sheets-connector'); ?>
+            <span class="pro"><?php esc_html_e('Pro', 'cf7-google-sheets-connector'); ?></span>
         </a>
     </li>
 </ul>
@@ -692,40 +794,40 @@ class Gs_Connector_Service {
         <!-- Single sheet connection START -->
          <form method="post" >
          <div class="gs-fields" >
-            <h2 class="inner-title"><span><?php echo esc_html( __( 'Google Sheet Settings', 'gsconnector' ) ); ?></span><span class="gs-info"><?php echo esc_html__( '( Fetch your sheets automatically using PRO )', 'gsconnector' ); ?>
+            <h2 class="inner-title"><span><?php echo esc_html( __( 'Google Sheet Settings', 'cf7-google-sheets-connector' ) ); ?></span><span class="gs-info"><?php echo esc_html__( '( Fetch your sheets automatically using PRO )', 'cf7-google-sheets-connector' ); ?>
                  </span></h2>
              <p>
-               <label><?php echo esc_html( __( 'Google Sheet Name', 'gsconnector' ) ); ?></label>
+               <label><?php echo esc_html( __( 'Google Sheet Name', 'cf7-google-sheets-connector' ) ); ?></label>
                <input type="text" name="cf7-gs[sheet-name]" id="gs-sheet-name" 
                       value="<?php echo ( isset( $form_data[0]['sheet-name'] ) ) ? esc_attr( $form_data[0]['sheet-name'] ) : ''; ?>"/>
 
 
-               <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html( __( 'Where do i get Sheet Name?', 'gsconnector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Go to your google account and click on"Google apps" icon and than click "Sheets". Select the name of the appropriate sheet you want to link your contact form or create new sheet.', 'gsconnector' ) ); ?> </span></a>
+               <a href="" class=" gs-name help-link"><img src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/help.png')?>" class="help-icon"><?php //echo esc_html( __( 'Where do i get Sheet Name?', 'cf7-google-sheets-connector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Go to your google account and click on"Google apps" icon and than click "Sheets". Select the name of the appropriate sheet you want to link your contact form or create new sheet.', 'cf7-google-sheets-connector' ) ); ?> </span></a>
             </p>
             <p>
-                  <label><?php echo esc_html(__('Google Sheet ID', 'gsconnector')); ?></label>
+                  <label><?php echo esc_html(__('Google Sheet ID', 'cf7-google-sheets-connector')); ?></label>
                   <input type="text" name="cf7-gs[sheet-id]" id="gs-sheet-id"
                          value="<?php echo ( isset($form_data[0]['sheet-id']) ) ? esc_attr($form_data[0]['sheet-id']) : ''; ?>"/>
-                  <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html(__('Google Sheet Id?', 'gsconnector')); ?><span class='hover-data'><?php echo esc_html(__('you can get sheet id from your sheet URL', 'gsconnector')); ?></span></a>
+                  <a href="" class=" gs-name help-link"><img src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/help.png')?>" class="help-icon"><?php //echo esc_html(__('Google Sheet Id?', 'cf7-google-sheets-connector')); ?><span class='hover-data'><?php echo esc_html(__('you can get sheet id from your sheet URL', 'cf7-google-sheets-connector')); ?></span></a>
                </p>
             <p>
-               <label><?php echo esc_html( __( 'Google Sheet Tab Name', 'gsconnector' ) ); ?></label>
+               <label><?php echo esc_html( __( 'Google Sheet Tab Name', 'cf7-google-sheets-connector' ) ); ?></label>
                <input type="text" name="cf7-gs[sheet-tab-name]" id="gs-sheet-tab-name"
                       value="<?php echo ( isset( $form_data[0]['sheet-tab-name'] ) ) ? esc_attr( $form_data[0]['sheet-tab-name'] ) : ''; ?>"/>
-               <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html( __( 'Where do i get Tab Name?', 'gsconnector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Open your Google Sheet with which you want to link your contact form . You will notice a tab names at bottom of the screen. Copy the tab name where you want to have an entry of contact form.', 'gsconnector' ) ); ?></span></a>
+               <a href="" class=" gs-name help-link"><img src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/help.png')?>" class="help-icon"><?php //echo esc_html( __( 'Where do i get Tab Name?', 'cf7-google-sheets-connector' ) ); ?><span class='hover-data'><?php echo esc_html( __( 'Open your Google Sheet with which you want to link your contact form . You will notice a tab names at bottom of the screen. Copy the tab name where you want to have an entry of contact form.', 'cf7-google-sheets-connector' ) ); ?></span></a>
             </p>
              <p>
-                  <label><?php echo esc_html(__('Google Tab ID', 'gsconnector')); ?></label>
+                  <label><?php echo esc_html(__('Google Tab ID', 'cf7-google-sheets-connector')); ?></label>
                   <input type="text" name="cf7-gs[tab-id]" id="gs-tab-id"
                          value="<?php echo ( isset($form_data[0]['tab-id']) ) ? esc_attr($form_data[0]['tab-id']) : ''; ?>"/>
-                  <a href="" class=" gs-name help-link"><img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon"><?php //echo esc_html(__('Google Tab Id?', 'gsconnector')); ?><span class='hover-data'><?php echo esc_html(__('you can get tab id from your sheet URL', 'gsconnector')); ?></span></a>
+                  <a href="" class=" gs-name help-link"><img src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/help.png')?>" class="help-icon"><?php //echo esc_html(__('Google Tab Id?', 'cf7-google-sheets-connector')); ?><span class='hover-data'><?php echo esc_html(__('you can get tab id from your sheet URL', 'cf7-google-sheets-connector')); ?></span></a>
                </p>
                
                <?php if((isset( $form_data[0]['sheet-name'] )) && !empty($form_data[0]['sheet-name']) && (isset($form_data[0]['sheet-id'])) && (!empty($form_data[0]['sheet-id'])) &&  (isset( $form_data[0]['sheet-tab-name']))  && (!empty($form_data[0]['sheet-tab-name'])) && (isset($form_data[0]['tab-id']))) {
                 $link = "https://docs.google.com/spreadsheets/d/".$form_data[0]['sheet-id']."/edit#gid=".$form_data[0]['tab-id']; 
                    ?>
               <p>
-                <a href="<?php echo $link; ?>" target="_blank" class="cf7_gs_link" >Google Sheet Link</a>
+                <a href="<?php echo esc_url($link); ?>" target="_blank" class="cf7_gs_link" >Google Sheet Link</a>
               </p>
               <?php } ?>
          </div> 
@@ -824,9 +926,9 @@ class Gs_Connector_Service {
                     
                        <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>
-                  <div class="label"><?php echo $v; ?> </div>
+                  <div class="label"><?php echo esc_attr($v); ?> </div>
                   <div class="field-input">
-                     <input type="text" name="gs-custom-header[<?php echo $count; ?>]" value="<?php echo $saved_val; ?>" placeholder="<?php echo $placeholder; ?>" disabled>
+                     <input type="text" name="gs-custom-header[<?php echo esc_attr($count); ?>]" value="<?php echo esc_attr($saved_val); ?>" placeholder="<?php echo esc_attr($placeholder); ?>" disabled>
                   </div>
                </li>
          <?php 
@@ -837,7 +939,7 @@ class Gs_Connector_Service {
       </ul>
       <?php
       }else {
-    echo '<p><span class="gs-info">' . esc_html__( 'No mail tags available.', 'gsconnector' ) . '</span></p>';
+    echo '<p><span class="gs-info">' . esc_html__( 'No mail tags available.', 'cf7-google-sheets-connector' ) . '</span></p>';
     }
 
    }
@@ -879,7 +981,7 @@ class Gs_Connector_Service {
       $tags_count = count( $this->special_mail_tags );
       $num_of_cols = 1;
       ?>
-      <h2 class="inner-title"><span class="gs-info"><?php echo esc_html( __( 'Map special mail tags with custom header name and save automatically to google sheet. ', 'gsconnector' ) ); ?></span></h2>
+      <h2 class="inner-title"><span class="gs-info"><?php echo esc_html( __( 'Map special mail tags with custom header name and save automatically to google sheet. ', 'cf7-google-sheets-connector' ) ); ?></span></h2>
       <ul class="gs-field-list special">
          <?php 
             
@@ -895,8 +997,8 @@ class Gs_Connector_Service {
               
                <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                             </div>';
-               echo '<div class="special-tags label">[_' . $tag_name . '] </div>';
-               echo '<div class="gs-r-pad field-input"><input type="text" class="name-field" name="gs-st-custom-header['. $i . ']" value="" disabled placeholder="'. $placeholder .'"> </div>';
+               echo '<div class="special-tags label">[_' . esc_attr($tag_name) . '] </div>';
+               echo '<div class="gs-r-pad field-input"><input type="text" class="name-field" name="gs-st-custom-header['. esc_attr($i) . ']" value="" disabled placeholder="'. esc_attr($placeholder) .'"> </div>';
                if ( $i % $num_of_cols == 1 ) {
                      echo '</li>';
                   }
@@ -941,9 +1043,9 @@ class Gs_Connector_Service {
                   echo '<div class="input-field">
                    <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
                   </div>';
-                  echo '<div class="label">[' . $tag_name . ']</div>';
-                  echo '<div class="gs-r-pad field-input"><input type="hidden" name="gs-ct-key['. $i . ']" value="' . $tag_name . '" ><input type="hidden" name="gs-ct-placeholder['. $i . ']" value="' . $placeholder . '" >
-                   <input type="text" name="gs-ct-custom-header['. $i . ']" value="' . $saved_val . '" placeholder="'. $placeholder .'" disabled>
+                  echo '<div class="label">[' . esc_attr($tag_name) . ']</div>';
+                  echo '<div class="gs-r-pad field-input"><input type="hidden" name="gs-ct-key['. esc_attr($i) . ']" value="' . esc_attr($tag_name) . '" ><input type="hidden" name="gs-ct-placeholder['. esc_attr($i) . ']" value="' . esc_attr($placeholder) . '" >
+                   <input type="text" name="gs-ct-custom-header['. esc_attr($i) . ']" value="' . esc_attr($saved_val) . '" placeholder="'. esc_attr($placeholder) .'" disabled>
                  
                   </div>';
                   if ( $i % $num_of_cols == 1 ) {
@@ -954,7 +1056,7 @@ class Gs_Connector_Service {
          </ul>
       <?php 
       } else {
-    echo '<p><span class="gs-info">' . esc_html__( 'No custom mail tags available.', 'gsconnector' ) . '</span></p>';
+    echo '<p><span class="gs-info">' . esc_html__( 'No custom mail tags available.', 'cf7-google-sheets-connector' ) . '</span></p>';
       }
     
    }
@@ -967,15 +1069,15 @@ class Gs_Connector_Service {
                         <input type="checkbox" name="cf7-gs[enable_conditional_logic]" id="enable-conditional-logic" value="1"
                              style="display: none;">
                         <label for="enable-conditional-logic" class="button-woo-toggle-cf7" id="conditional-toggle"></label>
-                        <?php echo esc_html__( 'Conditional Logic', 'gsconnector' ); ?>
+                        <?php echo esc_html__( 'Conditional Logic', 'cf7-google-sheets-connector' ); ?>
                     </label>
 
                     <span class="tooltip" style="display: inline !important;">
-                        <img src="<?php echo GS_CONNECTOR_URL; ?>assets/img/help.png" class="help-icon">
+                        <img src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/help.png')?>" class="help-icon">
                         <span class="tooltiptext tooltip-right-msg">
                         <?php echo esc_html__( 
                     "The Enable Conditional Logic option in the field settings allows you to create rules to dynamically display or hide the submission to Google Sheet based on values.", 
-                    "gsconnector" 
+                    "cf7-google-sheets-connector" 
                ); ?>
               </span>
 
@@ -1016,14 +1118,18 @@ class Gs_Connector_Service {
             'type'    => 'upgrade',
             'message' => $upgrade_text
          ) );
-         echo $upgrade_block;
+         echo wp_kses_post($upgrade_block);
       }
    }
    
    public function set_upgrade_notification_interval() {
       // check nonce
       check_ajax_referer( 'gs_upgrade_ajax_nonce', 'security' );
-      $time_interval = date( 'Y-m-d', strtotime( '+10 day' ) );
+    $time_interval = gmdate(
+    'Y-m-d',
+    strtotime( '+10 days' )
+);
+
       update_option( 'gs_upgrade_notice_interval', $time_interval );
       wp_send_json_success();
    }

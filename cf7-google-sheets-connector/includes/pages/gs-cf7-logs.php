@@ -3,8 +3,8 @@
 				<div class="wrap gs-form opacity-down">
                 <div class="gs-card">
                     
-                     <h2 class="inner-title"><span><?php echo esc_html( __('CF7 Google Sheet Database Settings', 'gsconnector' ) ); ?></span> <span class="pro-ver"><?php echo esc_html( __('PRO', 'gsconnector' ) ); ?></span></h2>
-						<div><label><?php echo esc_html( __('Enable/Disable CF7 Database Settings', 'gsconnector' ) ); ?> </label></div>
+                     <h2 class="inner-title"><span><?php echo esc_html( __('CF7 Google Sheet Database Settings', 'cf7-google-sheets-connector' ) ); ?></span> <span class="pro-ver"><?php echo esc_html( __('PRO', 'cf7-google-sheets-connector' ) ); ?></span></h2>
+						<div><label><?php echo esc_html( __('Enable/Disable CF7 Database Settings', 'cf7-google-sheets-connector' ) ); ?> </label></div>
 						<label style="display: block;">
 							<input type="checkbox" class="gs-checkbox" name="gs_cf7db_setting" checked="">ON/OFF
 						</label>
@@ -18,7 +18,7 @@
  
 <div class="database-table"  style="opeacity:0.75; margin-top:30px;">
 			<div id="icon-users" class="icon32"></div>
-			<h2 class="inner-title"><?php echo esc_html( __('Contact Forms List', 'gsconnector' ) ); ?></h2>
+			<h2 class="inner-title"><?php echo esc_html( __('Contact Forms List', 'cf7-google-sheets-connector' ) ); ?></h2>
 		 
 		  
 	
