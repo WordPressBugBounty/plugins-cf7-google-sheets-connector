@@ -1,11 +1,12 @@
 <?php
+
 /**
  * Plugin Name: GSheetConnector for CF7
  * Plugin URI: https://wordpress.org/plugins/cf7-google-sheets-connector/
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 3.6
  * Requires PHP: 7.4
- * Version: 5.1.5
+ * Version: 5.1.6
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -26,28 +27,27 @@ if (!function_exists('cgsc_fs')) {
     {
         global $cgsc_fs;
 
-        if (!isset($cgsc_fs)) {
+        if (! isset($cgsc_fs)) {
             // Activate multisite network integration.
-            if (!defined('WP_FS__PRODUCT_17336_MULTISITE')) {
+            if (! defined('WP_FS__PRODUCT_17336_MULTISITE')) {
                 define('WP_FS__PRODUCT_17336_MULTISITE', true);
             }
 
-            // Manually include the Freemius SDK (not needed if using Composer).
+            // Include Freemius SDK.
             require_once dirname(__FILE__) . '/lib/vendor/freemius/start.php';
 
             $cgsc_fs = fs_dynamic_init(array(
-                'id' => '17336',
-                'slug' => 'cf7-google-sheets-connector',
-                'type' => 'plugin',
-                'public_key' => 'pk_2f6c283a209e1297535f87b63603e',
-                'is_premium' => false,
-                'has_addons' => false,
-                'has_paid_plans' => false,
-                'menu' => array(
-                    'slug' => 'cf7-google-sheets-connector',
-                    'first-path' => 'admin.php?page=wpcf7-google-sheet-config',
-                    'account' => false,
-                    'support' => false,
+                'id'                  => '17336',
+                'slug'                => 'cf7-google-sheets-connector',
+                'type'                => 'plugin',
+                'public_key'          => 'pk_2f6c283a209e1297535f87b63603e',
+                'is_premium'          => false,
+                'has_addons'          => false,
+                'has_paid_plans'      => false,
+                'menu'                => array(
+                    'slug'           => 'wpcf7-google-sheet-config',
+                    'first-path'     => 'admin.php?page=wpcf7-google-sheet-config',
+                    'support'        => false,
                 ),
             ));
         }
@@ -63,8 +63,8 @@ if (!function_exists('cgsc_fs')) {
 
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.1.5');
-define('GS_CONNECTOR_DB_VERSION', '5.1.5');
+define('GS_CONNECTOR_VERSION', '5.1.6');
+define('GS_CONNECTOR_DB_VERSION', '5.1.6');
 define('GS_CONNECTOR_ROOT', dirname(__FILE__));
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(dirname(__FILE__)) . '/google-sheet-connector.php');
@@ -206,10 +206,7 @@ class Gs_Connector_Free_Init
      * deactivate the plugin
      * @since 1.0
      */
-    public function gs_connector_deactivate($network_wide)
-    {
-
-    }
+    public function gs_connector_deactivate($network_wide) {}
 
     /**
      *  Runs on plugin uninstall.
@@ -268,14 +265,15 @@ class Gs_Connector_Free_Init
      *
      * @since 1.0 initial version
      */
-    public function contact_form_7_missing_notice() {
+    public function contact_form_7_missing_notice()
+    {
 
-        $plugin_error = Gs_Connector_Free_Utility::instance()->admin_notice( array(
+        $plugin_error = Gs_Connector_Free_Utility::instance()->admin_notice(array(
             'type'    => 'error',
-            'message' => __( 'Google Sheet Connector Add-on requires Contact Form 7 plugin to be installed and activated.', 'cf7-google-sheets-connector' ),
-        ) );
+            'message' => __('Google Sheet Connector Add-on requires Contact Form 7 plugin to be installed and activated.', 'cf7-google-sheets-connector'),
+        ));
 
-        echo wp_kses_post( $plugin_error );
+        echo wp_kses_post($plugin_error);
     }
 
 
@@ -302,8 +300,8 @@ class Gs_Connector_Free_Init
      */
     public function google_sheet_configuration()
     {
-        if ( ! current_user_can('manage_options') ) {
-          wp_die( esc_html__( 'You are not allowed to access this page.', 'cf7-google-sheets-connector' ) );
+        if (! current_user_can('manage_options')) {
+            wp_die(esc_html__('You are not allowed to access this page.', 'cf7-google-sheets-connector'));
         }
 
         include(GS_CONNECTOR_PATH . "includes/pages/google-sheet-settings.php");
@@ -330,58 +328,57 @@ class Gs_Connector_Free_Init
         $header = "";
         if (isset($_GET['code'])) {
             if (is_string($_GET['code'])) {
-              $cf7gsc_code = '';
+                $cf7gsc_code = '';
 
-                if ( isset( $_GET['code'] ) ) {
+                if (isset($_GET['code'])) {
                     $cf7gsc_code = sanitize_text_field(
-                        wp_unslash( $_GET['code'] )
+                        wp_unslash($_GET['code'])
                     );
                 }
-
             }
             update_option('is_new_client_secret_cf7gscfree', 1);
             $header = esc_url_raw(admin_url('admin.php?page=wpcf7-google-sheet-config'));
         }
 
-        ?>
+?>
 
 
         <div class="card-cf7gs dropdownoption-cf7gs">
-			<h2><?php echo esc_html__('CF7 - Google Sheet Integration', 'cf7-google-sheets-connector'); ?></h2>
-			<p><?php echo esc_html__('Choose your Google API Setting from the dropdown. You can select Use Existing Client/Secret Key (Auto Google API Configuration) or Use Manual Client/Secret Key (Use Your Google API Configuration - Pro Version) or Use Service Account (Recommended- Pro Version) . After saving, the related integration settings will appear, and you can complete the setup.', 'cf7-google-sheets-connector'); ?></p>
-			
+            <h2><?php echo esc_html__('CF7 - Google Sheet Integration', 'cf7-google-sheets-connector'); ?></h2>
+            <p><?php echo esc_html__('Choose your Google API Setting from the dropdown. You can select Use Existing Client/Secret Key (Auto Google API Configuration) or Use Manual Client/Secret Key (Use Your Google API Configuration - Pro Version) or Use Service Account (Recommended- Pro Version) . After saving, the related integration settings will appear, and you can complete the setup.', 'cf7-google-sheets-connector'); ?></p>
+
             <div class="row">
                 <label for="cf7gs_dro_option"><?php echo esc_html__('Choose Google API Setting  ', 'cf7-google-sheets-connector'); ?></label>
-            
-            <div class="drop-down-select-btn">
-                <select id="cf7gs_dro_option" name="cf7gs_dro_option">
-                    <option value="cf7gs_existing" selected>
-                        <?php echo esc_html__('Use Existing Client/Secret Key (Auto Google API Configuration)', 'cf7-google-sheets-connector'); ?>
-                    </option>
-                    <option value="cf7gs_manual" disabled="">
-                        <?php echo esc_html__('Use Manual Client/Secret Key (Use Your Google API Configuration) (Upgrade To PRO)', 'cf7-google-sheets-connector'); ?>
-                    </option>
-                    <option value="cf7gs_service" disabled="">
-                        <?php echo esc_html__('Use Service Account (Recommended) (Upgrade To PRO)', 'cf7-google-sheets-connector'); ?>
-                    </option>
-                </select>
-                <p class="int-meth-btn-cf7gs"><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro"
-                        target="_blank"><input type="button" name="save-method-api-cf7gs" id="save-method-api-cf7gs"
-                            value="<?php echo esc_html__('Upgrade To PRO', 'cf7-google-sheets-connector'); ?>" class="save-btn" />
-                    </a>
-                   
-                </p>
+
+                <div class="drop-down-select-btn">
+                    <select id="cf7gs_dro_option" name="cf7gs_dro_option">
+                        <option value="cf7gs_existing" selected>
+                            <?php echo esc_html__('Use Existing Client/Secret Key (Auto Google API Configuration)', 'cf7-google-sheets-connector'); ?>
+                        </option>
+                        <option value="cf7gs_manual" disabled="">
+                            <?php echo esc_html__('Use Manual Client/Secret Key (Use Your Google API Configuration) (Upgrade To PRO)', 'cf7-google-sheets-connector'); ?>
+                        </option>
+                        <option value="cf7gs_service" disabled="">
+                            <?php echo esc_html__('Use Service Account (Recommended) (Upgrade To PRO)', 'cf7-google-sheets-connector'); ?>
+                        </option>
+                    </select>
+                    <p class="int-meth-btn-cf7gs"><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro"
+                            target="_blank"><input type="button" name="save-method-api-cf7gs" id="save-method-api-cf7gs"
+                                value="<?php echo esc_html__('Upgrade To PRO', 'cf7-google-sheets-connector'); ?>" class="save-btn" />
+                        </a>
+
+                    </p>
+                </div>
             </div>
-			</div>
         </div>
 
         <div class="gs-form">
             <div class="gs-parts">
                 <div class="gs-card" id="googlesheet">
                     <h2 class="title"><?php echo esc_html(__('Google Sheet Integration - Use Existing Client/Secret Key (Auto Google API Configuration)', 'cf7-google-sheets-connector')); ?></h2>
-					
-					<p><?php echo esc_html__('Automatic integration allows you to connect Contact Forms with Google Sheets using built-in Google API configuration. By authorizing your Google account, the plugin will handle API setup and authentication automatically, enabling seamless form data sync. Learn more in the documentation', 'cf7-google-sheets-connector'); ?> <a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector/integration-with-google-existing-method"><?php echo esc_html__('click here', 'cf7-google-sheets-connector'); ?></a>.</p>
-                   
+
+                    <p><?php echo esc_html__('Automatic integration allows you to connect Contact Forms with Google Sheets using built-in Google API configuration. By authorizing your Google account, the plugin will handle API setup and authentication automatically, enabling seamless form data sync. Learn more in the documentation', 'cf7-google-sheets-connector'); ?> <a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector/integration-with-google-existing-method"><?php echo esc_html__('click here', 'cf7-google-sheets-connector'); ?></a>.</p>
+
                     <div class="inside">
                         <?php if (empty(get_option('gs_token'))) { ?>
                             <!--  <p class="gs-alert">
@@ -416,25 +413,24 @@ class Gs_Connector_Free_Init
                                 <input type="text" name="gs-code" id="gs-code" value="" disabled
                                     placeholder="<?php echo esc_html(__('Currently Active', 'cf7-google-sheets-connector')); ?>" />
                                 <input type="button" name="deactivate-log" id="deactivate-log"
-                                    value="<?php esc_attr_e( 'Deactivate', 'cf7-google-sheets-connector' ); ?>" class="button button-primary" />
-                              
+                                    value="<?php esc_attr_e('Deactivate', 'cf7-google-sheets-connector'); ?>" class="button button-primary" />
+
                                 <span class="loading-sign-deactive">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                                <?php
+                            <?php
                             } else {
 
                                 $cf7gsc_auth_url = GS_CONNECTOR_AUTH_URL . "?client_admin_url=" . GS_CONNECTOR_AUTH_REDIRECT_URI . "&plugin=" . GS_CONNECTOR_AUTH_PLUGIN_NAME;
-                                ?>
+                            ?>
                                 <input type="text" name="gs-code" id="gs-code" value="<?php echo esc_attr($cf7gsc_code); ?>"
                                     placeholder="<?php echo esc_html(__('Click on Sign in with Google button', 'cf7-google-sheets-connector')); ?>"
                                     disabled />
                                 <?php if ($cf7gsc_code == "") { ?>
-                                 <a href="<?php echo esc_url( $cf7gsc_auth_url ); ?>" target="_blank" class="button-cf7pro">
-                                    <img
-                                        src="<?php echo esc_url( GS_CONNECTOR_URL . 'assets/img/btn_google_signin_dark_pressed_web.gif' ); ?>"
-                                        class="button_cf7formgsc"
-                                        alt="<?php esc_attr_e( 'Sign in with Google', 'cf7-google-sheets-connector' ); ?>"
-                                    >
-                                </a>
+                                    <a href="<?php echo esc_url($cf7gsc_auth_url); ?>" target="_blank" class="button-cf7pro">
+                                        <img
+                                            src="<?php echo esc_url(GS_CONNECTOR_URL . 'assets/img/btn_google_signin_dark_pressed_web.gif'); ?>"
+                                            class="button_cf7formgsc"
+                                            alt="<?php esc_attr_e('Sign in with Google', 'cf7-google-sheets-connector'); ?>">
+                                    </a>
 
                                 <?php } ?>
                             <?php } ?>
@@ -443,7 +439,7 @@ class Gs_Connector_Free_Init
                             <?php if ($cf7gsc_code != "") { ?>
 
                                 <input type="button" name="save-gs-code" id="save-gs-code"
-                                    value="<?php esc_attr_e( 'Click here to Save Authentication Code', 'cf7-google-sheets-connector' ); ?>"
+                                    value="<?php esc_attr_e('Click here to Save Authentication Code', 'cf7-google-sheets-connector'); ?>"
                                     class="button button-primary blinking-button-wc" />
                             <?php } ?>
                             <span class="loading-sign">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
@@ -454,12 +450,12 @@ class Gs_Connector_Free_Init
                         <?php
                         //resolved - google sheet permission issues - START
                         if (!empty(get_option('gs_verify')) && (get_option('gs_verify') == "invalid-auth")) {
-                            ?>
+                        ?>
                             <p style="color:#c80d0d; font-size: 14px; border: 1px solid;padding: 8px;">
                                 <?php echo esc_html(__('Something went wrong! It looks you have not given the permission of Google Drive and Google Sheets from your google account.Please Deactivate Auth and Re-Authenticate again with the permissions.', 'cf7-google-sheets-connector')); ?>
                             </p>
                             <p style="color:#c80d0d;border: 1px solid;padding: 8px;"><img width="350px"
-                                    src="<?php echo esc_url(GS_CONNECTOR_URL.'assets/img/permission_screen.png') ?>"></p>
+                                    src="<?php echo esc_url(GS_CONNECTOR_URL . 'assets/img/permission_screen.png') ?>"></p>
                             <p style="color:#c80d0d; font-size: 14px; border: 1px solid;padding: 8px;">
                                 <?php echo esc_html(__('Also,', 'cf7-google-sheets-connector')); ?><a
                                     href="https://myaccount.google.com/permissions" target="_blank">
@@ -478,18 +474,20 @@ class Gs_Connector_Free_Init
 
                                 if ($email_account) {
                                     update_option('cf7gs_auth_expired_free', 'false');
-                                    ?>
+                            ?>
                                     <p class="row">
-                                        <label><stong><?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?></stong></label>
+                                        <label>
+                                            <stong><?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?></stong>
+                                        </label>
                                         <span class="connected-account"><?php echo esc_attr($email_account); ?></span>
                                     </p>
-                                    <?php } else {
+                                <?php } else {
                                     update_option('cf7gs_auth_expired_free', 'true');
-                                    ?>
+                                ?>
                                     <p style="color:red">
                                         <?php echo esc_html(__('Something wrong ! Your Auth Code may be wrong or expired. Please deactivate and do Re-Authentication again. ', 'cf7-google-sheets-connector')); ?>
                                     </p>
-                                    <?php
+                        <?php
                                 }
                             }
                         }
@@ -500,7 +498,7 @@ class Gs_Connector_Free_Init
                             <label>
                                 <!-- display error logs -->
                                 <button class="gsc-cf7free-logs"><?php echo esc_html(__('View', 'cf7-google-sheets-connector')); ?></button>
-                              
+
                             </label>
                             <!-- clear logs -->
                             <label><a class="debug-clear"><?php echo esc_html(__('Clear', 'cf7-google-sheets-connector')); ?></a></label>
@@ -508,16 +506,16 @@ class Gs_Connector_Free_Init
                         </p>
                         <p id="gs-validation-message"></p>
                         <span id="deactivate-message"></span>
-                        
-						
-						<div class="msg success-msg">
-							<i class="fa-solid fa-lock"></i>
-								<p> <?php echo esc_html(__('We do not store any of the data from your Google account on our servers, everything is processed &amp; stored on your server. We take your privacy extremely seriously and ensure it is never misused.', 'cf7-google-sheets-connector')); ?>  <a href="https://gsheetconnector.com/usage-tracking/" target="_blank" rel="noopener noreferrer"><?php echo esc_html(__('Learn more.', 'cf7-google-sheets-connector')); ?></a></p>
-						</div>
-						
-						
-						
-						<?php /*?><div id="cf7-gsc-cta" class="cf7-gsc-privacy-box">
+
+
+                        <div class="msg success-msg">
+                            <i class="fa-solid fa-lock"></i>
+                            <p> <?php echo esc_html(__('We do not store any of the data from your Google account on our servers, everything is processed &amp; stored on your server. We take your privacy extremely seriously and ensure it is never misused.', 'cf7-google-sheets-connector')); ?> <a href="https://gsheetconnector.com/usage-tracking/" target="_blank" rel="noopener noreferrer"><?php echo esc_html(__('Learn more.', 'cf7-google-sheets-connector')); ?></a></p>
+                        </div>
+
+
+
+                        <?php /*?><div id="cf7-gsc-cta" class="cf7-gsc-privacy-box">
                             <div class="cf7-gsc-table">
                                 <div class="cf7-gsc-less-free">
                                     <i class="dashicons dashicons-lock"></i>
@@ -527,13 +525,13 @@ class Gs_Connector_Free_Init
                                     </p>
                                 </div>
                             </div>
-                        </div><?php */?>
-						
+                        </div><?php */ ?>
+
                         <!-- set nonce -->
                         <input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"
-                            value="<?php echo esc_attr( wp_create_nonce( 'gs-ajax-nonce' ) ); ?>" />
+                            value="<?php echo esc_attr(wp_create_nonce('gs-ajax-nonce')); ?>" />
                         <input type="hidden" name="redirect_auth" id="redirect_auth"
-                            value="<?php echo isset( $header ) ? esc_attr( $header ) : ''; ?>">
+                            value="<?php echo isset($header) ? esc_attr($header) : ''; ?>">
 
                     </div>
                 </div>
@@ -576,31 +574,31 @@ class Gs_Connector_Free_Init
 
 
             <!-- display content error logs -->
-          <div class="system-error-cf7free-logs card" style="display:none;">
-    <button id="copy-logs-btn" type="button" onclick="copyLogs()">
-        <?php esc_html_e( 'Copy Logs', 'cf7-google-sheets-connector' ); ?>
-    </button>
+            <div class="system-error-cf7free-logs card" style="display:none;">
+                <button id="copy-logs-btn" type="button" onclick="copyLogs()">
+                    <?php esc_html_e('Copy Logs', 'cf7-google-sheets-connector'); ?>
+                </button>
 
-    <div class="display-cf7free-logs">
-        <?php
-        // Fetch the debug log file
-        $cf7existDebugFile = get_option( 'gs_debug_log_file' );
+                <div class="display-cf7free-logs">
+                    <?php
+                    // Fetch the debug log file
+                    $cf7existDebugFile = get_option('gs_debug_log_file');
 
-        if ( ! empty( $cf7existDebugFile ) && file_exists( $cf7existDebugFile ) ) {
-            // Sanitize and safely output file contents
-            $file_content = file_get_contents( $cf7existDebugFile );
-            $safe_content = esc_html( $file_content );
-            echo '<pre id="cf7pro-log-content">' . nl2br( esc_html( $safe_content ) ) . '</pre>';
-        } else {
-            // Show default message if file doesn’t exist
-            echo '<pre id="cf7pro-log-content">' .
-                esc_html__( 'No log file exists as no errors are generated', 'cf7-google-sheets-connector' ) .
-                '</pre>';
-        }
-        ?>
-    </div>
-</div>
-<br>
+                    if (! empty($cf7existDebugFile) && file_exists($cf7existDebugFile)) {
+                        // Sanitize and safely output file contents
+                        $file_content = file_get_contents($cf7existDebugFile);
+                        $safe_content = esc_html($file_content);
+                        echo '<pre id="cf7pro-log-content">' . nl2br(esc_html($safe_content)) . '</pre>';
+                    } else {
+                        // Show default message if file doesn’t exist
+                        echo '<pre id="cf7pro-log-content">' .
+                            esc_html__('No log file exists as no errors are generated', 'cf7-google-sheets-connector') .
+                            '</pre>';
+                    }
+                    ?>
+                </div>
+            </div>
+            <br>
             <br>
             <script>
                 function copyLogs() {
@@ -787,7 +785,7 @@ class Gs_Connector_Free_Init
         <!-- two column #end  -->
 
 
-        <?php
+<?php
     }
 
     public function load_css_and_js_files()
@@ -805,7 +803,7 @@ class Gs_Connector_Free_Init
         if (is_admin() && (isset($_GET['page']) && (($_GET['page'] == 'wpcf7-new') || ($_GET['page'] == 'wpcf7-google-sheet-config') || ($_GET['page'] == 'wpcf7')))) {
             wp_enqueue_style('gs-connector-css', GS_CONNECTOR_URL . 'assets/css/gs-connector.css', GS_CONNECTOR_VERSION, true);
             wp_enqueue_style('gs-connector-faq-css', GS_CONNECTOR_URL . 'assets/css/faq-style.css', GS_CONNECTOR_VERSION, true);
-			wp_enqueue_style('gs-fontawesome-css', GS_CONNECTOR_URL . 'assets/css/fontawesome.css', GS_CONNECTOR_VERSION, true);
+            wp_enqueue_style('gs-fontawesome-css', GS_CONNECTOR_URL . 'assets/css/fontawesome.css', GS_CONNECTOR_VERSION, true);
         }
 
         if (is_plugin_active('cf7-grid-layout/cf7-grid-layout.php') && ((isset($_REQUEST['post_type']) && $_REQUEST['post_type'] == "wpcf7_contact_form") || (isset($_REQUEST['action']) && $_REQUEST['action'] == "edit"))) {
@@ -824,34 +822,34 @@ class Gs_Connector_Free_Init
             wp_enqueue_script('gs-connector-js', GS_CONNECTOR_URL . 'assets/js/gs-connector.js', GS_CONNECTOR_VERSION, true);
             wp_enqueue_script('jquery-json', GS_CONNECTOR_URL . 'assets/js/jquery.json.js', '', '2.3', true);
         }
-       if ( is_admin() && isset( $_SERVER['REQUEST_URI'] ) ) {
+        if (is_admin() && isset($_SERVER['REQUEST_URI'])) {
 
-    $request_uri = sanitize_text_field(
-        wp_unslash( $_SERVER['REQUEST_URI'] )
-    );
+            $request_uri = sanitize_text_field(
+                wp_unslash($_SERVER['REQUEST_URI'])
+            );
 
-    if ( preg_match(
-        '/page=wpcf7-new|page=wpcf7-google-sheet-config|page=wpcf7/',
-        $request_uri
-    ) ) {
+            if (preg_match(
+                '/page=wpcf7-new|page=wpcf7-google-sheet-config|page=wpcf7/',
+                $request_uri
+            )) {
 
-        wp_enqueue_script(
-            'gs-connector-js',
-            GS_CONNECTOR_URL . 'assets/js/gs-connector.js',
-            [ 'jquery' ],
-            GS_CONNECTOR_VERSION,
-            true
-        );
+                wp_enqueue_script(
+                    'gs-connector-js',
+                    GS_CONNECTOR_URL . 'assets/js/gs-connector.js',
+                    ['jquery'],
+                    GS_CONNECTOR_VERSION,
+                    true
+                );
 
-        wp_enqueue_script(
-            'jquery-json',
-            GS_CONNECTOR_URL . 'assets/js/jquery.json.js',
-            [ 'jquery' ],
-            '2.3',
-            true
-        );
-    }
-}
+                wp_enqueue_script(
+                    'jquery-json',
+                    GS_CONNECTOR_URL . 'assets/js/jquery.json.js',
+                    ['jquery'],
+                    '2.3',
+                    true
+                );
+            }
+        }
 
 
         if (is_plugin_active('cf7-grid-layout/cf7-grid-layout.php') && ((isset($_REQUEST['post_type']) && $_REQUEST['post_type'] == "wpcf7_contact_form") || (isset($_REQUEST['action']) && $_REQUEST['action'] == "edit"))) {
@@ -880,15 +878,15 @@ class Gs_Connector_Free_Init
      * checks the current version and applies the necessary upgrades from that version onwards
      * @since 5.0.20
      */
-    public function run_on_upgrade() {
+    public function run_on_upgrade()
+    {
 
-        $plugin_options = get_site_option( 'google_sheet_info_free' );
+        $plugin_options = get_site_option('google_sheet_info_free');
 
-        if ( isset( $plugin_options['version'] ) && version_compare( $plugin_options['version'], '3.0', '<=' ) ) {
+        if (isset($plugin_options['version']) && version_compare($plugin_options['version'], '3.0', '<=')) {
             $this->upgrade_database_40();
             $this->upgrade_database_41();
-
-        } elseif ( isset( $plugin_options['version'] ) && $plugin_options['version'] === '5.0.19' ) {
+        } elseif (isset($plugin_options['version']) && $plugin_options['version'] === '5.0.19') {
             $this->upgrade_database_41();
         }
 
@@ -901,11 +899,11 @@ class Gs_Connector_Free_Init
         // Delete old debug log file (WordPress-safe way)
         $log_file_path = GS_CONNECTOR_PATH . 'logs/log.txt';
 
-        if ( file_exists( $log_file_path ) ) {
-            wp_delete_file( $log_file_path );
+        if (file_exists($log_file_path)) {
+            wp_delete_file($log_file_path);
         }
 
-        update_site_option( 'google_sheet_info_free', $google_sheet_info_free );
+        update_site_option('google_sheet_info_free', $google_sheet_info_free);
     }
 
 
@@ -932,7 +930,6 @@ class Gs_Connector_Free_Init
 
         // Add the transient to redirect.
         set_transient('cf7gs_upgrade_redirect', true, 30);
-
     }
     public function upgrade_database_41()
     {
@@ -957,7 +954,6 @@ class Gs_Connector_Free_Init
 
         // Fetch and save the API credentails.
         Gs_Connector_Free_Utility::instance()->save_api_credentials();
-
     }
 
 
@@ -1000,7 +996,8 @@ class Gs_Connector_Free_Init
         return $links;
     }
 
-    public function add_gs_connector_summary_widget() {
+    public function add_gs_connector_summary_widget()
+    {
 
         $title = sprintf(
             '<img style="width:30px;margin-right:10px;" src="%sassets/img/cf7-gsc.svg" alt="" /> <span>%s</span>',
@@ -1040,7 +1037,6 @@ class Gs_Connector_Free_Init
             $this->run_on_upgrade();
         }
         Gs_Connector_Free_Utility::instance()->save_api_credentials();
-
     }
 
     /**
@@ -1089,8 +1085,6 @@ class Gs_Connector_Free_Init
             delete_post_meta_by_key('gs_settings');
         }
     }
-
-
 }
 
 // Initialize the google sheet connector class

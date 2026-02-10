@@ -8,7 +8,7 @@ Tested up to: 6.9.1
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.1.5
+Stable tag: 5.1.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,9 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.1.6 (10-02-2026) =
+* Fixed: Fixed Freemius integration issue.
 
 = 5.1.5 (04-02-2026) =
 * Fixed: Admin notices not getting closed and showing error.

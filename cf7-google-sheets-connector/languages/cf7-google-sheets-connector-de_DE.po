@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: GSheetConnector for CF7\n"
-"POT-Creation-Date: 2026-02-04 19:14+0530\n"
-"PO-Revision-Date: 2026-02-04 19:14+0530\n"
+"POT-Creation-Date: 2026-02-10 17:26+0530\n"
+"PO-Revision-Date: 2026-02-10 17:26+0530\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de_DE\n"
@@ -36,7 +36,7 @@ msgstr "Support erhalten"
 msgid "Support"
 msgstr "Support"
 
-#: google-sheet-connector.php:275
+#: google-sheet-connector.php:273
 msgid ""
 "Google Sheet Connector Add-on requires Contact Form 7 plugin to be installed "
 "and activated."
@@ -44,22 +44,22 @@ msgstr ""
 "Für das Google Sheet Connector Add-on muss das Contact Form 7-Plugin "
 "installiert und aktiviert sein."
 
-#: google-sheet-connector.php:290 google-sheet-connector.php:291
-#: google-sheet-connector.php:400 includes/class-gs-service.php:545
+#: google-sheet-connector.php:288 google-sheet-connector.php:289
+#: google-sheet-connector.php:397 includes/class-gs-service.php:545
 msgid "Google Sheets"
 msgstr "Google Sheets"
 
-#: google-sheet-connector.php:306
+#: google-sheet-connector.php:304
 msgid "You are not allowed to access this page."
 msgstr ""
 "Sie verfügen nicht über die nötige Berechtigung, um auf diese Seite "
 "zuzugreifen."
 
-#: google-sheet-connector.php:350
+#: google-sheet-connector.php:347
 msgid "CF7 - Google Sheet Integration"
 msgstr "CF7 – Google Sheet-Integration"
 
-#: google-sheet-connector.php:351
+#: google-sheet-connector.php:348
 msgid ""
 "Choose your Google API Setting from the dropdown. You can select Use "
 "Existing Client/Secret Key (Auto Google API Configuration) or Use Manual "
@@ -75,17 +75,17 @@ msgstr ""
 "Speichern werden die entsprechenden Integrationseinstellungen angezeigt, und "
 "Sie können die Einrichtung abschließen."
 
-#: google-sheet-connector.php:354
+#: google-sheet-connector.php:351
 msgid "Choose Google API Setting  "
 msgstr "Wählen Sie die Google API-Einstellung"
 
-#: google-sheet-connector.php:359
+#: google-sheet-connector.php:356
 msgid "Use Existing Client/Secret Key (Auto Google API Configuration)"
 msgstr ""
 "Vorhandenen Client/geheimen Schlüssel verwenden (automatische Google API-"
 "Konfiguration)"
 
-#: google-sheet-connector.php:362
+#: google-sheet-connector.php:359
 msgid ""
 "Use Manual Client/Secret Key (Use Your Google API Configuration) (Upgrade To "
 "PRO)"
@@ -93,16 +93,16 @@ msgstr ""
 "Manuellen Client/geheimen Schlüssel verwenden (Ihre Google-API-Konfiguration "
 "verwenden) (Upgrade auf PRO)"
 
-#: google-sheet-connector.php:365
+#: google-sheet-connector.php:362
 msgid "Use Service Account (Recommended) (Upgrade To PRO)"
 msgstr "Dienstkonto verwenden (empfohlen) (Upgrade auf PRO)"
 
-#: google-sheet-connector.php:370 includes/pages/pro-popup.php:20
+#: google-sheet-connector.php:367 includes/pages/pro-popup.php:20
 #: includes/pages/pro-popup.php:54
 msgid "Upgrade To PRO"
 msgstr "Auf PRO-Version upgraden"
 
-#: google-sheet-connector.php:381
+#: google-sheet-connector.php:378
 msgid ""
 "Google Sheet Integration - Use Existing Client/Secret Key (Auto Google API "
 "Configuration)"
@@ -110,7 +110,7 @@ msgstr ""
 "Google Sheet-Integration – Vorhandenen Client/geheimen Schlüssel verwenden "
 "(automatische Google API-Konfiguration)"
 
-#: google-sheet-connector.php:383
+#: google-sheet-connector.php:380
 msgid ""
 "Automatic integration allows you to connect Contact Forms with Google Sheets "
 "using built-in Google API configuration. By authorizing your Google account, "
@@ -124,11 +124,11 @@ msgstr ""
 "Synchronisierung der Formulardaten. Weitere Informationen finden Sie in der "
 "Dokumentation."
 
-#: google-sheet-connector.php:383
+#: google-sheet-connector.php:380
 msgid "click here"
 msgstr "Hier klicken"
 
-#: google-sheet-connector.php:388
+#: google-sheet-connector.php:385
 msgid ""
 "Click on \"Sign in with Google\" button to retrieve your code from Google "
 "Drive to allow us to access your spreadsheets. "
@@ -136,31 +136,31 @@ msgstr ""
 "Klicken Sie auf die Schaltfläche \"Mit Google anmelden\", um Ihren Code von "
 "Google Drive abzurufen, damit wir auf Ihre Tabellen zugreifen können. "
 
-#: google-sheet-connector.php:393
+#: google-sheet-connector.php:390
 msgid "Authenticate with your Google account, follow these steps:"
 msgstr ""
 "Gehen Sie folgendermaßen vor, um sich mit Ihrem Google-Konto zu "
 "authentifizieren:"
 
-#: google-sheet-connector.php:396
+#: google-sheet-connector.php:393
 msgid "Click on the \"Sign In With Google\" button."
 msgstr "Klicken Sie auf die Schaltfläche \"Mit Google anmelden\"."
 
-#: google-sheet-connector.php:397
+#: google-sheet-connector.php:394
 msgid "Grant permissions for the following:"
 msgstr "Erteilen Sie Berechtigungen für Folgendes:"
 
-#: google-sheet-connector.php:399
+#: google-sheet-connector.php:396
 msgid "Google Drive"
 msgstr "Google Drive"
 
-#: google-sheet-connector.php:402
+#: google-sheet-connector.php:399
 msgid "* Ensure that you enable the checkbox for each of these services."
 msgstr ""
 "Stellen Sie sicher, dass Sie das Kontrollkästchen für jeden dieser Dienste "
 "aktivieren."
 
-#: google-sheet-connector.php:408
+#: google-sheet-connector.php:405
 msgid ""
 "This will allow the integration to access your Google Drive and Google "
 "Sheets."
@@ -168,33 +168,33 @@ msgstr ""
 "Dadurch kann die Integration auf Ihr Google Drive und Google Sheets "
 "zugreifen."
 
-#: google-sheet-connector.php:414
+#: google-sheet-connector.php:411
 msgid "Google Access Code"
 msgstr "Google-Zugangscode"
 
-#: google-sheet-connector.php:417
+#: google-sheet-connector.php:414
 msgid "Currently Active"
 msgstr "Derzeit aktiv"
 
-#: google-sheet-connector.php:419
+#: google-sheet-connector.php:416
 msgid "Deactivate"
 msgstr "Deaktivieren"
 
-#: google-sheet-connector.php:428
+#: google-sheet-connector.php:425
 msgid "Click on Sign in with Google button"
 msgstr "Klicken Sie auf die Schaltfläche Mit Google anmelden"
 
-#: google-sheet-connector.php:435
+#: google-sheet-connector.php:432
 #, fuzzy
 #| msgid "Click on Sign in with Google button"
 msgid "Sign in with Google"
 msgstr "Klicken Sie auf die Schaltfläche Mit Google anmelden"
 
-#: google-sheet-connector.php:446
+#: google-sheet-connector.php:442
 msgid "Click here to Save Authentication Code"
 msgstr "Klicken Sie hier, um den Authentifizierungscode zu speichern"
 
-#: google-sheet-connector.php:459
+#: google-sheet-connector.php:455
 msgid ""
 "Something went wrong! It looks you have not given the permission of Google "
 "Drive and Google Sheets from your google account.Please Deactivate Auth and "
@@ -205,15 +205,15 @@ msgstr ""
 "nicht erteilt. Bitte deaktivieren Sie die Authentifizierung und "
 "authentifizieren Sie sich erneut mit den Berechtigungen."
 
-#: google-sheet-connector.php:464
+#: google-sheet-connector.php:460
 msgid "Also,"
 msgstr "Auch"
 
-#: google-sheet-connector.php:466
+#: google-sheet-connector.php:462
 msgid "Click Here "
 msgstr "Hier klicken "
 
-#: google-sheet-connector.php:467
+#: google-sheet-connector.php:463
 msgid ""
 "and if it displays \"GSheetConnector for WP Contact Forms\" under Third-"
 "party apps with account access then remove it."
@@ -221,11 +221,11 @@ msgstr ""
 "und wenn es \"GSheetConnector for WP Contact Forms\" unter Drittanbieter-"
 "Apps mit Kontozugriff anzeigt, entfernen Sie es."
 
-#: google-sheet-connector.php:483
+#: google-sheet-connector.php:480
 msgid "Connected Email Account"
 msgstr "Verbundenes E-Mail-Konto: %s"
 
-#: google-sheet-connector.php:490
+#: google-sheet-connector.php:488
 msgid ""
 "Something wrong ! Your Auth Code may be wrong or expired. Please deactivate "
 "and do Re-Authentication again. "
@@ -234,19 +234,19 @@ msgstr ""
 "oder abgelaufen. Bitte deaktivieren Sie und wiederholen Sie die "
 "Authentifizierung. "
 
-#: google-sheet-connector.php:499
+#: google-sheet-connector.php:497
 msgid "Debug Log"
 msgstr "Debug Log (Fehlerprotokoll)"
 
-#: google-sheet-connector.php:502
+#: google-sheet-connector.php:500
 msgid "View"
 msgstr "Anzeigen"
 
-#: google-sheet-connector.php:506 includes/pages/gs-integrate-info.php:32
+#: google-sheet-connector.php:504 includes/pages/gs-integrate-info.php:32
 msgid "Clear"
 msgstr "Zurücksetzen"
 
-#: google-sheet-connector.php:515
+#: google-sheet-connector.php:513
 msgid ""
 "We do not store any of the data from your Google account on our servers, "
 "everything is processed &amp; stored on your server. We take your privacy "
@@ -257,32 +257,32 @@ msgstr ""
 "Schutz Ihrer Daten sehr ernst und stellen sicher, dass diese niemals "
 "missbraucht werden."
 
-#: google-sheet-connector.php:515
+#: google-sheet-connector.php:513
 msgid "Learn more."
 msgstr "Mehr erfahren."
 
-#: google-sheet-connector.php:581
+#: google-sheet-connector.php:579
 msgid "Copy Logs"
 msgstr "Protokolle kopieren"
 
-#: google-sheet-connector.php:597
+#: google-sheet-connector.php:595
 msgid "No log file exists as no errors are generated"
 msgstr ""
 "Es ist keine Protokolldatei vorhanden, da keine Fehler generiert werden."
 
-#: google-sheet-connector.php:648
+#: google-sheet-connector.php:646
 msgid "CF7 Google Sheet Connector Pro - Amazing Key Features"
 msgstr "CF7 Google Sheet Connector Pro – Herausragende Hauptmerkmale"
 
-#: google-sheet-connector.php:649
+#: google-sheet-connector.php:647
 msgid "Common Features of GSheetConnector Pro Plugins."
 msgstr "Gemeinsame Funktionen der GSheetConnector Pro-Plugins."
 
-#: google-sheet-connector.php:655
+#: google-sheet-connector.php:653
 msgid "One-Click Authentication"
 msgstr "Ein-Klick-Authentifizierung"
 
-#: google-sheet-connector.php:656
+#: google-sheet-connector.php:654
 msgid ""
 "Get spreadsheet and Worksheet list directly to your contact form’s google "
 "sheet settings with one-click authentication."
@@ -291,11 +291,11 @@ msgstr ""
 "Tabelleneinstellungen Ihres Kontaktformulars mit einer Ein-Klick-"
 "Authentifizierung."
 
-#: google-sheet-connector.php:662
+#: google-sheet-connector.php:660
 msgid "Auto Fetch Sheets and Integration"
 msgstr "Automatisches Abrufen von Tabellen und Integration"
 
-#: google-sheet-connector.php:663
+#: google-sheet-connector.php:661
 msgid ""
 "You can add multiple Contact Forms of your site to multiple Google Sheets. "
 "And can add as many Google Sheets as forms."
@@ -304,11 +304,11 @@ msgstr ""
 "Tabellen hinzufügen. Außerdem können Sie so viele Google Tabellen "
 "hinzufügen, wie Sie Formulare haben."
 
-#: google-sheet-connector.php:669
+#: google-sheet-connector.php:667
 msgid "Google Sheets API Up to date"
 msgstr "Google Sheets API – Aktuell"
 
-#: google-sheet-connector.php:670
+#: google-sheet-connector.php:668
 msgid ""
 "One of the features you get with the latest API-V4 is the ability to format "
 "content in Google Sheets. when using our addon plugins."
@@ -317,11 +317,11 @@ msgstr ""
 "Möglichkeit, Inhalte in Google Sheets zu formatieren, wenn Sie unsere Add-on-"
 "Plugins verwenden."
 
-#: google-sheet-connector.php:678
+#: google-sheet-connector.php:676
 msgid "Map Contact Form Mail Tags to GSheet Columns"
 msgstr "Kontaktformular-E-Mail-Tags in GSheet-Spalten zuordnen"
 
-#: google-sheet-connector.php:679
+#: google-sheet-connector.php:677
 msgid ""
 "In the Google sheets tab, provide column names in row 1. The first column "
 "should be “date” for each."
@@ -329,11 +329,11 @@ msgstr ""
 "Bitte geben Sie in der Registerkarte „Google Sheets“ die Spaltennamen in "
 "Zeile 1 an. Die erste Spalte sollte jeweils „Datum“ lauten."
 
-#: google-sheet-connector.php:685 includes/pages/gs-integrate-demo.php:29
+#: google-sheet-connector.php:683 includes/pages/gs-integrate-demo.php:29
 msgid "Quick Configuration"
 msgstr "Schnelle Konfiguration"
 
-#: google-sheet-connector.php:686 google-sheet-connector.php:693
+#: google-sheet-connector.php:684 google-sheet-connector.php:691
 msgid ""
 "The Configuration of the form to the GSheet is very easy. Just follow the "
 "steps provided by the plugin and you will get data on the GSheet."
@@ -342,48 +342,48 @@ msgstr ""
 "Sie die vom Plugin angegebenen Schritte, und Sie erhalten die Daten in "
 "GSheet."
 
-#: google-sheet-connector.php:692
+#: google-sheet-connector.php:690
 msgid "Support WordPress Multi-site"
 msgstr "Unterstützung für WordPress Multi-Site"
 
-#: google-sheet-connector.php:702
+#: google-sheet-connector.php:700
 msgid "See Demo"
 msgstr "Demo ansehen"
 
-#: google-sheet-connector.php:715
+#: google-sheet-connector.php:713
 msgid "Next steps…"
 msgstr "Die nächsten Schritte…"
 
-#: google-sheet-connector.php:722
+#: google-sheet-connector.php:720
 msgid "Upgrade to PRO"
 msgstr "Upgrade auf PRO"
 
-#: google-sheet-connector.php:723
+#: google-sheet-connector.php:721
 msgid "Sync Orders, Order wise data and much more..."
 msgstr ""
 "Synchronisieren Sie Bestellungen, bestellbezogene Daten und vieles mehr..."
 
-#: google-sheet-connector.php:731
+#: google-sheet-connector.php:729
 msgid "Compatibility"
 msgstr "Kompatibilität"
 
-#: google-sheet-connector.php:732
+#: google-sheet-connector.php:730
 msgid "Compatibility with Contact Form 7 Third-Party Plugins"
 msgstr "Kompatibilität mit Contact Form 7 Plugins von Drittanbietern"
 
-#: google-sheet-connector.php:739
+#: google-sheet-connector.php:737
 msgid "Multi Languages"
 msgstr "Mehrere Sprachen"
 
-#: google-sheet-connector.php:740
+#: google-sheet-connector.php:738
 msgid "This plugin supports multi-languages as well!"
 msgstr "Dieses Plugin unterstützt auch mehrere Sprachen."
 
-#: google-sheet-connector.php:747
+#: google-sheet-connector.php:745
 msgid "Support Wordpress multisites"
 msgstr "Unterstützung für WordPress-Multisites"
 
-#: google-sheet-connector.php:748
+#: google-sheet-connector.php:746
 msgid ""
 "With the use of a Multisite, you’ll also have a new level of user-available: "
 "the Super\n"
@@ -392,15 +392,15 @@ msgstr ""
 "Mit der Verwendung einer Multisite-Lösung steht Ihnen auch eine neue "
 "Benutzerrolle zur Verfügung: der Super-Administrator."
 
-#: google-sheet-connector.php:759
+#: google-sheet-connector.php:757
 msgid "Product Support"
 msgstr "Produkt Support"
 
-#: google-sheet-connector.php:765
+#: google-sheet-connector.php:763
 msgid "Online Documentation"
 msgstr "Online Dokumentation"
 
-#: google-sheet-connector.php:766
+#: google-sheet-connector.php:764
 #, fuzzy
 #| msgid ""
 #| "Understand all the capabilities of Contact Form 7 - CF7 GSheetConnector"
@@ -409,23 +409,23 @@ msgid ""
 msgstr ""
 "Bitte beachten Sie alle Funktionen von Contact Form 7 – CF7 GSheetConnector."
 
-#: google-sheet-connector.php:772
+#: google-sheet-connector.php:770
 msgid "Ticket Support"
 msgstr "Ticket Support"
 
-#: google-sheet-connector.php:773
+#: google-sheet-connector.php:771
 msgid "Direct help from our qualified support team"
 msgstr "Direkte Hilfe von unseren qualifizierten Support Team"
 
-#: google-sheet-connector.php:779
+#: google-sheet-connector.php:777
 msgid "Affiliate Program"
 msgstr "Partnerprogramm"
 
-#: google-sheet-connector.php:985
+#: google-sheet-connector.php:981
 msgid "Get CF7 Google Sheet Pro"
 msgstr "CF7 Google Sheet Pro erwerben"
 
-#: google-sheet-connector.php:1008
+#: google-sheet-connector.php:1005
 #, fuzzy
 #| msgid "CF7 GSheetConnector"
 msgid "Contact Form 7 - GSheetConnector"
