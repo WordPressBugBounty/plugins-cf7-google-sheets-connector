@@ -1,0 +1,488 @@
+/***Start Theme Variables***/
+:root {
+  /* Brand */
+  --primary: #199436;
+  --secondary: #ededed;
+  --accent: #000000;
+
+  /* Text */
+  --text-white: #fff;
+  --text-dark: #000000;
+  --btn-deactive-text-normal: #666666;
+  --text-light: #7d7d7d;
+  --text-label: #1d2327;
+  --text-gray: #7f868d;
+
+  /* Background */
+  --bg-white: #ffffff;
+  --bg-light-yellow: #fdfde08a;
+  --bg-deactivate: #ededed;
+  --bg-success: #19943633;
+  --bg-danger: #94191933;
+
+  /* Border */
+  --border-light: #ccc;
+  --border-normal: #199436;
+
+  /* Base spacing unit */
+  --space-5: 5px;
+  --space-10: 10px;
+  --space-15: 15px;
+  --space-20: 20px;
+  --space-30: 30px;
+  --space-40: 40px;
+  --space-50: 50px;
+
+  /*Spacing Scale Variables*/
+  --sp-0: 0px;
+  --sp-5: 5px;
+  --sp-10: 10px;
+  --sp-15: 15px;
+  --sp-20: 20px;
+  --sp-30: 30px;
+  --sp-40: 40px;
+  --sp-50: 50px;
+  --sp-80: 80px;
+
+  /*Font Weight*/
+  --fw-thin: 100;
+  --fw-extra-light: 200;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semi-bold: 600;
+  --fw-bold: 700;
+  --fw-extra-bold: 800;
+  --fw-black: 900;
+}
+/***End Theme Variables***/
+
+/***Start Global Css***/
+
+/*Start Layout Grid System*/
+.gscf7-free .container {
+  width: 100%;
+  max-width: 100%;
+  margin: auto;
+  padding: 0 15px;
+}
+.gscf7-free .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.gscf7-free .col {
+  flex: 1;
+  padding: 0 15px;
+}
+.gscf7-free .col-2 {
+  width: 16.66%;
+}
+.gscf7-free .col-3 {
+  width: 25%;
+}
+.gscf7-free .col-4 {
+  width: 33.33%;
+}
+.gscf7-free .col-5 {
+  width: 41.67%;
+}
+.gscf7-free .col-6 {
+  width: 50%;
+}
+.gscf7-free .col-7 {
+  width: 58.33%;
+}
+.gscf7-free .col-8 {
+  width: 66.66666667%;
+}
+.gscf7-free .col-12 {
+  width: 100%;
+}
+/*End Layout Grid System*/
+
+/**Start Margin Utilities**/
+.gscf7-free .mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.gscf7-free .m-0 {
+  margin: var(--sp-0);
+}
+.gscf7-free .m-5 {
+  margin: var(--sp-5);
+}
+.gscf7-free .m-10 {
+  margin: var(--sp-10);
+}
+.gscf7-free .m-15 {
+  margin: var(--sp-15);
+}
+.gscf7-free .m-20 {
+  margin: var(--sp-20);
+}
+.gscf7-free .m-30 {
+  margin: var(--sp-30);
+}
+.gscf7-free .m-40 {
+  margin: var(--sp-40);
+}
+.gscf7-free .m-50 {
+  margin: var(--sp-50);
+}
+
+/* Top */
+.gscf7-free .mt-0 {
+  margin-top: 0;
+}
+.gscf7-free .mt-5 {
+  margin-top: var(--sp-5);
+}
+.gscf7-free .mt-10 {
+  margin-top: var(--sp-10);
+}
+.gscf7-free .mt-15 {
+  margin-top: 15px;
+}
+.gscf7-free .mt-20 {
+  margin-top: var(--sp-20);
+}
+.gscf7-free .mt-25 {
+  margin-top: 25px;
+}
+.gscf7-free .mt-30 {
+  margin-top: var(--sp-30);
+}
+.gscf7-free .mt-40 {
+  margin-top: 40px !important;
+}
+.gscf7-free .mt-50 {
+  margin-top: var(--sp-50);
+}
+
+/* Bottom */
+.gscf7-free .mb-0 {
+  margin-bottom: 0;
+}
+.gscf7-free .mb-5 {
+  margin-bottom: var(--sp-5);
+}
+.gscf7-free .mb-10 {
+  margin-bottom: var(--sp-10);
+}
+.gscf7-free .mb-15 {
+  margin-bottom: 15px;
+}
+.gscf7-free .mb-20 {
+  margin-bottom: var(--sp-20);
+}
+.gscf7-free .mb-30 {
+  margin-bottom: var(--sp-30);
+}
+.gscf7-free .mb-50 {
+  margin-bottom: var(--sp-50);
+}
+/*Right*/
+.gscf7-free .mr-5 {
+  margin-right: var(--sp-5);
+}
+.gscf7-free .mr-10 {
+  margin-right: var(--sp-10);
+}
+.gscf7-free .mr-15 {
+  margin-right: var(--sp-15);
+}
+.gscf7-free .mr-20 {
+  margin-right: var(--sp-20);
+}
+/*Left*/
+.gscf7-free .ml-5 {
+  margin-left: var(--sp-5);
+}
+.gscf7-free .ml-15 {
+  margin-left: 15px;
+}
+.gscf7-free .ml-20 {
+  margin-left: var(--sp-20);
+}
+/**End Margin Utilities**/
+
+/**Start Padding Utilities**/
+.gscf7-free .p-0 {
+  padding: var(--sp-0);
+}
+.gscf7-free .p-5 {
+  padding: var(--sp-5);
+}
+.gscf7-free .p-10 {
+  padding: var(--sp-10);
+}
+.gscf7-free .p-15 {
+  padding: var(--sp-15);
+}
+.gscf7-free .p-20 {
+  padding: var(--sp-20);
+}
+.gscf7-free .p-30 {
+  padding: var(--sp-30);
+}
+.gscf7-free .p-40 {
+  padding: var(--sp-40);
+}
+.gscf7-free .p-50 {
+  padding: var(--sp-50);
+}
+/*left & Right*/
+.gscf7-free .pl-5 {
+  padding-left: var(--sp-5);
+}
+.gscf7-free .pr-5 {
+  padding-right: var(--sp-5);
+}
+.gscf7-free .pl-15 {
+  padding-left: var(--sp-15);
+}
+.gscf7-free .pr-15 {
+  padding-right: var(--sp-15);
+}
+.gscf7-free .pl-20 {
+  padding-left: var(--sp-20);
+}
+.gscf7-free .pr-20 {
+  padding-right: var(--sp-20);
+}
+.gscf7-free .pl-30 {
+  padding-left: var(--sp-30);
+}
+.gscf7-free .pr-30 {
+  padding-right: var(--sp-30);
+}
+/* Top */
+.gscf7-free .pt-5 {
+  padding-top: var(--sp-5);
+}
+.gscf7-free .pt-10 {
+  padding-top: var(--sp-10);
+}
+.gscf7-free .pt-13 {
+  padding-top: 12px;
+}
+.gscf7-free .pt-15 {
+  padding-top: var(--sp-15);
+}
+.gscf7-free .pt-20 {
+  padding-top: var(--sp-20);
+}
+.gscf7-free .pt-30 {
+  padding-top: var(--sp-30);
+}
+.gscf7-free .pt-50 {
+  padding-top: var(--sp-50);
+}
+
+/* Bottom */
+.gscf7-free .pb-5 {
+  padding-bottom: var(--sp-5);
+}
+.gscf7-free .pb-10 {
+  padding-bottom: var(--sp-10);
+}
+.gscf7-free .pb-13 {
+  padding-bottom: 12px;
+}
+.gscf7-free .pb-15 {
+  padding-bottom: var(--sp-15);
+}
+.gscf7-free .pb-20 {
+  padding-bottom: var(--sp-20);
+}
+.gscf7-free .pb-30 {
+  padding-bottom: var(--sp-30);
+}
+.gscf7-free .pb-50 {
+  padding-bottom: var(--sp-50);
+}
+/**End Padding Utilities**/
+
+.gscf7-free .d-block {
+  display: block;
+}
+.gscf7-free .d-none {
+  display: none;
+}
+.gscf7-free .d-flex {
+  display: flex;
+}
+.gscf7-free .d-inline-flex {
+  display: inline-flex;
+}
+.gscf7-free .flex-wrap {
+  flex-wrap: wrap;
+}
+.gscf7-free .justify-flex-start {
+  justify-content: flex-start;
+}
+.gscf7-free .justify-center {
+  justify-content: center;
+}
+.gscf7-free .justify-between {
+  justify-content: space-between;
+}
+.gscf7-free .justify-end {
+  justify-content: flex-end;
+}
+.gscf7-free .align-center {
+  align-items: center;
+}
+.gscf7-free .align-end {
+  align-items: end;
+}
+.gscf7-free .text-center {
+  text-align: center;
+}
+.gscf7-free .text-left {
+  text-align: left;
+}
+.gscf7-free .text-right {
+  text-align: right;
+}
+.gscf7-free .postion-relative {
+  position: relative;
+}
+.gscf7-free .postion-absolute {
+  position: absolute;
+}
+.gscf7-free .w-100 {
+  width: 100%;
+}
+.gscf7-free .w-50 {
+  width: 50%;
+}
+.gscf7-free .text-white {
+  color: var(--text-white);
+}
+.gscf7-free .text-dark {
+  color: var(--text-dark);
+}
+.gscf7-free .text-gray {
+  color: var(--text-gray);
+}
+.gscf7-free .text-primary {
+  color: var(--primary);
+}
+.gscf7-free .text-deactive {
+  color: var(--btn-deactive-text-normal);
+}
+.gscf7-free .heading-text-dark {
+  color: var(--text-dark);
+}
+.gscf7-free .paragraph-text-light {
+  color: var(--text-light);
+}
+.gscf7-free .label-text {
+  color: var(--text-label);
+}
+.gscf7-free .btn-deactive-text {
+  color: var(--btn-deactive-text-normal);
+}
+.gscf7-free .bg-yellow {
+  background-color: var(--bg-light-yellow);
+}
+.gscf7-free .bg-success {
+  background-color: var(--bg-success);
+}
+.gscf7-free .bg-danger {
+  background-color: var(--bg-danger);
+}
+.gscf7-free .bg-white {
+  background-color: var(--bg-white);
+}
+.gscf7-free .text-uppercase {
+  text-transform: uppercase;
+}
+.gscf7-free .text-lowercase {
+  text-transform: lowercase;
+}
+.gscf7-free .text-capitalize {
+  text-transform: capitalize;
+}
+.gscf7-free .line-height-zero {
+  line-height: 0;
+}
+.gscf7-free .text-decoration-none {
+  text-decoration: none;
+}
+
+/* Flex & Grid Gap */
+.gscf7-free .gap-5 {
+  gap: var(--space-5);
+}
+.gscf7-free .gap-10 {
+  gap: var(--space-10);
+}
+.gscf7-free .gap-15 {
+  gap: var(--space-15);
+}
+.gscf7-free .gap-20 {
+  gap: var(--space-20);
+}
+.gscf7-free .gap-30 {
+  gap: var(--space-30);
+}
+.gscf7-free .gap-40 {
+  gap: var(--space-40);
+}
+.gscf7-free .gap-50 {
+  gap: var(--space-50);
+}
+
+/* Row & Column gap separately */
+.gscf7-free .row-gap-10 {
+  row-gap: var(--space-10);
+}
+.gscf7-free .row-gap-20 {
+  row-gap: var(--space-20);
+}
+.gscf7-free .row-gap-30 {
+  row-gap: var(--space-30);
+}
+
+.gscf7-free .col-gap-10 {
+  column-gap: var(--space-10);
+}
+.gscf7-free .col-gap-20 {
+  column-gap: var(--space-20);
+}
+.gscf7-free .col-gap-30 {
+  column-gap: var(--space-30);
+}
+
+/*Font Weight*/
+.gscf7-free .fw-100 {
+  font-weight: 100;
+}
+.gscf7-free .fw-200 {
+  font-weight: 200;
+}
+.gscf7-free .fw-300 {
+  font-weight: 300;
+}
+.gscf7-free .fw-400 {
+  font-weight: 400;
+}
+.gscf7-free .fw-500 {
+  font-weight: 500;
+}
+.gscf7-free .fw-600 {
+  font-weight: 600;
+}
+.gscf7-free .fw-700 {
+  font-weight: 700;
+}
+.gscf7-free .fw-800 {
+  font-weight: 800;
+}
+.gscf7-free .fw-900 {
+  font-weight: 900;
+}
+
+/***End Global Css***/

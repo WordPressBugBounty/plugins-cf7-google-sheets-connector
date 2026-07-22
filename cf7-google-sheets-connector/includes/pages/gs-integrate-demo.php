@@ -1,5 +1,9 @@
 
-
+<?php 
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+?>
 <div class="cf7_pro_demo">
 
     <div class="cd-faq-content" style="display: block;">

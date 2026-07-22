@@ -1,3 +1,9 @@
+
+<?php
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+?>
 <div class="wrap">
    <div class="support">
    <div class="wrapper">

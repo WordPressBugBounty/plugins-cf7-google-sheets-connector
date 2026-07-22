@@ -1,4 +1,7 @@
-
+<?php if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+?>
 <div class="cd-faq-items">
 	<ul id="basics" class="cd-faq-group">
 		<li class="content-visible">

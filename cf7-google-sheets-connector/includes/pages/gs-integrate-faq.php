@@ -1,3 +1,8 @@
+<?php 
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+?>
 <div class="wrap-main">
 <div class="tab-full">
 	<button class="collapsible"><?php echo esc_html( __('Why isn’t the data send to spreadsheet? CF7 Submit is just Spinning.','cf7-google-sheets-connector')); ?></button>

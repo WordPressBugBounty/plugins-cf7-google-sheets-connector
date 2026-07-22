@@ -1,14 +1,14 @@
-=== GSheetConnector for CF7 – Connect Contact Form 7 to Google Sheets and Send Form Submissions in Real Time ===
-Contributors: westerndeal, abdullah17, gsheetconnector
+=== GSheetConnector – CF7 Google Sheets Connector with Real-Time Sync ===
+Contributors: westerndeal, abdullah17
 Donate link: https://www.paypal.me/WesternDeal
 Author URL: https://www.gsheetconnector.com/
 Tags: cf7, contact form 7, contact form 7 integrations, contact forms, google sheets integrations
 Docs: https://www.gsheetconnector.com/docs/cf7-gsheetconnector
-Tested up to: 6.9.1
+Tested up to: 7.0
 Requires at least: 3.6
 Requires PHP: 7.4
 Requires Plugins: contact-form-7
-Stable tag: 5.1.6
+Stable tag: 5.1.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,7 +63,7 @@ Refer to the features and benefits page for more detailed information on the fea
 ➜ In the Google sheets tab, provide column names in row 1. The first column should be "date". For each further column, copy paste mail tags from the Contact Form 7 form (e.g. "your-name", "your-email", "your-subject", "your-message", etc).  
 ➜ Test your form submit and verify that the data shows up in your Google Sheet.
 
-= 🔥 Videos to help you get started with Google Sheets Connector for CF7 =
+= Videos to help you get started with Google Sheets Connector for CF7 =
 
 🚀How to Install, Authenticate and Integrate Contact Form with your Google Sheet.
 
@@ -110,6 +110,16 @@ Please double-check those items and hopefully getting them right will fix the is
 * Now you can paste this code back on the `Admin Panel > Contact form 7 > Google Sheets` screen. 
 
 == Changelog ==
+
+= 5.1.7 (22-07-2026) =
+* Added: Introduced dedicated custom database tables for plugin configuration and feed data storage, replacing post meta storage to improve query performance, scalability, and data management.
+* Added: Implemented a confirmation dialog before feed deletion to prevent accidental removal of feed configurations.
+* Added: Introduced a Dashboard tab providing centralized access to plugin status, configuration overview, system notices, and quick navigation to key settings.
+* Improved: Optimized bundled third-party libraries by removing unused components, reducing package size and improving overall plugin loading efficiency.
+* Improved: OAuth token validation to prevent repetitive debug log entries when expired or invalid access tokens are encountered during authentication.
+* Enhanced: validation and error handling for missing Google Sheets and Google Drive OAuth scopes, displaying clear permission-related messages within the Integration settings.
+* Fixed: Addressed multiple security hardening issues by improving input validation, data sanitization, and output escaping across plugin components.
+* Fixed: Issues affecting the Activate, Install, and Deactivate actions within the Extensions module, ensuring reliable extension lifecycle management.
 
 = 5.1.6 (10-02-2026) =
 * Fixed: Fixed Freemius integration issue.

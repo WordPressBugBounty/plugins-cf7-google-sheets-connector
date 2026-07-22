@@ -1,0 +1,678 @@
+/***Start Pro version header notice***/
+.gscf7-free .pro-header-notice {
+  text-align: center;
+  position: relative;
+  padding: 7px;
+  margin-bottom: 0;
+  opacity: 1;
+  transition: all 0.3s ease-in-out;
+  max-height: 100px;
+  overflow: hidden;
+  background: #199436;
+}
+.gscf7-free .pro-notice-bar-message {
+  font-size: 14px;
+  line-height: 160%;
+  color: #fff;
+  font-weight: 400;
+}
+.gscf7-free .pro-notice-bar-message a {
+  text-decoration: underline;
+  font-weight: bold;
+  color: #fff;
+}
+.gscf7-free .pro-header-notice .pro-dismiss {
+  position: absolute;
+  top: 1px;
+  right: 50px;
+  border: none;
+  padding: 5px;
+  margin-top: 1px;
+  background: 0 0;
+  color: #72777c;
+  cursor: pointer;
+}
+
+/***End Pro version header notice***/
+/****Start PRO Version for Integration tab manual and service***/
+.gscf7-free .spacing-bdg-pro {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-left: 4px;
+}
+.gscf7-free .gscf7-popup-overlay-pro {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 99999;
+  overflow-y: auto;
+}
+.gscf7-free .gsc-pro-section {
+  padding: 40px 20px;
+}
+.gscf7-free .gsc-pro-card {
+  width: 100%;
+  max-width: 750px;
+  margin: auto;
+  padding: 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  position: relative;
+  transition-duration: 0.4s;
+  transition-timing-function: cubic-bezier(0.36, 0.55, 0.19, 1);
+  transition-property: all, margin;
+}
+/* PRO Badge */
+.gscf7-free .gsc-pro-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50px;
+  margin-bottom: 15px;
+}
+
+/* Header */
+.gscf7-free .gsc-pro-headers .main-popup-heading {
+  font-size: 24px;
+  line-height: normal;
+}
+
+.gscf7-free .gsc-pro-headers p {
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Features Grid */
+.gscf7-free .gsc-pro-features {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.gscf7-free .gsc-feature-item {
+  display: flex;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.gscf7-free .gsc-feature-item:last-child {
+  border-bottom: none;
+}
+
+.gscf7-free .gsc-feature-icon {
+  width: 42px;
+  height: 42px;
+  background: #ecfdf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.gscf7-free .gsc-feature-content .gsc-popup-header {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #111827;
+  line-height: normal;
+}
+
+.gscf7-free .gsc-feature-content p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+.gscf7-free .position-relative-popup {
+  position: relative;
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  justify-content: center;
+}
+.gscf7-free .gsc-pro-close {
+  position: absolute;
+  z-index: 999;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.gscf7-free .gsc-pro-close:hover {
+  background: #000;
+  color: #fff;
+  transform: rotate(90deg);
+}
+/****End PRO Version for Integration tab manual and service***/
+
+/***Start Pro Feed Setting Features***/
+.gscf7-free .gscf7row-disabled {
+  opacity: 0.5;
+  background: #f5f5f5;
+}
+
+.gscf7-free .gscf7row-disabled td {
+  pointer-events: none;
+}
+
+.gscf7-free .gscf7row-disabled .gscf7-status-col {
+  pointer-events: auto; /* toggle always clickable */
+}
+.gscf7-free .gsc-pro-promo {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.gscf7-free .gsc-pro-icon {
+  background: #ffffff;
+  box-shadow:
+    0px 6.05242px 7.56552px rgba(0, 26, 119, 0.0415),
+    0px 3.39293px 4.24117px rgba(0, 26, 119, 0.04),
+    0px 1.80196px 2.25245px rgba(0, 26, 119, 0.0285),
+    0px 0.749837px 0.937296px rgba(0, 26, 119, 0.0337);
+  border-radius: 2px;
+  min-width: 60px;
+  width: 65px;
+  height: 65px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ecebeb;
+  color: #7c878f;
+  font-size: 26px;
+}
+.gscf7-free .gsc-pro-header {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.gscf7-free .gsc-pro-header .unlock-header {
+  font-size: 20px;
+  margin: 0;
+  color: #111827;
+  line-height: normal;
+  font-weight: 600;
+}
+
+.gscf7-free .gsc-pro-badge {
+  display: inline-block;
+  margin-top: 5px;
+  background: #ecfdf5;
+  color: #16a34a;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Tabs */
+.gscf7-free .gsc-pro-tabs {
+  display: flex;
+  justify-content: space-between;
+  background-color: #fff;
+  box-shadow:
+    0px 1px 2px rgb(0 0 0 / 5%),
+    0px 4px 5px rgb(0 0 0 / 5%);
+  border: 1px solid #e8e8eb;
+  border-bottom: 0px solid transparent;
+  overflow: hidden;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.gscf7-free .gsc-pro-tabs a {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border-right: 1px solid #e5e7eb;
+}
+
+.gscf7-free .gsc-pro-tabs a:last-child {
+  border-right: none;
+}
+
+.gscf7-free .gsc-pro-grid li {
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #374151;
+}
+.gscf7-free .blur-pro-feature {
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+/***End Pro Feed Setting Features***/
+
+/***Start Pro Setting(Roll Permissions an Version Control)***/
+.gscf7-free .gsc-pro-access-promo {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+.gscf7-free .mr-pro-15 {
+  margin-right: 15px;
+}
+/* Header */
+.gscf7-free .gsc-pro-access-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+.gscf7-free .pro-roll-sub-header {
+  font-size: 14px;
+}
+.gscf7-free .gsc-pro-access-icon {
+  width: 60px;
+  height: 60px;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #bbf7d0;
+}
+
+.gscf7-free .gsc-pro-access-title h2 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.gscf7-free .gsc-pro-badge {
+  display: inline-block;
+  margin-top: 6px;
+  background: #ecfdf5;
+  color: #16a34a;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Grid */
+.gscf7-free .gsc-pro-access-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.gscf7-free .gsc-pro-access-col h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.gscf7-free .gsc-pro-access-col ul {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+}
+
+.gscf7-free .gsc-pro-access-col li {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+/* Footer */
+.gscf7-free .gsc-pro-access-footer {
+  text-align: center;
+}
+
+.gscf7-free .gsc-upgrade-btn {
+  background: #16a34a;
+  color: #ffffff;
+  padding: 10px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gscf7-free .gsc-upgrade-btn:hover {
+  background: #15803d;
+}
+
+/***End Pro Setting(Roll Permissions an Version Control)***/
+
+/***Start Common Pro Feature***/
+.gscf7-free .common-section-gsc-promo-wrapper {
+  padding: 30px;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  margin: 40px 15px 30px 15px;
+  gap: 40px;
+  box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+}
+
+/* LEFT SIDE */
+.gscf7-free .common-section-gsc-promo-left {
+  position: relative;
+  width: 220px;
+  height: 150px;
+  background: linear-gradient(135deg, #fde2e4, #e0f2fe);
+  border-radius: 12px;
+}
+.gscf7-free .cf7-to-gsheet {
+  background: #f1f5f9;
+}
+
+/* Floating Cards */
+.gscf7-free .common-section-gsc-card {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gscf7-free .common-section-gsc-card img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Card Positions */
+.gscf7-free .gsc-card-1 {
+  top: 10px;
+  left: 15px;
+}
+.gscf7-free .gsc-card-2 {
+  top: 40px;
+  left: 90px;
+}
+.gscf7-free .gsc-card-3 {
+  top: 70px;
+  left: 40px;
+}
+.gscf7-free .gsc-card-4 {
+  top: 20px;
+  left: 140px;
+}
+
+/* RIGHT SIDE */
+.gscf7-free .common-section-gsc-promo-content .common-section-heading {
+  margin: 0 0 15px;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 600;
+}
+.gscf7-free .free-pro-btn {
+  color: #1d56d1;
+  font-size: 15px;
+  font-weight: 500;
+}
+.gscf7-free .common-section-gsc-promo-content ul {
+  list-style: disc;
+  padding-left: 18px;
+  text-decoration: none;
+  margin-top: 20px;
+}
+.gscf7-free .common-section-gsc-promo-content ul li {
+  color: #555;
+  font-size: 14px;
+  position: relative;
+  line-height: 25px;
+}
+.gscf7-free .common-section-gsc-promo-content p {
+  font-size: 16px;
+  color: #6b7280;
+}
+.gscf7-free .common-section-gsc-card {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+/***End Common Pro Feature***/
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 1024px) {
+  /***Start PRO FEATURE***/
+  .gscf7-free .pro-container {
+    gap: 20px;
+    padding: 20px;
+  }
+  .gscf7-free .pro-left {
+    width: 60%;
+  }
+  .gscf7-free .pro-right {
+    width: 40%;
+  }
+  .gscf7-free .pro-features {
+    grid-template-columns: 1fr; /* stack feature cards */
+  }
+  .gscf7-free .sync-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  /***End PRO FEATURE***/
+}
+@media (max-width: 992px) {
+  /***Start Pro version header notice***/
+  .gscf7-free .pro-notice-bar-message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding-top: 15px;
+  }
+  .gscf7-free .pro-header-notice .pro-dismiss {
+    right: 0px;
+  }
+  /***End Pro version header notice***/
+  /****Start PRO Version for Integration tab manual and service***/
+  .gscf7-free .gsc-pro-card {
+    padding: 30px 25px;
+  }
+  /****End PRO Version for Integration tab manual and service***/
+  /***Start Pro Feed Setting Features***/
+  .gscf7-free .gsc-pro-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .gscf7-free .gsc-pro-icon {
+    width: 55px;
+    height: 55px;
+  }
+  .gscf7-free .gsc-pro-tabs div {
+    font-size: 12px;
+  }
+  .gscf7-free .gsc-pro-grid ul {
+    margin-bottom: 20px;
+  }
+  /***End Pro Feed Setting Features***/
+}
+
+@media (max-width: 768px) {
+  /***Start PRO FEATURE***/
+  .gscf7-free .pro-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .gscf7-free .pro-left,
+  .gscf7-free .pro-right {
+    width: 100%;
+  }
+  .gscf7-free .right-card {
+    padding: 14px;
+  }
+  .gscf7-free .flow-ui {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .gscf7-free .line {
+    display: none;
+  }
+  .gscf7-free .sync-stats {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  /***End PRO FEATURE***/
+
+  /****Start PRO Version for Integration tab manual and service***/
+  .gscf7-free .gsc-pro-card {
+    padding: 25px 20px;
+    border-radius: 16px;
+  }
+
+  .gscf7-free .gsc-pro-headers .main-popup-heading {
+    font-size: 20px;
+  }
+
+  .gscf7-free .gsc-pro-headers p {
+    font-size: 14px;
+  }
+
+  .gscf7-free .gsc-feature-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .gscf7-free .gsc-feature-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .gscf7-free .gsc-pro-actions {
+    flex-direction: column;
+  }
+
+  .gscf7-free .gsc-pro-actions a {
+    width: 100%;
+    text-align: center;
+  }
+  /****End PRO Version for Integration tab manual and service***/
+  /***Start Pro Feed Setting Features***/
+  .gscf7-free .gsc-pro-promo {
+    padding: 20px;
+  }
+  .gscf7-free .gsc-pro-header h2 {
+    font-size: 18px;
+  }
+  .gscf7-free .gsc-pro-tabs {
+    flex-direction: column;
+  }
+  .gscf7-free .gsc-pro-tabs div {
+    border-right: none;
+    text-align: left;
+  }
+  .gscf7-free .gsc-pro-tabs div:last-child {
+    border-bottom: none;
+  }
+  .gscf7-free .gsc-pro-grid ul {
+    padding-inline-start: 20px;
+  }
+  /***End Pro Feed Setting Features***/
+}
+
+@media (max-width: 480px) {
+  /***Start PRO FEATURE***/
+  .gscf7-free .pro-container {
+    padding: 16px;
+  }
+  .gscf7-free .pro-title {
+    font-size: 18px;
+  }
+  .gscf7-free .pro-desc {
+    font-size: 12px;
+  }
+  .gscf7-free .feature-card {
+    padding: 8px;
+  }
+  .gscf7-free .feature-card h4 {
+    font-size: 12px;
+  }
+  .gscf7-free .feature-card p {
+    font-size: 11px;
+  }
+  .gscf7-free .pro-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .gscf7-free .pro-btn {
+    width: 100%;
+    text-align: center;
+  }
+  .gscf7-free .sync-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  /***End PRO FEATURE***/
+  /****Start PRO Version for Integration tab manual and service***/
+  .gscf7-free .gsc-pro-card {
+    padding: 20px 15px;
+  }
+
+  .gscf7-free .gsc-pro-headers .main-popup-heading {
+    font-size: 18px;
+  }
+  /****End PRO Version for Integration tab manual and service***/
+  /***Start Pro Feed Setting Features***/
+  .gscf7-free .gsc-pro-header h2 {
+    font-size: 16px;
+  }
+  .gscf7-free .gsc-pro-badge {
+    font-size: 11px;
+  }
+  .gscf7-free .gsc-pro-tabs div {
+    font-size: 12px;
+  }
+  .gscf7-free .gsc-pro-grid li {
+    font-size: 12px;
+  }
+  /***End Pro Feed Setting Features***/
+}
