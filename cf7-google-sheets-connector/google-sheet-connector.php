@@ -4,9 +4,9 @@
  * Plugin Name: CF7 Google Sheet Connector
  * Plugin URI: https://wordpress.org/plugins/cf7-google-sheets-connector/
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
- * Requires at least: 3.6
+ * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.1.7
+ * Version: 5.2.0
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -64,8 +64,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.1.7');
-define('GS_CONNECTOR_DB_VERSION', '5.1.7');
+define('GS_CONNECTOR_VERSION', '5.2.0');
+define('GS_CONNECTOR_DB_VERSION', '5.2.0');
 define('GS_CONNECTOR_ROOT', dirname(__FILE__));
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(dirname(__FILE__)) . '/google-sheet-connector.php');
@@ -166,7 +166,7 @@ class Gs_Connector_Free_Init
         if (empty($screen) || ($screen->id !== 'contact_page_cf7-new' && strpos($screen->id, 'wpcf7') === false)) {
             return;
         }
-        ?>
+?>
         <script>
             (function() {
                 var original = window.addEventListener;
@@ -177,7 +177,7 @@ class Gs_Connector_Free_Init
                 window.onbeforeunload = null;
             })();
         </script>
-        <?php
+<?php
     }
 
     public function gscf7_connector_free_plugin_action_links($links)
@@ -189,31 +189,31 @@ class Gs_Connector_Free_Init
         return array_merge(
             array(
                 '<a href="' . esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config')) . '">' .
-                esc_html__('Settings', 'cf7-google-sheets-connector') .
-                '</a>'
+                    esc_html__('Settings', 'cf7-google-sheets-connector') .
+                    '</a>'
             ),
             $links
         );
     }
 
-/**
- * Check whether a plugin class exists and is active.
- *
- * Used to verify if a specific plugin
- * is installed and activated.
- *
- * @since 2.0.2
- *
- * @param string $class Plugin main class name.
- * @return bool True if plugin class exists, otherwise false.
- */
-public static function gscf7_is_plugin_active($class)
-{
-    if (class_exists($class)) {
-        return true;
+    /**
+     * Check whether a plugin class exists and is active.
+     *
+     * Used to verify if a specific plugin
+     * is installed and activated.
+     *
+     * @since 2.0.2
+     *
+     * @param string $class Plugin main class name.
+     * @return bool True if plugin class exists, otherwise false.
+     */
+    public static function gscf7_is_plugin_active($class)
+    {
+        if (class_exists($class)) {
+            return true;
+        }
+        return false;
     }
-    return false;
-}
 
 
 
@@ -547,23 +547,23 @@ public static function gscf7_is_plugin_active($class)
             return;
         }
         $request_uri = isset($_SERVER['REQUEST_URI'])
-        ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
-        : '';
+            ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
+            : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
         $page = isset($_GET['page'])
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        ? sanitize_text_field(wp_unslash($_GET['page']))
-        : '';
+            ? sanitize_text_field(wp_unslash($_GET['page']))
+            : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
         $post_type = isset($_REQUEST['post_type'])
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        ? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
-        : '';
+            ? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
+            : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
         $action = isset($_REQUEST['action'])
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        ? sanitize_text_field(wp_unslash($_REQUEST['action']))
-        : '';
+            ? sanitize_text_field(wp_unslash($_REQUEST['action']))
+            : '';
 
         /*
      * CF7 Admin Pages

@@ -1283,4 +1283,51 @@ jQuery(document).ready(function ($) {
     },
     );
   });
+function gscf7LoadFeedPage(page) {
+    $.post(
+        ajaxurl,
+        {
+            action: "gscf7_paginate_feed_list",
+            paged: page,
+            security: $("#gscf7-pagination-nonce").val()
+        },
+        function (res) {
+            if (res.success) {
+                let rows = res.data.rows_html;
+                let pagination = res.data.pagination_html;
+
+                // Inject table rows
+                $("#gscf7-feed-table-body").html(rows);
+
+                // Inject pagination links
+                $("#gscf7-pagination-wrap").html(pagination);
+
+                // Toggle headers and pagination visibility based on feed existence
+                if (!res.data.has_feeds) {
+                    $("#gscf7-feed-table thead").hide();
+                    $("#gscf7-pagination-wrap").hide();
+                } else {
+                    $("#gscf7-feed-table thead").show();
+                    $("#gscf7-pagination-wrap").show();
+                }
+
+                $("#gscf7-feed-table").attr("data-page", page);
+            }
+        }
+    );
+}
+
+// Initial load
+$(document).ready(function () {
+    gscf7LoadFeedPage(1);
+});
+
+// Event delegation for pagination buttons
+$(document).on("click", ".gscf7-page-link", function (e) {
+    e.preventDefault();
+    let page = $(this).data("page");
+    if (page) {
+        gscf7LoadFeedPage(page);
+    }
+});
 });

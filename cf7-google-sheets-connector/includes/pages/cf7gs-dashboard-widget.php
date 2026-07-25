@@ -46,7 +46,7 @@ if (! empty($gscf7_forms_list)) {
       <thead>
          <tr>
             <th><?php esc_html_e('Form Name', 'cf7-google-sheets-connector'); ?></th>
-            <th><?php esc_html_e('Sheet Connections', 'cf7-google-sheets-connector'); ?></th>
+            <th><?php esc_html_e('Sheet Name', 'cf7-google-sheets-connector'); ?></th>
          </tr>
       </thead>
       <tbody>
@@ -58,6 +58,7 @@ if (! empty($gscf7_forms_list)) {
                         <?php echo esc_html($gscf7_form['post_title']); ?>
                      </a>
                   </td>
+                 
                   <td>
                      <?php foreach ($gscf7_form['connections'] as $gscf7_conn) :
                         $gscf7_sheet_name = $gscf7_conn['sheet_name'];
@@ -73,7 +74,7 @@ if (! empty($gscf7_forms_list)) {
                         <div style="margin-bottom:5px;">
                            <a target="_blank"
                               href="<?php echo esc_url('https://docs.google.com/spreadsheets/d/' . $gscf7_sheet_id . '/edit#gid=' . $gscf7_tab_id); ?>">
-                              <?php echo esc_html($gscf7_sheet_name . ' → ' . $gscf7_tab_name); ?>
+                              <?php echo esc_html($gscf7_sheet_name); ?>
                            </a>
                         </div>
 

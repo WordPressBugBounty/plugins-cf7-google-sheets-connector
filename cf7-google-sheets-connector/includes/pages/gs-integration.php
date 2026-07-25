@@ -233,9 +233,9 @@ $gscf7_auth_method = get_option('gs_cf7_auth_method', 'cf7_existing');
 
                                     if (!empty($gscf7_token) && $gscf7_token !== "") {
 
-                                        $google_sheet = new CF7GSC_googlesheet();
+                                        $gscf7_google_sheet = new CF7GSC_googlesheet();
 
-                                        $gscf7_email_account = $google_sheet->gsheet_print_google_account_email();
+                                        $gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
 
                                         if ($gscf7_email_account) {
 
@@ -485,9 +485,9 @@ $gscf7_auth_method = get_option('gs_cf7_auth_method', 'cf7_existing');
 
                                 <?php
 
-                                $google_sheet = new CF7GSC_googlesheet();
+                                $gscf7_google_sheet = new CF7GSC_googlesheet();
 
-                                $gscf7_email_account = $google_sheet->gsheet_print_google_account_email();
+                                $gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
 
 
 
@@ -888,9 +888,9 @@ if ($gscf7_auth_method == "cf7_service") {
         }
     }
 
-    $cf7_service_valid   = $gscf7_service_valid;
-    $cf7_service_email   = $gscf7_service_email;
-    $gs_cf7_service_json = $gscf7_service_json;
+    $gscf7_service_valid   = $gscf7_service_valid;
+    $gscf7_service_email   = $gscf7_service_email;
+    $gscf7_service_json = $gscf7_service_json;
 
     include(GS_CONNECTOR_PATH . "includes/pages/gs-service-integration.php");
 
@@ -1301,7 +1301,7 @@ if ($gscf7_auth_method == "cf7_service") {
     </div>
 
 </div>
-
+<?php // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound ?>
 <script>
     function copyLogs() {
 

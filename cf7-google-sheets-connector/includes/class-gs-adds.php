@@ -106,7 +106,7 @@ class GS_Connector_Adds
     {
         $ajax_nonce   = wp_create_nonce("gs_adds_ajax_nonce");
         $review_text  = '<div class="gs-adds-notice success" data-nonce="' . esc_attr($ajax_nonce) . '">';
-        $review_text .= 'Upgrade to <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" >GSheetConnector for CF7 PRO</a> with automated sheets to setup within few clicks. Grab the deal with discounted price.';
+        $review_text .= 'Upgrade to <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" >CF7 Google Sheet Connector PRO</a> with automated sheets to setup within few clicks. Grab the deal with discounted price.';
         $review_text .= '<ul class="review-rating-list">';
         $review_text .= '<li>
         <a href="#"

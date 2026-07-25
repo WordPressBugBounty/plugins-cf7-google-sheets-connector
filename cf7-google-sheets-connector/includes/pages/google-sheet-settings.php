@@ -43,7 +43,7 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
 <div class="gscf7-free">
     <!--Start NOTICE BAR-->
     <div id="pro-notice-bar" class="pro-header-notice">
-        <span class="pro-notice-bar-message"><?php echo esc_html__("You`re using GSheetConnector for CF7 Lite. To unlock more features consider ", 'cf7-google-sheets-connector'); ?><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" class="link-hover-white" target="_blank" rel="noopener"><?php echo esc_html__('upgrading to Pro', 'cf7-google-sheets-connector'); ?></a></span>
+        <span class="pro-notice-bar-message"><?php echo esc_html__("You`re using CF7 Google Sheet Connector Lite. To unlock more features consider ", 'cf7-google-sheets-connector'); ?><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" class="link-hover-white" target="_blank" rel="noopener"><?php echo esc_html__('upgrading to Pro', 'cf7-google-sheets-connector'); ?></a></span>
         <button type="button" id="pro-dismiss-header-notice" title="Dismiss this message" data-page="overview" class="pro-dismiss">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15.8327 5.34175L14.6577 4.16675L9.99935 8.82508L5.34102 4.16675L4.16602 5.34175L8.82435 10.0001L4.16602 14.6584L5.34102 15.8334L9.99935 11.1751L14.6577 15.8334L15.8327 14.6584L11.1744 10.0001L15.8327 5.34175Z" fill="white"></path>
@@ -64,8 +64,8 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
 
     // Check if the user is authenticated when saving existing API method
     if ((!empty($gscf7_authenticated) && $gscf7_per == 'valid' && $gscf7_auth_method === "cf7_existing")) {
-        $google_sheet = new CF7GSC_googlesheet();
-        $gscf7_email_account = $google_sheet->gsheet_print_google_account_email();
+        $gscf7_google_sheet = new CF7GSC_googlesheet();
+        $gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
         if ($gscf7_email_account) {
             $gscf7_is_authenticated = true;
             $gscf7_selected_method = esc_html(__('Existing', 'cf7-google-sheets-connector'));
@@ -344,7 +344,7 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
                     <div class="gsheet-header-logo-text">
                         <a href="https://gsheetconnector.com/docs/cf7-gsheetconnector" class="text-decoration-none" target="_blank">
                             <div class="line-height-zero m-0">
-                                <span class="title fw-600"><?php echo esc_html(__('GSheetConnector for CF7', 'cf7-google-sheets-connector')); ?></span>
+                                <span class="title fw-600"><?php echo esc_html(__('CF7 Google Sheet Connector', 'cf7-google-sheets-connector')); ?></span>
                             </div>
                         </a>
                         <small class="p-0"><?php echo esc_html(__('v', 'cf7-google-sheets-connector')); ?> <?php echo esc_html($gscf7_plugin_version, 'cf7-google-sheets-connector'); ?> </small>
@@ -531,7 +531,7 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
                         </ul>
                     </div>
                     <div class="mt-30 d-flex align-center gap-20">
-                        <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="btn btn-primary link-hover-white text-decoration-none">View Docs</a>
+                        <a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector" target="_blank" class="btn btn-primary link-hover-white text-decoration-none">View Docs</a>
                         <a class="text-decoration-none free-pro-btn" href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro#compare" target="_blank">Free vs Pro</a>
                     </div>
                 </div>

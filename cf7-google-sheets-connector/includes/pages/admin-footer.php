@@ -3,14 +3,14 @@
 }
 ?>
 <?php
-if (!function_exists('remove_footer_admin')) {
-  function remove_footer_admin()
+if (!function_exists('gscf7_remove_footer_admin')) {
+  function gscf7_remove_footer_admin()
   {
     return '';
   }
 }
 
-add_filter('admin_footer_text', 'remove_footer_admin');
+add_filter('admin_footer_text', 'gscf7_remove_footer_admin');
 ?>
 <!---Start Footer Section--->
 <div class="gscf7-free">
@@ -20,7 +20,7 @@ add_filter('admin_footer_text', 'remove_footer_admin');
     <div class="gsc-footer-left">
       <?php echo esc_html__('Please rate', 'cf7-google-sheets-connector'); ?>
       <strong>
-        <?php echo esc_html__('GSheetConnector for CF7', 'cf7-google-sheets-connector'); ?>
+        <?php echo esc_html__('CF7 Google Sheet Connector', 'cf7-google-sheets-connector'); ?>
       </strong>
       <span class="gsc-stars">★★★★★</span>
       <?php echo esc_html__('on', 'cf7-google-sheets-connector'); ?>

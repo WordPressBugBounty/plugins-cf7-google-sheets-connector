@@ -229,3 +229,96 @@
   color: #000;
 }
 /***End Inner Edit setting Sidebar***/
+.gscf7-free .gscf7-feed-table-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.gscf7-free #gscf7-feed-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.gscf7-free table#gscf7-feed-table thead th {
+  text-align: left;
+  padding: 12px 18px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  border-bottom: 1px solid #e5e7eb;
+}
+.gscf7-free table#gscf7-feed-table tbody td a {
+  color: #000000;
+  font-weight: 500;
+  text-decoration: none;
+}
+.gscf7-free .dividb-feed-table-wrap {
+  width: 100%;
+}
+.gscf7-free table#gscf7-feed-table .gscf7-not-connected {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 500;
+}
+.gscf7-free table#gscf7-feed-table tbody tr td:first-child {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  text-decoration: none;
+  text-transform: capitalize;
+}
+.gscf7-free table#gscf7-feed-table tbody td {
+  padding: 14px 18px;
+  font-size: 12px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  text-decoration: underline;
+}
+.gscdf #gscf7-pagination-wrap {
+  padding-bottom: 15px;
+}
+.gscf7-free table#gscf7-feed-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.gscf7-free table#gscf7-feed-table .gscf7-feed-loading-row td {
+  text-align: center;
+  padding: 26px 18px;
+}
+
+.gscf7-free .gscf7-loader {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: gscf7-spin 0.7s linear infinite;
+}
+@keyframes gscf7-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gscf7-free .gscf7-loader-text {
+  margin-left: 10px;
+  color: #6b7280;
+  font-size: 13px;
+  vertical-align: middle;
+}

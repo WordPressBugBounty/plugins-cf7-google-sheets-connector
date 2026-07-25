@@ -600,24 +600,17 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
 
 
-                foreach ($result_values as $key => $result) {
+               foreach ( $result_values as $key => $result ) {
 
+    if ( ( strpos( $key, 'cfdb7_file' ) !== false ) &&
+        ! empty( $result ) &&
+        file_exists( $cfdb7_dirname . '/' . $result )
+    ) {
 
-
-                    if ((strpos($key, 'cfdb7_file') !== false) &&
-
-                        !empty($result) &&
-
-                        file_exists($cfdb7_dirname . '/' . $result)
-
-                    ) {
-
-
-
-                        unlink($cfdb7_dirname . '/' . $result);
-                    }
-                }
-
+        // Use WordPress native file deletion function instead of PHP's unlink()
+        wp_delete_file( $cfdb7_dirname . '/' . $result );
+    }
+}
 
 
                 $cfdb->delete(

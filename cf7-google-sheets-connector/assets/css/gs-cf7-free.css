@@ -742,6 +742,7 @@
   border-radius: 999px;
   margin-left: 5px;
   font-weight: 600;
+  display: inline-block;
 }
 .gscf7-free .gsc-json-wrapper {
   margin-bottom: 18px;

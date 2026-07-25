@@ -69,6 +69,12 @@ class Gs_Connector_Service
       // AJAX actions for Service Account authentication management.
       add_action('wp_ajax_save_service_account_json_cf7', array($this, 'save_service_account_json_cf7'));
       add_action('wp_ajax_deactivate_service_account_cf7', array($this, 'deactivate_service_account_cf7'));
+      
+      //pagination
+      add_action(
+         'wp_ajax_gscf7_paginate_feed_list',
+         array( $this, 'gscf7_paginate_feed_list' )
+     );
    }
 
    /**
@@ -205,6 +211,175 @@ class Gs_Connector_Service
       wp_send_json_success();
    }
 
+ /**
+ * Handles the AJAX request for paginating the dashboard feed list.
+ *
+ * Verifies security nonces, processes current page parameters, fetches feed entries 
+ * from the database, and returns the rendered HTML payload.
+ *
+ * @since 5.2.0
+ *
+ * @return void Sends a JSON response using wp_send_json_success().
+ */
+
+public function gscf7_paginate_feed_list() {
+
+    check_ajax_referer( 'gscf7-pagination', 'security' );
+
+    $paged            = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
+    $first_page_count = 3; 
+    $per_page         = 4; 
+
+    global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $query = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT
+                p.ID,
+                p.post_title,
+                s.sheet_name,
+                s.sheet_id,
+                s.tab_id,
+                s.tab_name,
+                s.form_id,
+                f.id AS feed_id,
+                f.feed_name
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->prefix}cf7gs_settings s
+                ON p.ID = s.form_id
+            LEFT JOIN {$wpdb->prefix}cf7gs_feeds f
+                ON p.ID = f.form_id
+            WHERE p.post_type=%s
+            ORDER BY p.ID ASC",
+            'wpcf7_contact_form'
+        )
+    );
+
+    // Pass first_page_count and per_page parameters
+    $result = $this->gscf7_render_feed_page(
+        $query,
+        $paged,
+        $first_page_count,
+        $per_page
+    );
+
+    wp_send_json_success( $result );
+}
+/**
+ * Renders the HTML output for the feed table rows and pagination controls.
+ *
+ * Offsets results dynamically to accommodate different item counts between page 1 
+ * and subsequent pages.
+ *
+ * @since 5.2.0
+ *
+ * @return array {
+ *     Structured HTML data and state status.
+ *
+ *     @type string $rows_html       Rendered HTML for the <tr> table rows.
+ *     @type string $pagination_html Rendered HTML for pagination buttons.
+ *     @type bool   $has_feeds       Whether any database rows exist.
+ * }
+ */
+public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $per_page = 4 ) {
+
+    $total_rows = count( $rows );
+
+    // Calculate total pages with standard + custom first page count
+    if ( $total_rows <= $first_page_count ) {
+        $total_pages = 1;
+    } else {
+        $remaining_rows = $total_rows - $first_page_count;
+        $total_pages    = 1 + (int) ceil( $remaining_rows / $per_page );
+    }
+
+    $paged = max( 1, min( $paged, $total_pages ) );
+
+    // Compute dynamic offset based on current page
+    if ( $paged === 1 ) {
+        $offset       = 0;
+        $slice_length = $first_page_count;
+    } else {
+        $offset       = $first_page_count + ( ( $paged - 2 ) * $per_page );
+        $slice_length = $per_page;
+    }
+
+    $paged_rows = array_slice( $rows, $offset, $slice_length );
+
+    // 1. Render Table Rows HTML
+    ob_start();
+
+    if ( empty( $paged_rows ) ) {
+        ?>
+        <tr>
+            <td colspan="3" class="gscf7-feed-empty-cell">
+                <div class="gscf7-feed-empty text-center">
+                    <div class="heading">
+                        <?php esc_html_e( 'No Form Feeds Created Yet', 'cf7-google-sheets-connector' ); ?>
+                    </div>
+                    <p>
+                        <?php esc_html_e(
+                            'Connect your form to Google Sheets to automatically sync submissions in real time. Create a feed to start sending data to your spreadsheet.',
+                            'cf7-google-sheets-connector'
+                        ); ?>
+                    </p>
+                                    </div>
+            </td>
+        </tr>
+        <?php
+    } else {
+        foreach ( $paged_rows as $row ) {
+            ?>
+            <tr>
+                <td>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=wpcf7&post=' . $row->ID . '&action=edit' ) ); ?>">
+                        <?php echo esc_html( $row->post_title ); ?>
+                    </a>
+                </td>
+                <td>
+                    <?php echo esc_html( $row->feed_name ); ?>
+                </td>
+                <td>
+                    <?php if ( ! empty( $row->sheet_id ) ) : ?>
+                        <a target="_blank"
+                           href="<?php echo esc_url( 'https://docs.google.com/spreadsheets/d/' . $row->sheet_id . '/edit#gid=' . $row->tab_id ); ?>">
+                            <?php echo esc_html( $row->sheet_name ); ?>
+                        </a>
+                    <?php else : ?>
+                        <span class="gscf7-not-connected"><?php echo esc_html__( 'Not connected', 'cf7-google-sheets-connector' ); ?></span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php
+        }
+    }
+
+    $rows_html = ob_get_clean();
+
+    // 2. Render Pagination HTML
+    ob_start();
+
+    if ( $total_pages > 1 ) {
+        for ( $i = 1; $i <= $total_pages; $i++ ) {
+            ?>
+            <a href="javascript:void(0)"
+               class="gscf7-page-link <?php echo $i == $paged ? 'active' : ''; ?>"
+               data-page="<?php echo esc_attr( $i ); ?>">
+                <?php echo esc_html( $i ); ?>
+            </a>
+            <?php
+        }
+    }
+
+    $pagination_html = ob_get_clean();
+
+    return array(
+        'rows_html'       => $rows_html,
+        'pagination_html' => $pagination_html,
+        'has_feeds'       => ! empty( $rows ),
+    );
+}
+
    /**
     * Snooze an admin notice temporarily.
     *
@@ -334,7 +509,7 @@ class Gs_Connector_Service
       $system_info .= '<div class="mb-20 mt-20"><button id="cf7-free-show-info-button" class="info-button">GSheetConnector<span class="dashicons dashicons-arrow-down"></span></div>';
       $system_info .= '<div id="info-container" class="info-content shadow-box pt-20 pb-20 pl-30 pr-30" style="display:none;">';
       $system_info .= '<table>';
-      $system_info .= '<tr><td>Plugin Name</td><td class="fw-600 common-badge-table info-name-blue">GSheetConnector for CF7</td></tr>';
+      $system_info .= '<tr><td>Plugin Name</td><td class="fw-600 common-badge-table info-name-blue">CF7 Google Sheet Connector</td></tr>';
       $system_info .= '<tr><td>Plugin Version</td><td class="fw-600 common-badge-table info-name-blue">' . esc_html($plugin_version) . '</td></tr>';
       $system_info .= '<tr><td>Plugin Subscription Plan</td><td class="fw-600 common-badge-table pro-badge">' . esc_html($subscription_plan) . '</td></tr>';
       $system_info .= '<tr><td>Connected Email Account</td><td class="fw-600">' . $connected_email . '</td></tr>';
@@ -3619,23 +3794,28 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table join, no caching needed.
             $query = $wpdb->get_results(
                $wpdb->prepare(
-                  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names sanitized with esc_sql() and backticks.
-                  "SELECT 
-                  p.ID,
-                  p.post_title,
-                  s.sheet_name,
-                  s.sheet_id,
-                  s.tab_id,
-                  s.tab_name,
-                  s.form_id
-                  FROM `" . esc_sql($wpdb->posts) . "` p
-                  INNER JOIN `" . esc_sql($wpdb->prefix . 'cf7gs_settings') . "` s 
-                  ON p.ID = s.form_id
-                  WHERE p.post_type = %s
-                  ORDER BY p.ID DESC",
-                  'wpcf7_contact_form'
+                   "SELECT
+                       p.ID,
+                       p.post_title,
+                       s.sheet_name,
+                       s.sheet_id,
+                       s.tab_id,
+                       s.tab_name,
+                       s.form_id,
+                       f.id AS feed_id,
+                       f.feed_name,
+                       f.status,
+                       f.is_default
+                   FROM `{$wpdb->posts}` p
+                   INNER JOIN `{$wpdb->prefix}cf7gs_settings` s
+                       ON p.ID = s.form_id
+                   LEFT JOIN `{$wpdb->prefix}cf7gs_feeds` f
+                       ON p.ID = f.form_id
+                   WHERE p.post_type = %s
+                   ORDER BY p.ID DESC",
+                   'wpcf7_contact_form'
                )
-            );
+           );
 
             return $query;
          }
