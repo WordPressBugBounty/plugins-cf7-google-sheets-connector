@@ -4,7 +4,7 @@ if (! defined('ABSPATH')) {
     exit();
 }
 
-$gscf7_Gs_Connector_Service = new Gs_Connector_Service();
+$gscf7_Gs_Connector_Service = Gs_Connector_Service::instance();
 ?>
 
 

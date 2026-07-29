@@ -20,7 +20,7 @@
 
                <div class="inside">
 
-                   <?php if (!$cf7_service_valid): ?>
+                   <?php if (!$gscf7_service_valid): ?>
 
                        <p><?php echo esc_html(__('Connect CF7 to Google Sheets using a secure service account. Upload your JSON credentials and share your spreadsheet with the service account email to enable syncing.', 'cf7-google-sheets-connector')); ?>
 
@@ -48,7 +48,7 @@
 
                                    class="gsc-service-json"
 
-                                   placeholder="<?php echo esc_attr__('Paste your service account JSON credentials here...', 'cf7-google-sheets-connector'); ?>"><?php echo esc_textarea($gs_cf7_service_json); ?></textarea>
+                                   placeholder="<?php echo esc_attr__('Paste your service account JSON credentials here...', 'cf7-google-sheets-connector'); ?>"><?php echo esc_textarea($gscf7_service_json); ?></textarea>
 
 
 
@@ -157,9 +157,9 @@
 
                                    <div class="connected-account gsc-connected-email">
 
-                                       <?php echo esc_html($cf7_service_email); ?>
+                                       <?php echo esc_html($gscf7_service_email); ?>
 
-                                       <a href="javascript:void(0);" class="ml-5 mt-5" data-email="<?php echo esc_html($cf7_service_email); ?>">
+                                       <a href="javascript:void(0);" class="ml-5 mt-5" data-email="<?php echo esc_html($gscf7_service_email); ?>">
 
                                            <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 
@@ -293,7 +293,7 @@
 
         ?>
 
-       <?php if ($cf7_service_valid != true) { ?>
+       <?php if ($gscf7_service_valid != true) { ?>
 
            <div class="col-5">
 
@@ -367,7 +367,7 @@
 
                            <div class="gsc-slide">
 
-                               <div class="gsc-slider-headers fw-600 mb-10 text-dark"><?php esc_html_e('Step-2 Create a New Service Account', 'cf7-google-sheets-connector'); ?> <a href="#" class="i-help" hover-tooltip="<?php echo esc_html__('Click Create Service Account and enter a meaningful name like ex.Fluent Form GSheet.', 'cf7-google-sheets-connector'); ?>">
+                               <div class="gsc-slider-headers fw-600 mb-10 text-dark"><?php esc_html_e('Step-2 Create a New Service Account', 'cf7-google-sheets-connector'); ?> <a href="#" class="i-help" hover-tooltip="<?php echo esc_html__('Click Create Service Account and enter a meaningful name like ex.CF7 Forms GSheet.', 'cf7-google-sheets-connector'); ?>">
 
                                        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 

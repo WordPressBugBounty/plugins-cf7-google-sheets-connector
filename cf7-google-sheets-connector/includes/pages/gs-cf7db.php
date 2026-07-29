@@ -29,17 +29,29 @@ class GS_CF7DB
 				global $wpdb;
 				// set the default character set and collation for the table
 				$charset_collate = $wpdb->get_charset_collate();
-				$tbl_name = $wpdb->base_prefix . 'cf7db_gsheet_forms';
+				/*
+				 * Use the site prefix, not the network prefix.
+				 *
+				 * Every read and write in this plugin uses $wpdb->prefix, so
+				 * creating the table with $wpdb->base_prefix meant that on
+				 * multisite each sub-site wrote to a table that was never
+				 * created, and its submissions were silently discarded.
+				 */
+				$tbl_name = $wpdb->prefix . 'cf7db_gsheet_forms';
 				// Check that the table does not already exist before continuing
 				$sql = "CREATE TABLE IF NOT EXISTS `$tbl_name` (
 				  		id bigint(20) NOT NULL AUTO_INCREMENT,
 			            form_id bigint(20) NOT NULL,
 			            value longtext NOT NULL COLLATE utf8mb4_unicode_520_ci,
 			            date datetime DEFAULT current_timestamp() NOT NULL,
-			            PRIMARY KEY  (id)
+			            PRIMARY KEY  (id),
+			            KEY form_id (form_id),
+			            KEY form_id_date (form_id, date),
+			            KEY form_id_id (form_id, id)
 				  ) $charset_collate;";
 				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 				dbDelta($sql);
+				$this->gscf7_add_entry_indexes($tbl_name);
 				$is_error = empty($wpdb->last_error);
 				return $is_error;
 			}
@@ -49,6 +61,60 @@ class GS_CF7DB
 			Gs_Connector_Free_Utility::gs_debug_log($data);
 		}
 	}
+
+	/**
+	 * Ensure the entries table carries the indexes its queries rely on.
+	 *
+	 * The table originally shipped with only PRIMARY KEY (id), while every query
+	 * filters on form_id and several also sort by date or id. Without these
+	 * indexes each of those queries performs a full table scan.
+	 *
+	 * dbDelta will create the keys for new installs, but it does not reliably add
+	 * composite keys to an existing table, so they are added explicitly here.
+	 *
+	 * @since 5.2.1
+	 *
+	 * @param string $table_name Fully prefixed table name.
+	 * @return void
+	 */
+	public function gscf7_add_entry_indexes($table_name)
+	{
+		global $wpdb;
+
+		$indexes = array(
+			'form_id'      => '(`form_id`)',
+			'form_id_date' => '(`form_id`, `date`)',
+			'form_id_id'   => '(`form_id`, `id`)',
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Reading index metadata for a custom plugin table.
+		$existing = $wpdb->get_col(
+			$wpdb->prepare(
+				'SELECT DISTINCT INDEX_NAME
+				FROM INFORMATION_SCHEMA.STATISTICS
+				WHERE table_schema = DATABASE()
+				AND table_name = %s',
+				$table_name
+			)
+		);
+
+		if (! is_array($existing)) {
+			$existing = array();
+		}
+
+		foreach ($indexes as $index_name => $columns) {
+
+			if (in_array($index_name, $existing, true)) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- ALTER TABLE cannot use placeholders; identifiers sanitized with esc_sql() and backticked.
+			$wpdb->query(
+				'ALTER TABLE `' . esc_sql($table_name) . '` ADD INDEX `' . esc_sql($index_name) . '` ' . $columns
+			);
+		}
+	}
+
 	/**
 
 	 * Display database settings UI and handle form entry routing.
@@ -581,7 +647,7 @@ class GS_CF7DB
 
 				//Get Special mail tags
 
-				$servicesgsc = new Gs_Connector_Service();
+				$servicesgsc = Gs_Connector_Service::instance();
 
 				$special_mail_tags = $servicesgsc->get_special_mail_tags();
 
@@ -722,25 +788,36 @@ class GS_CF7DB
 			}
 		}
 
-		// WP_List_Table is not loaded automatically so we need to load it in our application
+		/*
+		 * The list-table screens below are admin-only. They were previously loaded
+		 * on every request, including front-end page views, which pulled
+		 * wp-admin/includes/class-wp-list-table.php into public requests.
+		 *
+		 * The GS_CF7DB class itself stays available everywhere because
+		 * cfdb7_before_send_mail() runs during front-end form submission.
+		 */
+		if (is_admin()) {
 
-		if (!class_exists('WP_List_Table')) {
+			// WP_List_Table is not loaded automatically so we need to load it in our application
 
-			require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
+			if (!class_exists('WP_List_Table')) {
+
+				require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
+			}
+
+			//============================================== list of All Forms ========================
+
+			include_once('class-gs-cf7db-formList.php');
+
+			// //============================================== list of Form Entries ========================
+
+			include_once('class-gs-cf7db-formEntryList.php');
+
+			//==============================================  Entries Details ========================
+
+			include_once('class-gs-cf7db-formEntryDetails.php');
+
+			//==============================================	CSV ====================================
+
+			include_once('class-gs-cf7db-export-csv.php');
 		}
-
-		//============================================== list of All Forms ========================
-
-		include_once('class-gs-cf7db-formList.php');
-
-		// //============================================== list of Form Entries ========================
-
-		include_once('class-gs-cf7db-formEntryList.php');
-
-		//==============================================  Entries Details ========================
-
-		include_once('class-gs-cf7db-formEntryDetails.php');
-
-		//==============================================	CSV ====================================
-
-		include_once('class-gs-cf7db-export-csv.php');

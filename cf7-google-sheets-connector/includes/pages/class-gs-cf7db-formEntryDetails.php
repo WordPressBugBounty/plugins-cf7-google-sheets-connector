@@ -27,20 +27,43 @@ class GSCF7_FormEntDetail_Table
     $cfdb          = apply_filters('cfdb7_database', $wpdb);
     $table_name    = $cfdb->prefix . 'cf7db_gsheet_forms';
     $upload_dir    = wp_upload_dir();
-    $cfdb7_dir_url = $upload_dir['baseurl'] . '/cfdb7_uploads';
+    /*
+     * Must match the directory used when entry files are removed in
+     * GSCF7_FormEntry_Table::process_bulk_action(), which uses '/cf7gs'.
+     */
+    $cfdb7_dir_url = $upload_dir['baseurl'] . '/cf7gs';
     $rm_underscore = apply_filters('cfdb7_remove_underscore_data', true);
-    $results    = $cfdb->get_results("SELECT * FROM $table_name WHERE form_id = $this->form_id AND id = $this->id LIMIT 1", OBJECT);
+    $results    = $cfdb->get_results(
+      $cfdb->prepare(
+        "SELECT * FROM $table_name WHERE form_id = %d AND id = %d LIMIT 1",
+        $this->form_id,
+        $this->id
+      ),
+      OBJECT
+    );
 
-    $form_data  = unserialize($results[0]->value);
+    /*
+     * Validate before dereferencing.
+     *
+     * This check previously ran after $results[0]->value had already been read,
+     * so a missing or mismatched entryId produced a run of PHP 8 warnings before
+     * wp_die() was ever reached.
+     */
+    if (empty($results[0])) {
+      wp_die(esc_html__('Not valid contact form', 'cf7-google-sheets-connector'));
+    }
+
+    $form_data = unserialize($results[0]->value);
+
+    if (! is_array($form_data)) {
+      $form_data = array();
+    }
+
     $fields_html = "";
     $special_mail_tag_html = "";
 
-    $servicesgsc = new Gs_Connector_Service();
+    $servicesgsc = Gs_Connector_Service::instance();
     $special_mail_tags_arr = $servicesgsc->get_special_mail_tags();
-
-    if (empty($results)) {
-      wp_die(esc_html__('Not valid contact form', 'cf7-google-sheets-connector'));
-    }
 
     foreach ($form_data as $key => $data) {
       $matches = array();
@@ -57,15 +80,19 @@ class GSCF7_FormEntDetail_Table
         $key_val = str_replace(array('-', '_'), ' ', $key_val);
         $key_val = ucwords($key_val);
 
+        $file_name = is_scalar($data) ? (string) $data : '';
+        $file_url  = esc_url($cfdb7_dir_url . '/' . $file_name);
+        $file_text = esc_html($file_name);
+
         if (!in_array($key, $special_mail_tags_arr)) {
           $fields_html .= '<tr>
-                            <th class="field-title"><b>' . $key_val . '</b></th>
-                            <td class="field-value"><a href="' . $cfdb7_dir_url . '/' . $data . '">' . $data . '</a></td>
+                            <th class="field-title"><b>' . esc_html($key_val) . '</b></th>
+                            <td class="field-value"><a href="' . $file_url . '">' . $file_text . '</a></td>
                         </tr>';
         } else {
           $special_mail_tag_html .= '<tr>
-                        <th class="field-title"><b>' . $key_val . '</b></th>
-                        <td class="field-value"><a href="' . $cfdb7_dir_url . '/' . $data . '">' . $data . '</a></td>
+                        <th class="field-title"><b>' . esc_html($key_val) . '</b></th>
+                        <td class="field-value"><a href="' . $file_url . '">' . $file_text . '</a></td>
                     </tr>';
         }
       } else {
@@ -116,8 +143,11 @@ class GSCF7_FormEntDetail_Table
     $id = $results[0]->id;
 
     $cfdb->query(
-      "UPDATE $table_name SET value =
-            '$form_data' WHERE id = '$id' LIMIT 1"
+      $cfdb->prepare(
+        "UPDATE $table_name SET value = %s WHERE id = %d LIMIT 1",
+        $form_data,
+        $id
+      )
     );
 ?>
     <input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"

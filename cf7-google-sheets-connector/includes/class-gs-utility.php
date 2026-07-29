@@ -159,8 +159,10 @@ class Gs_Connector_Free_Utility
             // If it's a multisite, update the site option (network-wide)
             update_site_option('cf7gsc_free_api_creds', $api_creds);
          } else {
-            // If it's not a multisite, update the regular option
-            update_option('cf7gsc_free_api_creds', $api_creds);
+            // If it's not a multisite, update the regular option.
+            // Not autoloaded: holds the OAuth client secret and is only needed
+            // during authentication and sheet writes.
+            update_option('cf7gsc_free_api_creds', $api_creds, false);
          }
       }
    }

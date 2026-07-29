@@ -140,7 +140,26 @@ class GSCF7_FormList_Table extends WP_List_Table
 
         $the_query = new WP_Query($args);
 
+        /*
+         * Entry counts for every form are fetched in a single grouped query.
+         * Previously this ran one COUNT(*) per form inside the loop, which on a
+         * large entries table meant one full table scan per row displayed.
+         */
+        $counts = array();
+
         if ($the_query->have_posts()) {
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is built from $wpdb->prefix and sanitized with esc_sql().
+            $count_rows = $cfdb->get_results(
+                'SELECT form_id, COUNT(*) AS total FROM `' . esc_sql($table_name) . '` GROUP BY form_id',
+                ARRAY_A
+            );
+
+            if (is_array($count_rows)) {
+                foreach ($count_rows as $count_row) {
+                    $counts[(int) $count_row['form_id']] = (int) $count_row['total'];
+                }
+            }
 
             while ($the_query->have_posts()) {
 
@@ -148,12 +167,9 @@ class GSCF7_FormList_Table extends WP_List_Table
 
                 $form_id = get_the_ID();
 
-                $total_count = $cfdb->get_var(
-                    $cfdb->prepare(
-                        "SELECT COUNT(*) FROM {$table_name} WHERE form_id = %d",
-                        $form_id
-                    )
-                );
+                $total_count = isset($counts[(int) $form_id])
+                    ? $counts[(int) $form_id]
+                    : 0;
 
                 $form_title = get_the_title();
 

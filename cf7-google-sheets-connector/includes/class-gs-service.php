@@ -15,6 +15,36 @@ if (! defined('ABSPATH')) {
 class Gs_Connector_Service
 {
 
+   /**
+    * Shared instance.
+    *
+    * The constructor registers 13 hooks. Because add_action() derives its
+    * callback ID from the object hash, every `new Gs_Connector_Service()`
+    * registered a fresh duplicate set rather than being deduplicated.
+    *
+    * @var Gs_Connector_Service|null
+    */
+   private static $instance = null;
+
+   /**
+    * Get the shared instance, creating it on first use.
+    *
+    * Use this instead of `new Gs_Connector_Service()` when the service is only
+    * needed for its helper methods.
+    *
+    * @since 5.2.1
+    *
+    * @return Gs_Connector_Service
+    */
+   public static function instance()
+   {
+      if (null === self::$instance) {
+         self::$instance = new self();
+      }
+
+      return self::$instance;
+   }
+
    private $allowed_tags = array('text', 'email', 'url', 'tel', 'number', 'range', 'date', 'textarea', 'select', 'checkbox', 'radio', 'acceptance', 'quiz', 'file', 'hidden');
    private $special_mail_tags = array('date', 'time', 'serial_number', 'remote_ip', 'user_agent', 'url', 'post_id', 'post_name', 'post_title', 'post_url', 'post_author', 'post_author_email', 'site_title', 'site_description', 'site_url', 'site_admin_email', 'user_login', 'user_email', 'user_display_name');
    protected $gs_uploads   = array();
@@ -32,7 +62,7 @@ class Gs_Connector_Service
          array($this, 'verify_gs_integation')
       );
 
-    // AJAX action to deactivate Google Sheets integration.
+      // AJAX action to deactivate Google Sheets integration.
       add_action(
          'wp_ajax_deactivate_gs_integation',
          array($this, 'deactivate_gs_integation')
@@ -56,8 +86,12 @@ class Gs_Connector_Service
       // AJAX action to save plugin uninstall settings.
       add_action('wp_ajax_gscf7_save_uninstall_settings', array($this, 'gscf7_save_uninstall_settings'));
 
-      // AJAX action to reset mapped Google Sheet fields.
-      add_action('wp_ajax_cf7_reset_sheet_fields', array($this, 'cf7_reset_sheet_fields'));
+      /*
+       * The wp_ajax_cf7_reset_sheet_fields handler was registered here for a
+       * cf7_reset_sheet_fields() method that does not exist in this build and
+       * has no client-side caller. Any authenticated request to that action
+       * raised an uncaught TypeError, so the registration has been removed.
+       */
 
       // AJAX actions for admin notice management.
       add_action('wp_ajax_gscf7_dismiss_notice', array($this, 'gscf7_dismiss_notice_callback'));
@@ -69,12 +103,56 @@ class Gs_Connector_Service
       // AJAX actions for Service Account authentication management.
       add_action('wp_ajax_save_service_account_json_cf7', array($this, 'save_service_account_json_cf7'));
       add_action('wp_ajax_deactivate_service_account_cf7', array($this, 'deactivate_service_account_cf7'));
-      
+
       //pagination
       add_action(
          'wp_ajax_gscf7_paginate_feed_list',
-         array( $this, 'gscf7_paginate_feed_list' )
-     );
+         array($this, 'gscf7_paginate_feed_list')
+      );
+   }
+
+   /**
+    * Validate a decoded Google service account key.
+    *
+    * Mirrors the client-side check so the same rules apply whether the request
+    * comes from the plugin's own screen or is posted directly.
+    *
+    * @since 5.2.1
+    *
+    * @param array $json Decoded service account JSON.
+    * @return string Empty string when valid, otherwise a translated error message.
+    */
+   public static function gscf7_validate_service_account_json($json)
+   {
+      $required = array(
+         'client_email',
+         'private_key',
+         'type',
+         'project_id',
+         'token_uri',
+      );
+
+      foreach ($required as $key) {
+         if (! isset($json[$key]) || ! is_scalar($json[$key]) || '' === trim((string) $json[$key])) {
+            return __('Your uploaded JSON key is invalid.', 'cf7-google-sheets-connector');
+         }
+      }
+
+      $client_email = trim((string) $json['client_email']);
+      $private_key  = (string) $json['private_key'];
+
+      if (
+         ! preg_match('/\A[^\s@]+@[^\s@]+\.iam\.gserviceaccount\.com\z/', $client_email)
+         || false === strpos($private_key, 'BEGIN PRIVATE KEY')
+      ) {
+         return __('Your uploaded JSON key is invalid.', 'cf7-google-sheets-connector');
+      }
+
+      if ('service_account' !== trim((string) $json['type'])) {
+         return __('Invalid JSON: file is not a service_account type.', 'cf7-google-sheets-connector');
+      }
+
+      return '';
    }
 
    /**
@@ -100,14 +178,14 @@ class Gs_Connector_Service
 
       // Get and sanitize the submitted JSON credentials.
       $json = isset($_POST['json'])
-      ? sanitize_textarea_field(wp_unslash($_POST['json']))
-      : '';
+         ? sanitize_textarea_field(wp_unslash($_POST['json']))
+         : '';
 
       // Decode JSON to validate its structure.
       $decoded = json_decode($json, true);
 
       // Return an error if the JSON is invalid.
-      if (JSON_ERROR_NONE !== json_last_error()) {
+      if (JSON_ERROR_NONE !== json_last_error() || ! is_array($decoded)) {
          wp_send_json_error(
             array(
                'error' => __('Invalid JSON format', 'cf7-google-sheets-connector'),
@@ -115,12 +193,34 @@ class Gs_Connector_Service
          );
       }
 
+      /*
+       * Confirm this is actually a Google service account key.
+       *
+       * Parsing successfully only proves the upload was valid JSON. Without a
+       * structural check any JSON file was accepted and the integration was
+       * marked "valid", so the failure only surfaced later as a silent sync
+       * error on every submission.
+       */
+      $validation_error = self::gscf7_validate_service_account_json($decoded);
+
+      if ('' !== $validation_error) {
+         wp_send_json_error(
+            array(
+               'error' => $validation_error,
+            )
+         );
+      }
+
       // Save the validated service account credentials.
+      // Not autoloaded: this holds a private key and is only read in admin and
+      // submission contexts, never on ordinary front-end page views.
       update_option(
          'gs_cf7_service_account_json',
-         wp_json_encode($decoded)
+         wp_json_encode($decoded),
+         false
       );
       update_option('gs_verify_service', 'valid');
+      CF7GSC_googlesheet::gsc_flush_meta_cache();
       // Return a success response.
       wp_send_json_success(
          array(
@@ -156,6 +256,7 @@ class Gs_Connector_Service
       // Remove the stored Service Account JSON credentials.
       delete_option('gs_cf7_service_account_json');
       delete_option('gs_verify_service');
+      CF7GSC_googlesheet::gsc_flush_meta_cache();
       // Return a success response.
       wp_send_json_success(
          array(
@@ -207,178 +308,250 @@ class Gs_Connector_Service
          return;
       }
       $key = sanitize_text_field(wp_unslash($_POST['key']));
-      update_option('gscf7_free_notice_' . $key, 'dismissed');
+      update_option('gscf7_free_notice_' . $key, 'dismissed', false);
       wp_send_json_success();
    }
 
- /**
- * Handles the AJAX request for paginating the dashboard feed list.
- *
- * Verifies security nonces, processes current page parameters, fetches feed entries 
- * from the database, and returns the rendered HTML payload.
- *
- * @since 5.2.0
- *
- * @return void Sends a JSON response using wp_send_json_success().
- */
+   /**
+    * Handles the AJAX request for paginating the dashboard feed list.
+    *
+    * Verifies security nonces, processes current page parameters, fetches feed entries 
+    * from the database, and returns the rendered HTML payload.
+    *
+    * @since 5.2.0
+    *
+    * @return void Sends a JSON response using wp_send_json_success().
+    */
 
-public function gscf7_paginate_feed_list() {
+   public function gscf7_paginate_feed_list()
+   {
 
-    check_ajax_referer( 'gscf7-pagination', 'security' );
+      check_ajax_referer('gscf7-pagination', 'security');
 
-    $paged            = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
-    $first_page_count = 3; 
-    $per_page         = 4; 
+      /*
+     * This response contains the Google Spreadsheet IDs for every connected form.
+     * Restrict it to users who may manage the plugin's settings.
+     */
+      if (! current_user_can('manage_options')) {
+         wp_send_json_error(
+            array(
+               'error' => __('Permission denied', 'cf7-google-sheets-connector'),
+            )
+         );
+         return;
+      }
 
-    global $wpdb;
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $query = $wpdb->get_results(
-        $wpdb->prepare(
+      $paged            = isset($_POST['paged']) ? absint($_POST['paged']) : 1;
+      $first_page_count = 3;
+      $per_page         = 4;
+
+      global $wpdb;
+
+      /*
+     * Row model: one row PER FEED.
+     * cf7gs_feeds.form_id -> forms (many feeds per form)
+     * cf7gs_settings.feed_id -> feeds (one settings row per feed, matched by feed_id, NOT form_id)
+     *
+     * Only the rows for the requested page are fetched via LIMIT/OFFSET,
+     * rather than fetching everything and slicing in PHP.
+     */
+      // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+      $total_rows = (int) $wpdb->get_var(
+         $wpdb->prepare(
+            "SELECT COUNT(*)
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->prefix}cf7gs_feeds f
+                ON p.ID = f.form_id
+            WHERE p.post_type = %s",
+            'wpcf7_contact_form'
+         )
+      );
+
+      if ($total_rows <= $first_page_count) {
+         $total_pages = 1;
+      } else {
+         $total_pages = 1 + (int) ceil(($total_rows - $first_page_count) / $per_page);
+      }
+
+      $paged = max(1, min($paged, $total_pages));
+
+      if (1 === $paged) {
+         $offset       = 0;
+         $slice_length = $first_page_count;
+      } else {
+         $offset       = $first_page_count + (($paged - 2) * $per_page);
+         $slice_length = $per_page;
+      }
+
+      // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+      $query = $wpdb->get_results(
+         $wpdb->prepare(
             "SELECT
                 p.ID,
                 p.post_title,
+                f.id AS feed_id,
+                f.feed_name,
+                f.form_id,
                 s.sheet_name,
                 s.sheet_id,
                 s.tab_id,
-                s.tab_name,
-                s.form_id,
-                f.id AS feed_id,
-                f.feed_name
+                s.tab_name
             FROM {$wpdb->posts} p
-            INNER JOIN {$wpdb->prefix}cf7gs_settings s
-                ON p.ID = s.form_id
-            LEFT JOIN {$wpdb->prefix}cf7gs_feeds f
+            INNER JOIN {$wpdb->prefix}cf7gs_feeds f
                 ON p.ID = f.form_id
-            WHERE p.post_type=%s
-            ORDER BY p.ID ASC",
-            'wpcf7_contact_form'
-        )
-    );
+            LEFT JOIN {$wpdb->prefix}cf7gs_settings s
+                ON s.feed_id = f.id
+            WHERE p.post_type = %s
+            ORDER BY p.ID ASC, f.id ASC
+            LIMIT %d OFFSET %d",
+            'wpcf7_contact_form',
+            $slice_length,
+            $offset
+         )
+      );
 
-    // Pass first_page_count and per_page parameters
-    $result = $this->gscf7_render_feed_page(
-        $query,
-        $paged,
-        $first_page_count,
-        $per_page
-    );
+      // Rows are already limited to the current page.
+      $result = $this->gscf7_render_feed_page(
+         $query,
+         $paged,
+         $first_page_count,
+         $per_page,
+         $total_rows
+      );
 
-    wp_send_json_success( $result );
-}
-/**
- * Renders the HTML output for the feed table rows and pagination controls.
- *
- * Offsets results dynamically to accommodate different item counts between page 1 
- * and subsequent pages.
- *
- * @since 5.2.0
- *
- * @return array {
- *     Structured HTML data and state status.
- *
- *     @type string $rows_html       Rendered HTML for the <tr> table rows.
- *     @type string $pagination_html Rendered HTML for pagination buttons.
- *     @type bool   $has_feeds       Whether any database rows exist.
- * }
- */
-public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $per_page = 4 ) {
+      wp_send_json_success($result);
+   }
+   /**
+    * Renders the HTML output for the feed table rows and pagination controls.
+    *
+    * Offsets results dynamically to accommodate different item counts between page 1 
+    * and subsequent pages.
+    *
+    * @since 5.2.0
+    *
+    * @return array {
+    *     Structured HTML data and state status.
+    *
+    *     @type string $rows_html       Rendered HTML for the <tr> table rows.
+    *     @type string $pagination_html Rendered HTML for pagination buttons.
+    *     @type bool   $has_feeds       Whether any database rows exist.
+    * }
+    */
+   public function gscf7_render_feed_page($rows, $paged, $first_page_count = 3, $per_page = 4, $total_rows = null)
+   {
 
-    $total_rows = count( $rows );
+      /*
+     * When $total_rows is supplied, $rows already contains only the current
+     * page (the query applied LIMIT/OFFSET). Otherwise fall back to slicing in
+     * PHP so existing callers keep working unchanged.
+     */
+      $rows_are_paged = (null !== $total_rows);
 
-    // Calculate total pages with standard + custom first page count
-    if ( $total_rows <= $first_page_count ) {
-        $total_pages = 1;
-    } else {
-        $remaining_rows = $total_rows - $first_page_count;
-        $total_pages    = 1 + (int) ceil( $remaining_rows / $per_page );
-    }
+      if (! $rows_are_paged) {
+         $total_rows = count($rows);
+      }
 
-    $paged = max( 1, min( $paged, $total_pages ) );
+      // Calculate total pages with standard + custom first page count
+      if ($total_rows <= $first_page_count) {
+         $total_pages = 1;
+      } else {
+         $remaining_rows = $total_rows - $first_page_count;
+         $total_pages    = 1 + (int) ceil($remaining_rows / $per_page);
+      }
 
-    // Compute dynamic offset based on current page
-    if ( $paged === 1 ) {
-        $offset       = 0;
-        $slice_length = $first_page_count;
-    } else {
-        $offset       = $first_page_count + ( ( $paged - 2 ) * $per_page );
-        $slice_length = $per_page;
-    }
+      $paged = max(1, min($paged, $total_pages));
 
-    $paged_rows = array_slice( $rows, $offset, $slice_length );
+      if ($rows_are_paged) {
 
-    // 1. Render Table Rows HTML
-    ob_start();
+         $paged_rows = $rows;
+      } else {
 
-    if ( empty( $paged_rows ) ) {
-        ?>
-        <tr>
+         // Compute dynamic offset based on current page
+         if ($paged === 1) {
+            $offset       = 0;
+            $slice_length = $first_page_count;
+         } else {
+            $offset       = $first_page_count + (($paged - 2) * $per_page);
+            $slice_length = $per_page;
+         }
+
+         $paged_rows = array_slice($rows, $offset, $slice_length);
+      }
+
+      // 1. Render Table Rows HTML
+      ob_start();
+
+      if (empty($paged_rows)) {
+?>
+         <tr>
             <td colspan="3" class="gscf7-feed-empty-cell">
-                <div class="gscf7-feed-empty text-center">
-                    <div class="heading">
-                        <?php esc_html_e( 'No Form Feeds Created Yet', 'cf7-google-sheets-connector' ); ?>
-                    </div>
-                    <p>
-                        <?php esc_html_e(
-                            'Connect your form to Google Sheets to automatically sync submissions in real time. Create a feed to start sending data to your spreadsheet.',
-                            'cf7-google-sheets-connector'
-                        ); ?>
-                    </p>
-                                    </div>
+               <div class="gscf7-feed-empty text-center">
+                  <div class="heading">
+                     <?php esc_html_e('No Form Feeds Created Yet', 'cf7-google-sheets-connector'); ?>
+                  </div>
+                  <p>
+                     <?php esc_html_e(
+                        'Connect your form to Google Sheets to automatically sync submissions in real time. Create a feed to start sending data to your spreadsheet.',
+                        'cf7-google-sheets-connector'
+                     ); ?>
+                  </p>
+               </div>
             </td>
-        </tr>
-        <?php
-    } else {
-        foreach ( $paged_rows as $row ) {
-            ?>
+         </tr>
+         <?php
+      } else {
+         foreach ($paged_rows as $row) {
+         ?>
             <tr>
-                <td>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=wpcf7&post=' . $row->ID . '&action=edit' ) ); ?>">
-                        <?php echo esc_html( $row->post_title ); ?>
-                    </a>
-                </td>
-                <td>
-                    <?php echo esc_html( $row->feed_name ); ?>
-                </td>
-                <td>
-                    <?php if ( ! empty( $row->sheet_id ) ) : ?>
-                        <a target="_blank"
-                           href="<?php echo esc_url( 'https://docs.google.com/spreadsheets/d/' . $row->sheet_id . '/edit#gid=' . $row->tab_id ); ?>">
-                            <?php echo esc_html( $row->sheet_name ); ?>
-                        </a>
-                    <?php else : ?>
-                        <span class="gscf7-not-connected"><?php echo esc_html__( 'Not connected', 'cf7-google-sheets-connector' ); ?></span>
-                    <?php endif; ?>
-                </td>
+               <td>
+                  <a href="<?php echo esc_url(admin_url('admin.php?page=wpcf7&post=' . $row->ID . '&action=edit')); ?>">
+                     <?php echo esc_html($row->post_title); ?>
+                  </a>
+               </td>
+               <td>
+                  <?php echo esc_html($row->feed_name); ?>
+               </td>
+               <td>
+                  <?php if (! empty($row->sheet_id)) : ?>
+                     <a target="_blank"
+                        href="<?php echo esc_url('https://docs.google.com/spreadsheets/d/' . $row->sheet_id . '/edit#gid=' . $row->tab_id); ?>">
+                        <?php echo esc_html($row->sheet_name); ?>
+                     </a>
+                  <?php else : ?>
+                     <span class="gscf7-not-connected"><?php echo esc_html__('Not connected', 'cf7-google-sheets-connector'); ?></span>
+                  <?php endif; ?>
+               </td>
             </tr>
-            <?php
-        }
-    }
+         <?php
+         }
+      }
 
-    $rows_html = ob_get_clean();
+      $rows_html = ob_get_clean();
 
-    // 2. Render Pagination HTML
-    ob_start();
+      // 2. Render Pagination HTML
+      ob_start();
 
-    if ( $total_pages > 1 ) {
-        for ( $i = 1; $i <= $total_pages; $i++ ) {
-            ?>
+      if ($total_pages > 1) {
+         for ($i = 1; $i <= $total_pages; $i++) {
+         ?>
             <a href="javascript:void(0)"
                class="gscf7-page-link <?php echo $i == $paged ? 'active' : ''; ?>"
-               data-page="<?php echo esc_attr( $i ); ?>">
-                <?php echo esc_html( $i ); ?>
+               data-page="<?php echo esc_attr($i); ?>">
+               <?php echo esc_html($i); ?>
             </a>
-            <?php
-        }
-    }
+      <?php
+         }
+      }
 
-    $pagination_html = ob_get_clean();
+      $pagination_html = ob_get_clean();
 
-    return array(
-        'rows_html'       => $rows_html,
-        'pagination_html' => $pagination_html,
-        'has_feeds'       => ! empty( $rows ),
-    );
-}
+      return array(
+         'rows_html'       => $rows_html,
+         'pagination_html' => $pagination_html,
+         // Reflects whether any feeds exist at all, not just on this page.
+         'has_feeds'       => $total_rows > 0,
+      );
+   }
 
    /**
     * Snooze an admin notice temporarily.
@@ -397,7 +570,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
          return;
       }
       $key = sanitize_text_field(wp_unslash($_POST['key']));
-      update_option('gscf7_free_notice_' . $key . '_time', time());
+      update_option('gscf7_free_notice_' . $key . '_time', time(), false);
       wp_send_json_success();
    }
 
@@ -442,9 +615,9 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
       */
       $setting = isset($_POST['uninstall_setting'])
 
-      ? sanitize_text_field(wp_unslash($_POST['uninstall_setting']))
+         ? sanitize_text_field(wp_unslash($_POST['uninstall_setting']))
 
-      : 'No';
+         : 'No';
       /* Save uninstall setting to WordPress options table */
       update_option('gscf7_uninstall_settings_free', $setting);
       /* Return success response */
@@ -665,9 +838,9 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
       <button id="show-acplug-info-button" class="info-button">'
 
-      . esc_html__('Active plugins', 'cf7-google-sheets-connector') .
+         . esc_html__('Active plugins', 'cf7-google-sheets-connector') .
 
-      ' (' . esc_html($total_active_plugins) . ') 
+         ' (' . esc_html($total_active_plugins) . ') 
 
       <span class="dashicons dashicons-arrow-down"></span>
 
@@ -1042,15 +1215,20 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
                $raw_date  = $matches[1];
 
+               /*
+                * debug.log timestamps carry their own timezone suffix, e.g.
+                * "28-Jul-2026 19:38:00 UTC". wp_date() converts the parsed
+                * moment into the site's configured timezone (Settings > General)
+                * and appends its abbreviation, matching the Error Log screen.
+                */
                $timestamp = strtotime($raw_date);
 
-               $formatted_date = wp_date(
-
-                  get_option('date_format') . ' ' . get_option('time_format'),
-
-                  $timestamp
-
-               );
+               $formatted_date = $timestamp
+                  ? wp_date(
+                     get_option('date_format') . ' ' . get_option('time_format') . ' (T)',
+                     $timestamp
+                  )
+                  : $raw_date;
 
                $rows[] = [
 
@@ -1160,7 +1338,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
             wp_unslash($_POST['code'])
          );
       }
-      update_option('gs_access_code', $Code);
+      update_option('gs_access_code', $Code, false);
       if (get_option('gs_access_code') != '') {
 
          include_once(GS_CONNECTOR_ROOT . '/lib/google-sheets.php');
@@ -1168,6 +1346,8 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
          cf7gsc_googlesheet::preauth(get_option('gs_access_code'));
 
          update_option('gs_cf7_manual_setting', '0');
+
+         CF7GSC_googlesheet::gsc_flush_meta_cache();
 
          wp_send_json_success();
       } else {
@@ -1194,6 +1374,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
          delete_option('cf7gf_email_account');
          delete_option('gs_access_code');
          delete_option('gs_verify');
+         CF7GSC_googlesheet::gsc_flush_meta_cache();
          wp_send_json_success();
       } else {
 
@@ -1201,7 +1382,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
       }
    }
 
-   
+
 
    /**
 
@@ -1215,17 +1396,47 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
    {
 
-    // Nonce check
+      // Nonce check
       check_ajax_referer('gs-ajax-nonce', 'security');
-      global $wp_filesystem;
-      if (empty($wp_filesystem)) {
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        WP_Filesystem();
-     }
 
-     $wp_filesystem->put_contents(WP_CONTENT_DIR . '/debug.log', '', FS_CHMOD_FILE);
-     wp_send_json_success();
-  }
+      global $wp_filesystem;
+
+      if (empty($wp_filesystem)) {
+         require_once ABSPATH . 'wp-admin/includes/file.php';
+
+         /*
+          * WP_Filesystem() returns false when credentials are unavailable and
+          * leaves $wp_filesystem null. Calling a method on it then raised a
+          * fatal error.
+          */
+         if (! WP_Filesystem()) {
+            wp_send_json_error(
+               array(
+                  'error' => __('Filesystem access is unavailable on this site.', 'cf7-google-sheets-connector'),
+               )
+            );
+         }
+      }
+
+      if (! is_object($wp_filesystem)) {
+         wp_send_json_error(
+            array(
+               'error' => __('Filesystem access is unavailable on this site.', 'cf7-google-sheets-connector'),
+            )
+         );
+      }
+
+      /*
+       * Honour a custom WP_DEBUG_LOG path. Hardcoding wp-content/debug.log
+       * truncated a file the site may not even be writing to.
+       */
+      $log_path = (defined('WP_DEBUG_LOG') && is_string(WP_DEBUG_LOG) && '' !== WP_DEBUG_LOG)
+         ? WP_DEBUG_LOG
+         : WP_CONTENT_DIR . '/debug.log';
+
+      $wp_filesystem->put_contents($log_path, '', FS_CHMOD_FILE);
+      wp_send_json_success();
+   }
 
    /**
 
@@ -1324,15 +1535,25 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
       $sheet_data = $default;
 
+      /*
+       * Bail when the Google Sheets panel was not part of this save.
+       *
+       * wpcf7_after_save fires for every form save, including programmatic
+       * saves, form duplication and CF7's import. Those requests carry no
+       * 'cf7-gs' field, and the method previously fell through to the empty
+       * defaults and wrote them over the existing mapping, silently
+       * disconnecting the form from its spreadsheet.
+       */
+      // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce and capability verified by Contact Form 7 before this hook fires.
+      if (! isset($_POST['cf7-gs'])) {
 
-
-      if (isset($_POST['cf7-gs'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
-
-         $sheet_data = array_map(
-            'sanitize_text_field',
-            wp_unslash((array) $_POST['cf7-gs']) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
-         );
+         return;
       }
+
+      $sheet_data = array_map(
+         'sanitize_text_field',
+         wp_unslash((array) $_POST['cf7-gs']) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce and capability verified by Contact Form 7 before this hook fires.
+      );
 
 
 
@@ -1442,6 +1663,11 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
             ]
 
          );
+      }
+
+      // The mapping changed, so any cached spreadsheet structure is stale.
+      if (! empty($sheet_id) && class_exists('CF7GSC_googlesheet')) {
+         CF7GSC_googlesheet::gsc_flush_meta_cache($sheet_id);
       }
    }
 
@@ -1813,9 +2039,20 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
             foreach ($data as $key => $value) {
 
-               if (in_array(substr((string)$value, 0, 1), ['=', '+', '-', '@'], true)) {
+               $value = (string) $value;
 
-                  $data[$key] = ltrim((string)$value, '=+-@');
+               /*
+                * Neutralise the formula rather than stripping it.
+                *
+                * ltrim() with a character list removed every leading occurrence,
+                * which corrupted legitimate values: "+1-555-0100" became
+                * "1-555-0100", "-5" became "5" and "@handle" became "handle".
+                * A leading apostrophe tells Google Sheets to treat the cell as
+                * text while preserving the value exactly as submitted.
+                */
+               if ('' !== $value && false !== strpos("=+-@\t\r", $value[0])) {
+
+                  $data[$key] = "'" . $value;
                }
             }
 
@@ -1843,12 +2080,35 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
             // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- CF7 core hook, not defined by this plugin.
             $data = apply_filters('gsc_filter_form_data', $data, $form);
 
-            $doc->add_row($data);
+            $gsc_result = $doc->add_row($data);
+
+            /*
+             * Surface a failed write. add_row() previously returned silently on
+             * error, so a submission could be lost with nothing recorded.
+             */
+            if (is_wp_error($gsc_result)) {
+
+               Gs_Connector_Free_Utility::gs_debug_log(array(
+                  'context' => 'cf7_save_to_google_sheets',
+                  'form_id' => $form_id,
+                  'fields'  => array_keys($data),
+                  'error'   => $gsc_result->get_error_message(),
+               ));
+            }
          } catch (Exception $e) {
 
-            $data['TRACE_STK'] = $e->getTraceAsString();
-
-            Gs_Connector_Free_Utility::gs_debug_log($data);
+            /*
+             * Log diagnostic context only. $data holds the visitor's submission,
+             * so field names are recorded but never their values.
+             */
+            Gs_Connector_Free_Utility::gs_debug_log(array(
+               'context' => 'cf7_save_to_google_sheets',
+               'form_id' => $form_id,
+               'fields'  => array_keys($data),
+               'message' => $e->getMessage(),
+               'file'    => $e->getFile(),
+               'line'    => $e->getLine(),
+            ));
          }
       }
    }
@@ -1984,7 +2244,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
          $show_setting = 1;
       } else {
 
-         ?>
+      ?>
 
          <?php
 
@@ -2056,7 +2316,7 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
             </div>
 
-            <?php
+         <?php
 
 
 
@@ -2128,13 +2388,13 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
                </div>
 
-               <?php
+            <?php
 
-            }
+         }
 
             ?>
 
-         </p>
+            </p>
 
          <?php
 
@@ -2166,62 +2426,62 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
                ? sanitize_text_field(wp_unslash($_GET['post'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 
                : '';
-               $feeds_table    = $wpdb->prefix . 'cf7gs_feeds';
-               $settings_table = $wpdb->prefix . 'cf7gs_settings';
+            $feeds_table    = $wpdb->prefix . 'cf7gs_feeds';
+            $settings_table = $wpdb->prefix . 'cf7gs_settings';
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
-               $feed_id = $wpdb->get_var(
+            $feed_id = $wpdb->get_var(
 
                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-                  $wpdb->prepare(
-                     'SELECT id FROM `' . esc_sql($wpdb->prefix . 'cf7gs_feeds') . '` WHERE form_id = %d LIMIT 1',
-                     $form_id
-                  )
+               $wpdb->prepare(
+                  'SELECT id FROM `' . esc_sql($wpdb->prefix . 'cf7gs_feeds') . '` WHERE form_id = %d LIMIT 1',
+                  $form_id
+               )
 
-               );
+            );
 
 
 
             //  Get settings data
 
-               $form_data = "";
+            $form_data = "";
 
 
 
-               if ($feed_id) {
+            if ($feed_id) {
                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
-                  $row = $wpdb->get_row(
+               $row = $wpdb->get_row(
 
                   // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-                     $wpdb->prepare(
-                        'SELECT * FROM `' . esc_sql($wpdb->prefix . 'cf7gs_settings') . '` WHERE feed_id = %d LIMIT 1',
-                        $feed_id
-                     ),
-                     ARRAY_A
+                  $wpdb->prepare(
+                     'SELECT * FROM `' . esc_sql($wpdb->prefix . 'cf7gs_settings') . '` WHERE feed_id = %d LIMIT 1',
+                     $feed_id
+                  ),
+                  ARRAY_A
 
-                  );
+               );
 
 
 
-                  if (!empty($row)) {
+               if (!empty($row)) {
 
                   // convert to OLD format (important)
 
-                     $form_data = [
+                  $form_data = [
 
-                        'sheet-name'     => $row['sheet_name'],
+                     'sheet-name'     => $row['sheet_name'],
 
-                        'sheet-id'       => $row['sheet_id'],
+                     'sheet-id'       => $row['sheet_id'],
 
-                        'sheet-tab-name' => $row['tab_name'],
+                     'sheet-tab-name' => $row['tab_name'],
 
-                        'tab-id'         => $row['tab_id'],
+                     'tab-id'         => $row['tab_id'],
 
-                     ];
-                  }
+                  ];
                }
             }
+         }
 
-            ?>
+         ?>
 
             <div class="gscf7-free">
 
@@ -2259,29 +2519,196 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
                      <div class="gsc-google-auth-card mt-30 mb-30">
                         <div>
                            <div class="heading mt-0 mb-30"> <?php echo esc_html(__('Google Account Connection', 'cf7-google-sheets-connector')); ?>
-                           <span class="badge"><?php echo esc_attr($selected_method_display); ?></span>
+                              <span class="badge"><?php echo esc_attr($selected_method_display); ?></span>
+                           </div>
                         </div>
+
+                        <div class="d-flex flex-wrap gap-20 justify-between align-center">
+
+                           <div class="gsc-google-auth-left d-flex flex-wrap align-center gap-15">
+
+                              <div class="gsc-google-icon">G</div>
+
+                              <div class="connected-account">
+
+                                 <div class="gsc-connected-left d-flex">
+
+                                    <span class="gsc-connected-label">
+                                       <?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?>
+
+                                    </span>
+
+                                    <span class="connected-account-manual gsc-connected-email">
+
+                                       <?php echo esc_html($connected_email); ?>
+                                    </span>
+
+                                 </div>
+
+                              </div>
+
+                           </div>
+
+                           <div class="gsc-google-auth-right">
+
+                              <div class="gsc-connected-pill">
+
+                                 <span class="dot"></span>
+
+                                 <?php echo esc_html(__(' Connected', 'cf7-google-sheets-connector')); ?>
+                              </div>
+
+                           </div>
+                        </div>
+
                      </div>
 
-                     <div class="d-flex flex-wrap gap-20 justify-between align-center">
+                  </div>
+                  <!-- Single sheet connection START -->
 
-                        <div class="gsc-google-auth-left d-flex flex-wrap align-center gap-15">
+                  <form method="post">
 
-                           <div class="gsc-google-icon">G</div>
 
-                           <div class="connected-account">
 
-                              <div class="gsc-connected-left d-flex">
+                     <div class="gs-fields shadow-box mt-30 p-30">
 
-                                 <span class="gsc-connected-label">
-                                    <?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?>
+                        <div class="heading mt-0">
 
-                                 </span>
+                           <?php echo esc_html(__('Manual Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
 
-                                 <span class="connected-account-manual gsc-connected-email">
+                        </div>
 
-                                    <?php echo esc_html($connected_email); ?>
-                                 </span>
+                        <p><?php echo esc_html(__("Connect your Google Sheet by entering the required sheet information.", 'cf7-google-sheets-connector')); ?></p>
+
+                        <div class="row">
+
+                           <div class="col-6 res-top-20">
+
+                              <div class="form-group field-row mr-10">
+
+                                 <label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?>
+
+                                    <span class="tooltip"
+
+                                       data-tooltip="<?php echo esc_html(__("Enter the exact name of your Google Spreadsheet (as shown in Google Sheets).", "cf7-google-sheets-connector")); ?>"
+
+                                       data-tooltip-pos="right" data-tooltip-length="medium">
+
+                                       <i class="fa-solid fa-circle-question help-icon"></i>
+
+                                    </span>
+
+                                 </label>
+
+                                 <input type="text" class="form-control" name="cf7-gs[sheet-name]" id="gs-sheet-name"
+
+                                    value="<?php echo (isset($form_data['sheet-name'])) ? esc_attr($form_data['sheet-name']) : ''; ?>" />
+
+                                 <div class="input-msg d-none">
+
+                                    <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
+
+                                 </div>
+
+                              </div>
+
+                           </div>
+
+                           <div class="col-6 res-top-20">
+
+                              <div class="form-group field-row mr-10">
+
+                                 <label><?php echo esc_html(__('Sheet ID', 'cf7-google-sheets-connector')); ?>
+
+                                    <span class="tooltip"
+
+                                       data-tooltip="<?php echo esc_html(__("Paste the Spreadsheet ID from your Google Sheet URL. (Example: ", "cf7-google-sheets-connector")); ?> https://docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit)"
+
+                                       data-tooltip-pos="right" data-tooltip-length="medium">
+
+                                       <i class="fa-solid fa-circle-question help-icon"></i>
+
+                                    </span>
+
+                                 </label>
+
+                                 <input type="text" class="form-control" name="cf7-gs[sheet-id]" id="gs-sheet-id"
+
+                                    value="<?php echo (isset($form_data['sheet-id'])) ? esc_attr($form_data['sheet-id']) : ''; ?>" />
+
+                                 <div class="input-msg d-none">
+
+                                    <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
+
+                                 </div>
+
+                              </div>
+
+                           </div>
+
+                           <div class="col-6 mt-20">
+
+                              <div class="form-group field-row mr-10">
+
+                                 <label
+
+                                    for="edit-tab-name"><?php echo esc_html(__('Tab Name', 'cf7-google-sheets-connector')); ?>
+
+                                    <span class="tooltip"
+
+                                       data-tooltip="<?php echo esc_html(__("Enter the exact sheet tab name (e.g., Sheet1) from the bottom of your Google Spreadsheet.", "cf7-google-sheets-connector")); ?>"
+
+                                       data-tooltip-pos="right" data-tooltip-length="medium">
+
+                                       <i class="fa-solid fa-circle-question help-icon"></i>
+
+                                    </span>
+
+                                 </label>
+
+                                 <input type="text" class="form-control" id="cf7-gs[edit-tab-name]" name="cf7-gs[sheet-tab-name]"
+
+                                    value="<?php echo (isset($form_data['sheet-tab-name'])) ? esc_attr($form_data['sheet-tab-name']) : ''; ?>">
+
+                                 <div class="input-msg d-none">
+
+                                    <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
+
+                                 </div>
+
+                              </div>
+
+                           </div>
+
+                           <div class="col-6 mt-20">
+
+                              <div class="form-group field-row mr-10">
+
+                                 <label><?php echo esc_html(__('Tab ID', 'cf7-google-sheets-connector')); ?>
+
+                                    <span class="tooltip"
+
+                                       data-tooltip="<?php echo esc_html(__("Get the Tab ID from your sheet URL after gid=.", "cf7-google-sheets-connector")); ?>"
+
+                                       data-tooltip-pos="right" data-tooltip-length="medium">
+
+                                       <i class="fa-solid fa-circle-question help-icon"></i>
+
+                                    </span>
+
+                                 </label>
+
+                                 <input type="text" class="form-control" name="cf7-gs[tab-id]" id="gs-tab-id"
+
+
+
+                                    value="<?php echo (isset($form_data['tab-id'])) ? esc_attr($form_data['tab-id']) : ''; ?>" />
+
+                                 <div class="input-msg d-none">
+
+                                    <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
+
+                                 </div>
 
                               </div>
 
@@ -2289,246 +2716,79 @@ public function gscf7_render_feed_page( $rows, $paged, $first_page_count = 3, $p
 
                         </div>
 
-                        <div class="gsc-google-auth-right">
-
-                           <div class="gsc-connected-pill">
-
-                              <span class="dot"></span>
-
-                              <?php echo esc_html(__(' Connected', 'cf7-google-sheets-connector')); ?>
-                           </div>
-
-                        </div>
-                     </div>
-
-                  </div>
-
-               </div>
-               <!-- Single sheet connection START -->
-
-               <form method="post">
 
 
+                        <div class="sheet-url field-row">
 
-                  <div class="gs-fields shadow-box mt-30 p-30">
+                           <?php if ((isset($form_data['sheet-name'])) && !empty($form_data['sheet-name']) && (isset($form_data['sheet-id'])) && (!empty($form_data['sheet-id'])) &&  (isset($form_data['sheet-tab-name']))  && (!empty($form_data['sheet-tab-name'])) && (isset($form_data['tab-id']))) {
 
-                     <div class="heading mt-0">
+                              $link = "https://docs.google.com/spreadsheets/d/" . $form_data['sheet-id'] . "/edit#gid=" . $form_data['tab-id'];
 
-                        <?php echo esc_html(__('Manual Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
+                           ?>
 
-                     </div>
+                              <a class=" sheet-url-cf7 common-sheet-url btn text-dark text-decoration-none mt-30" href="<?php echo esc_url($link); ?>" target="_blank" class="cf7_gs_link" title="<?php echo esc_html__('View Spreadsheet', 'cf7-google-sheets-connector'); ?>">
+                                 <i class="fa-regular fa-eye"></i></a>
 
-                     <p><?php echo esc_html(__("Connect your Google Sheet by entering the required sheet information.", 'cf7-google-sheets-connector')); ?></p>
+                           <?php } ?>
 
-                     <div class="row">
+                           <?php if ((isset($form_data['sheet-name'])) && !empty($form_data['sheet-name']) && (isset($form_data['sheet-id'])) && (!empty($form_data['sheet-id'])) &&  (isset($form_data['sheet-tab-name']))  && (!empty($form_data['sheet-tab-name'])) && (isset($form_data['tab-id']))) {
 
-                        <div class="col-6 res-top-20">
+                           ?>
 
-                           <div class="form-group field-row mr-10">
 
-                              <label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?>
-
-                              <span class="tooltip"
-
-                              data-tooltip="<?php echo esc_html(__("Enter the exact name of your Google Spreadsheet (as shown in Google Sheets).", "cf7-google-sheets-connector")); ?>"
-
-                              data-tooltip-pos="right" data-tooltip-length="medium">
-
-                              <i class="fa-solid fa-circle-question help-icon"></i>
-
-                           </span>
-
-                        </label>
-
-                        <input type="text" class="form-control" name="cf7-gs[sheet-name]" id="gs-sheet-name"
-
-                        value="<?php echo (isset($form_data['sheet-name'])) ? esc_attr($form_data['sheet-name']) : ''; ?>" />
-
-                        <div class="input-msg d-none">
-
-                           <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
+                           <?php } ?>
 
                         </div>
 
                      </div>
 
-                  </div>
+                  </form>
 
-                  <div class="col-6 res-top-20">
+                  <?php
 
-                     <div class="form-group field-row mr-10">
+                  $cf7_service_json   = get_option('gs_cf7_service_account_json');
 
-                        <label><?php echo esc_html(__('Sheet ID', 'cf7-google-sheets-connector')); ?>
+                  $gs_cf7_auth_method = get_option('gs_cf7_auth_method');
 
-                        <span class="tooltip"
-
-                        data-tooltip="<?php echo esc_html(__("Paste the Spreadsheet ID from your Google Sheet URL. (Example: ", "cf7-google-sheets-connector")); ?> https://docs.google.com/spreadsheets/d/**SPREADSHEET_ID**/edit)"
-
-                        data-tooltip-pos="right" data-tooltip-length="medium">
-
-                        <i class="fa-solid fa-circle-question help-icon"></i>
-
-                     </span>
-
-                  </label>
-
-                  <input type="text" class="form-control" name="cf7-gs[sheet-id]" id="gs-sheet-id"
-
-                  value="<?php echo (isset($form_data['sheet-id'])) ? esc_attr($form_data['sheet-id']) : ''; ?>" />
-
-                  <div class="input-msg d-none">
-
-                     <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
-
-                  </div>
-
-               </div>
-
-            </div>
-
-            <div class="col-6 mt-20">
-
-               <div class="form-group field-row mr-10">
-
-                  <label
-
-                  for="edit-tab-name"><?php echo esc_html(__('Tab Name', 'cf7-google-sheets-connector')); ?>
-
-                     <span class="tooltip"
-
-                  data-tooltip="<?php echo esc_html(__("Enter the exact sheet tab name (e.g., Sheet1) from the bottom of your Google Spreadsheet.", "cf7-google-sheets-connector")); ?>"
-
-                  data-tooltip-pos="right" data-tooltip-length="medium">
-
-                  <i class="fa-solid fa-circle-question help-icon"></i>
-
-               </span>
-
-            </label>
-
-            <input type="text" class="form-control" id="cf7-gs[edit-tab-name]" name="cf7-gs[sheet-tab-name]"
-
-            value="<?php echo (isset($form_data['sheet-tab-name'])) ? esc_attr($form_data['sheet-tab-name']) : ''; ?>">
-
-            <div class="input-msg d-none">
-
-               <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
-
-            </div>
-
-         </div>
-
-      </div>
-
-      <div class="col-6 mt-20">
-
-         <div class="form-group field-row mr-10">
-
-            <label><?php echo esc_html(__('Tab ID', 'cf7-google-sheets-connector')); ?>
-
-            <span class="tooltip"
-
-            data-tooltip="<?php echo esc_html(__("Get the Tab ID from your sheet URL after gid=.", "cf7-google-sheets-connector")); ?>"
-
-            data-tooltip-pos="right" data-tooltip-length="medium">
-
-            <i class="fa-solid fa-circle-question help-icon"></i>
-
-         </span>
-
-      </label>
-
-      <input type="text" class="form-control" name="cf7-gs[tab-id]" id="gs-tab-id"
-
-
-
-      value="<?php echo (isset($form_data['tab-id'])) ? esc_attr($form_data['tab-id']) : ''; ?>" />
-
-      <div class="input-msg d-none">
-
-         <?php echo esc_html__('Please fill out this field', 'cf7-google-sheets-connector'); ?>
-
-      </div>
-
-   </div>
-
-</div>
-
-</div>
-
-
-
-<div class="sheet-url field-row">
-
-   <?php if ((isset($form_data['sheet-name'])) && !empty($form_data['sheet-name']) && (isset($form_data['sheet-id'])) && (!empty($form_data['sheet-id'])) &&  (isset($form_data['sheet-tab-name']))  && (!empty($form_data['sheet-tab-name'])) && (isset($form_data['tab-id']))) {
-
-      $link = "https://docs.google.com/spreadsheets/d/" . $form_data['sheet-id'] . "/edit#gid=" . $form_data['tab-id'];
-
-      ?>
-
-      <a class=" sheet-url-cf7 common-sheet-url btn text-dark text-decoration-none mt-30" href="<?php echo esc_url($link); ?>" target="_blank" class="cf7_gs_link" title="<?php echo esc_html__('View Spreadsheet', 'cf7-google-sheets-connector'); ?>">
-         <i class="fa-regular fa-eye"></i></a>
-
-      <?php } ?>
-
-      <?php if ((isset($form_data['sheet-name'])) && !empty($form_data['sheet-name']) && (isset($form_data['sheet-id'])) && (!empty($form_data['sheet-id'])) &&  (isset($form_data['sheet-tab-name']))  && (!empty($form_data['sheet-tab-name'])) && (isset($form_data['tab-id']))) {
-
-         ?>
-
-
-      <?php } ?>
-
-   </div>
-
-</div>
-
-</form>
-
-<?php
-
-$cf7_service_json   = get_option('gs_cf7_service_account_json');
-
-$gs_cf7_auth_method = get_option('gs_cf7_auth_method');
-
-$cf7_service_email  = '';
+                  $cf7_service_email  = '';
 
 
 
                   //   Decode JSON safely
 
-if (!empty($cf7_service_json)) {
+                  if (!empty($cf7_service_json)) {
 
-   $decoded = json_decode($cf7_service_json, true);
+                     $decoded = json_decode($cf7_service_json, true);
 
-   if (!empty($decoded) && isset($decoded['client_email'])) {
+                     if (!empty($decoded) && isset($decoded['client_email'])) {
 
-      $cf7_service_email = trim($decoded['client_email']);
-   }
-}
+                        $cf7_service_email = trim($decoded['client_email']);
+                     }
+                  }
 
 
 
                   //   Correct auth method check
 
-if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
+                  if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
 
 
-   <div class="sheet-email cf7gsc-notes cf7gsc-notes2" id="sheet-email">
+                     <div class="sheet-email cf7gsc-notes cf7gsc-notes2" id="sheet-email">
 
-      <?php
+                        <?php
 
-      $doc = new CF7GSC_googlesheet();
+                        $doc = new CF7GSC_googlesheet();
 
-      $doc->auth();
+                        $doc->auth();
 
 
 
-      $sheet_id = !empty($form_data) && isset($form_data['sheet-id'])
+                        $sheet_id = !empty($form_data) && isset($form_data['sheet-id'])
 
-      ? $form_data['sheet-id']
+                           ? $form_data['sheet-id']
 
-      : '';
+                           : '';
 
 
 
@@ -2536,816 +2796,502 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                         //   Fallback to saved sheet
 
-      if (empty($sheet_id)) {
+                        if (empty($sheet_id)) {
 
-         $getsheets_id = get_option('gs_sheetId');
-
-
-
-         if (!empty($getsheets_id) && !empty($saved_sheet_name) && isset($getsheets_id[$saved_sheet_name])) {
-
-            $sheet_details = $getsheets_id[$saved_sheet_name];
-
-            $sheet_id = isset($sheet_details['id']) ? $sheet_details['id'] : '';
-         }
-      }
+                           $getsheets_id = get_option('gs_sheetId');
 
 
 
-      $sheet_id = trim($sheet_id);
+                           if (!empty($getsheets_id) && !empty($saved_sheet_name) && isset($getsheets_id[$saved_sheet_name])) {
+
+                              $sheet_details = $getsheets_id[$saved_sheet_name];
+
+                              $sheet_id = isset($sheet_details['id']) ? $sheet_details['id'] : '';
+                           }
+                        }
+
+
+
+                        $sheet_id = trim($sheet_id);
 
 
 
 
 
-      $result = $doc->check_sheet_access($sheet_id);
+                        $result = $doc->check_sheet_access($sheet_id);
 
 
 
                         //   Safe result check
 
-      if (!empty($result) && isset($result['status']) && $result['status']) { ?>
+                        if (!empty($result) && isset($result['status']) && $result['status']) { ?>
 
 
 
-         <div class="gsc-sheet-info mt-30">
+                           <div class="gsc-sheet-info mt-30">
 
-            <!-- Header -->
+                              <!-- Header -->
 
-            <div class="gsc-sheet-status-header">
+                              <div class="gsc-sheet-status-header">
 
-               <div class="gsc-status-headings fw-600">
+                                 <div class="gsc-status-headings fw-600">
 
-                  <?php echo esc_html__('Google Sheets Connection', 'cf7-google-sheets-connector'); ?>
-
-               </div>
-
-            </div>
-
-
-
-            <!-- Description -->
-
-            <p class="gsc-sheet-status-desc">
-
-               <?php echo esc_html__('Your Google Spreadsheet is securely connected and ready to receive form submissions in real time.', 'cf7-google-sheets-connector'); ?>
-
-            </p>
-
-
-
-            <!-- Email Box -->
-
-            <div class="gsc-sheet-email-box">
-
-               <span class="email-text email-success-service">
-
-                  <?php echo esc_html($cf7_service_email); ?>
-
-               </span>
-
-               <span class="gsc-sheet-badge connected">
-
-                  <?php echo esc_html__('Connected Successfully', 'cf7-google-sheets-connector'); ?>
-
-               </span>
-
-            </div>
-
-
-
-            <!-- Help Info -->
-
-            <ul class="gsc-sheet-status-info">
-
-               <li class="success">
-
-                  <?php echo esc_html__('Green status means the spreadsheet access is configured correctly.', 'cf7-google-sheets-connector'); ?>
-
-               </li>
-
-               <li class="error">
-
-                  <?php echo esc_html__('Red status means permission is missing. Please grant editor access.', 'cf7-google-sheets-connector'); ?>
-
-               </li>
-
-            </ul>
-
-         </div>
-
-
-
-      <?php } else { ?>
-
-
-
-         <div class="gsc-sheet-info mt-30">
-
-            <div class="gsc-status-headings fw-600">
-
-               <?php echo esc_html__('Sharing Required', 'cf7-google-sheets-connector'); ?>
-
-            </div>
-
-
-
-            <p>
-
-               <?php echo esc_html__('Please share your Google Spreadsheet with the following service account to enable automatic syncing.', 'cf7-google-sheets-connector'); ?>
-
-            </p>
-
-
-
-            <p>
-
-               <?php echo esc_html__('After sharing the spreadsheet, refresh the page to view the updated sharing status.', 'cf7-google-sheets-connector'); ?>
-
-            </p>
-
-
-
-            <div class="gsc-email-box d-flex align-center justify-between email-unsuccess-service">
-
-               <div class="gsc-service-email">
-
-                  <?php echo esc_html($cf7_service_email); ?>
-
-               </div>
-
-
-
-               <a
-
-               data-email="<?php echo esc_attr($cf7_service_email); ?>"
-
-               class="gsc-copy-btn-feed-setting text-decoration-none link-hover-white"
-
-               id="copy-service-email">
-
-               <?php echo esc_html__('Copy', 'cf7-google-sheets-connector'); ?>
-
-            </a>
-
-
-
-            <div class="gsc-copy-msg d-none">
-
-               <?php echo esc_html__('Copied successfully!', 'cf7-google-sheets-connector'); ?>
-
-            </div>
-
-         </div>
-
-
-
-         <ul class="gsc-status-list">
-
-            <li class="success">
-
-               <?php echo esc_html__('Green email indicates the spreadsheet is shared successfully.', 'cf7-google-sheets-connector'); ?>
-
-            </li>
-
-            <li class="error">
-
-               <?php echo esc_html__('Red email indicates access is missing. Please grant permission.', 'cf7-google-sheets-connector'); ?>
-
-            </li>
-
-         </ul>
-
-      </div>
-
-
-
-   <?php } ?>
-
-</div>
-
-
-
-<?php } ?>
-
-<!--Start pro Features-->
-
-<div class="edit-gs-pro-card shadow-box mt-40 mb-30">
-
-   <div class="edit-gs-pro-header p-20">
-
-      <div class="edit-gs-pro-icon">
-
-         <span class="pro-badge">
-
-            <i class="fas fa-lock gsc-pro-icon"></i>
-
-         </span>
-
-      </div>
-
-      <div class="edit-gs-pro-title">
-
-         <div class="heading mt-0">
-
-            <?php echo esc_html(__('Unlock Advanced Features with Form Feeds', 'cf7-google-sheets-connector')); ?>
-
-         </div>
-
-         <div class="d-flex flex-wrap align-items-center gap-15">
-
-            <span class="edit-gs-pro-badge">
-
-               <?php echo esc_html(__('Advanced options are available in PRO', 'cf7-google-sheets-connector')); ?>
-
-            </span>
-
-            <span class="edit-gs-upgrade-btn">
-
-               <a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector" target="_blank" class="text-decoration-none link-hover-white">
-
-                  <?php echo esc_html(__('Get Advanced Features', 'cf7-google-sheets-connector')); ?>
-
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-
-                     <path d="M0.166016 10.6584L8.99102 1.83341H3.49935V0.166748H11.8327V8.50008H10.166V3.00841L1.34102 11.8334L0.166016 10.6584Z" fill="white"></path>
-
-                  </svg>
-
-               </a>
-
-            </span>
-
-         </div>
-
-      </div>
-
-   </div>
-
-
-
-   <!-- Toggle checkbox -->
-
-   <input type="checkbox" id="toggle-features">
-
-
-
-   <div class="edit-gs-pro-features p-20">
-
-
-
-      <div class="edit-gs-feature-col">
-
-         <div class="mb-20">
-
-            <a href="#auto-googlesheet-configuration">
-
-               <?php echo esc_html(__('Automatic Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
-
-            </a>
-
-         </div>
-
-
-
-         <div class="gsc-pro-grid">
-
-            <ul>
-
-               <li><?php esc_html_e('Auto fetch Google Sheets list', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Auto detect sheet tabs', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('One-click configuration', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Real-time entry sync', 'cf7-google-sheets-connector'); ?></li>
-
-            </ul>
-
-         </div>
-
-      </div>
-
-
-
-      <div class="edit-gs-feature-col">
-
-         <div class="mb-20">
-
-            <a href="#field-mapping">
-
-               <?php echo esc_html(__('Select Fields to Sync', 'cf7-google-sheets-connector')); ?>
-
-            </a>
-
-         </div>
-
-
-
-         <div class="gsc-pro-grid">
-
-            <ul>
-
-               <li><?php esc_html_e('Drag & drop field reordering', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Rename column headers', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Select specific fields to sync', 'cf7-google-sheets-connector'); ?></li>
-
-            </ul>
-
-         </div>
-
-      </div>
-
-
-
-      <div class="edit-gs-feature-col">
-
-         <div class="mb-20">
-
-            <a href="#conditional-logic">
-
-               <?php echo esc_html(__('Conditional Logic', 'cf7-google-sheets-connector')); ?>
-
-            </a>
-
-         </div>
-
-
-
-         <div class="gsc-pro-grid">
-
-            <ul>
-
-               <li><?php esc_html_e('Apply rules based on form values', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Sync data only when conditions match', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Filter unwanted or incomplete entries', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Create dynamic workflows automatically', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Map data conditionally to sheet columns', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Support multiple conditions (AND / OR)', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Improve accuracy and reduce extra data', 'cf7-google-sheets-connector'); ?></li>
-
-            </ul>
-
-         </div>
-
-      </div>
-
-
-
-      <div class="edit-gs-feature-col">
-
-         <div class="mb-20">
-
-            <a href="#header-settings-sheet-sorting">
-
-               <?php echo esc_html(__('Header Settings', 'cf7-google-sheets-connector')); ?>
-
-            </a>
-
-         </div>
-
-
-
-         <div class="gsc-pro-grid">
-
-            <ul>
-
-               <li><?php esc_html_e('Freeze header row', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Custom font styling', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Header & row color control', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Sort by any column', 'cf7-google-sheets-connector'); ?></li>
-
-               <li><?php esc_html_e('Download spreadsheet as file', 'cf7-google-sheets-connector'); ?></li>
-
-            </ul>
-
-         </div>
-
-      </div>
-
-
-
-   </div>
-   <div class="edit-gs-pro-footer">
-
-      <label for="toggle-features" class="edit-gs-show-btn show">
-
-         <?php echo esc_html(__('Show Features ▼', 'cf7-google-sheets-connector')); ?>
-
-      </label>
-
-
-
-      <label for="toggle-features" class="edit-gs-show-btn hide">
-
-         <?php echo esc_html(__('Hide Features ▲', 'cf7-google-sheets-connector')); ?>
-
-      </label>
-
-   </div>
-
-
-
-</div>
-
-<!--End Pro Feature-->
-
-
-
-
-
-
-
-
-
-<div class="feed-informtion-inner shadow-box mt-40 p-30">
-
-   <!-- Free setting End -->
-
-
-
-   <div class="system-debug-logs" id="opener">
-
-      <a href="https://www.gsheetconnector.com/cf7-google-sheets-connector" class="pro-link" target="_blank" style="text-decoration: none;"></a>
-
-      <div class="auto-section shadow-box p-30" id="auto-googlesheet-configuration" name="auto-googlesheet-configuration" style="display:block;">
-
-         <div class="gsc-fields">
-
-            <div class="sheet-details ">
-
-               <div class="heading mt-0"><?php echo esc_html(__('Automatic Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
-
-               <span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span>
-
-            </div>
-
-            <p><?php echo esc_html(__("Automatic configure your Google Sheet and start syncing form submissions in real time.", 'cf7-google-sheets-connector')); ?></p>
-
-            <div class="row">
-
-               <div class="col-4">
-
-                  <div class="mr-10">
-
-                     <label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?></label>
-
-                     <select name="gscf-ff[gsc-fluentform-sheet-id]" class="auto-select-display w-100 mt-5" id="gsc-fluentform-sheet-id">
-
-                        <option value="" disabled>
-
-                           <?php echo esc_html(__('Select', 'cf7-google-sheets-connector')); ?> </option>
-
-                           <option value="create_new" disabled>
-
-                              <?php echo esc_html(__('Create New', 'cf7-google-sheets-connector')); ?> </option>
-
-                           </select>
-
-                        </div>
-
-                     </div>
-
-                     <span class="error_msg" id="error_spread"></span>
-
-                     <span class="loading-sign">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-
-                     <i class="errorSelect errorSelectsheet"></i>
-
-                     <div class="col-4">
-
-                        <label><?php echo esc_html(__('Sheet Tab Name', 'cf7-google-sheets-connector')); ?></label>
-
-                        <select name="gscf-ff[gs-sheet-tab-name]" class="auto-select-display w-100 mt-5" id="gscf7-sheet-tab-name">
-
-                           <option value="" disabled>
-
-                              <?php echo esc_html(__('Select', 'cf7-google-sheets-connector')); ?> </option>
-
-                           </select>
-
-                        </div>
-
-                     </div>
-
-                  </div>
-
-               </div>
-
-            </div>
-
-            <div class="feed-setting-pro-wrapper">
-
-               <div class="form-fields-list gscf7-list-set shadow-box mt-40 p-30" id="field-mapping" name="field-mapping">
-
-                  <div class="gscf7-color-code">
-
-                     <div class="color-ffgs">
-
-                        <div class="heading"><?php echo esc_html('Select Fields to Sync', 'cf7-google-sheets-connector'); ?><span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span></div>
-
-                        <p class="gsc-pro-desc"><?php echo esc_html(__('Enable the fields you want to send to Google Sheets and rename columns if needed.', 'cf7-google-sheets-connector')); ?></p>
-
-
-
-                     </div>
-
-                     <div class="gscf7-color-code flex-wrap d-flex align-center gap-20 pt-10">
-
-                        <div class="color-ffgs field-type-form">
-
-                           <span class="field-list-pill align-center fw-700"><?php echo esc_html(__('Field List', 'cf7-google-sheets-connector')); ?></span>
-
-
-
-                        </div>
-
-                        <div class="color-ffgs field-type-system">
-
-                           <span class="align-center fw-700"><?php echo esc_html(__('Submission Info', 'cf7-google-sheets-connector')); ?></span>
-
-                        </div>
-
-                        <div class="color-ffgs custom-mail-tags">
-
-                           <span class="align-center fw-700"><?php echo esc_html(__('Custom Mail Tags', 'cf7-google-sheets-connector')); ?></span>
-
-                        </div>
-
-                     </div>
-
-                  </div>
-
-                  <div class="toggle-button select-all-toggle gsc-pro-content">
-
-                     <div class="mt-40 select-all-field mb-20">
-
-                        <label class="switch">
-
-                           <input type="checkbox" id="select-all-checkbox" checked disabled>
-
-                           <span class="slider round button-toggle"></span> </label>
-
-                           <span class="label-text"><?php echo esc_html('Select All Fields', 'cf7-google-sheets-connector'); ?></span>
-
-                        </div>
-
-                        <div id="gscf7-sortable" class="ui-sortable connected-sortable">
-
-                           <?php $this->display_form_fields($form_id, $post); ?>
-
-                        </div>
-
-                     </div>
-
-                  </div>
-
-
-
-                  <!-- SECTION 2:Conditional Logic-->
-
-                  <div class="settings-card  shadow-box mt-40 p-30" id="conditional-logic">
-
-
-
-                     <div class="mt-0 heading">
-
-                        <?php echo esc_html(__('Conditional Logic', 'cf7-google-sheets-connector')); ?>
-
-                        <span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span>
-
-                     </div>
-
-                     <p class="mb-30">
-
-                        <?php echo esc_html__('Control how and when your form data is sent to Google Sheets using powerful conditional rules. Automatic filter, route, and manage submissions based on user input.', 'cf7-google-sheets-connector'); ?>
-
-                     </p>
-
-
-
-                     <div class="gscfrmnt-cards gscfrmnt-card setting-row">
-
-
-
-                        <div class="misc-conditional-inner30 misc-options-inner-color-multi-cf7gs-hidden">
-
-
-
-                           <input type="hidden"
-
-                           id="getfieldList"
-
-                           value="">
-
-
-
-                           <div>
-
-                              <?php echo esc_html(__('Process this feed if', 'cf7-google-sheets-connector')); ?>
-
-                              <select name="cf7-gs30[enable_conditional_logic_type_feed]" class="enableConditionalLogic conditional-logic">
-
-                                 <option value="all"><?php echo esc_html(__('All', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="any" disabled><?php echo esc_html(__('Any', 'cf7-google-sheets-connector')); ?></option>
-
-                              </select>
-
-                              <?php echo esc_html(__('of the following match:', 'cf7-google-sheets-connector')); ?>
-
-                           </div>
-
-
-
-                           <div class="mt-30 d-flex flex-wrap gap-10">
-
-
-
-                              <select name="cf7-gs30[conditional_feed][0][enable_conditional_logic_field_name_feed]" class="enableConditionalLogic">
-
-                                 <option value="your-name"><?php echo esc_html(__('your-name', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="your-email" disabled><?php echo esc_html(__('your-email', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="your-subject" disabled><?php echo esc_html(__('your-subject', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="your-message" disabled><?php echo esc_html(__('your-message', 'cf7-google-sheets-connector')); ?></option>
-
-                              </select>
-
-
-
-                              <select name="cf7-gs30[conditional_feed][0][enable_conditional_logic_rule_select_feed]" class="enableConditionalLogic">
-
-                                 <option value="is"><?php echo esc_html(__('is', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="isnot" disabled><?php echo esc_html(__('is not', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="greaterthan" disabled><?php echo esc_html(__('greater than', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="lessthan" disabled><?php echo esc_html(__('less than', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="contains" disabled><?php echo esc_html(__('contains', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="starts_with" disabled><?php echo esc_html(__('starts with', 'cf7-google-sheets-connector')); ?></option>
-
-                                 <option value="ends_with" disabled><?php echo esc_html(__('ends with', 'cf7-google-sheets-connector')); ?></option>
-
-                              </select>
-
-
-
-                              <input type="text"
-
-                              name="cf7-gs30[conditional_feed][0][enable_conditional_logic_rule_value_feed]"
-
-                              value=""
-
-                              placeholder="Enter a value"
-
-                              class="enableConditionalLogic form-control conditional-form-control" disabled>
-
-
-
-                              <button type="button"
-
-                              class="add_field_choice-multi circle-plus"
-
-                              data-id="30">
-
-                              +
-
-                           </button>
-
-
-
-                        </div>
-
-
-
-                        <div class="conditional-logic-container-multi30"></div>
-
-
-
-                        <table class="alt-color-fields gsheet-table three-cols">
-
-                           <input type="hidden"
-
-                           name="selected_field_lists_num_multi"
-
-                           class="selected_field_lists_num_multi"
-
-                           value="1">
-
-                        </table>
-
-
-
-                     </div>
-
-
-
-                  </div>
-
-
-
-               </div>
-
-
-
-               <div class="freez_order_sort form-fields-list gscf7-list-set shadow-box mt-40 p-30">
-
-                  <div id="header-settings-sheet-sorting" name="header-settings-sheet-sorting">
-
-                     <div class="heading mt-0"><?php echo esc_html(__('Header Settings', 'cf7-google-sheets-connector')); ?><span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span></div>
-
-                     <p><?php echo esc_html(__('Customize the appearance and behavior of your sheet headers and rows for better readability and organization.', 'cf7-google-sheets-connector')); ?></p>
-
-                     <!-- SECTION 1: Header Behavior -->
-
-                     <div class="header-styling-sheet d-flex gap-20">
-
-                        <div class="settings-card mb-20 w-100 bg-white">
-
-                           <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html(__('Header Behavior', 'cf7-google-sheets-connector')); ?></div>
-
-                           <div class="gscfrmnt-cards gscfrmnt-card setting-row">
-
-                              <div class="toggle-button freeze-header-toggle d-flex align-items-center justify-between mb-15">
-
-                                 <span class="label-text fw-400"><?php echo esc_html(__('Freeze Header', 'cf7-google-sheets-connector')); ?></span>
-
-                                 <label class="switch">
-
-                                    <input type="checkbox" id="freeze-header-checkbox" name="gscf-ff[freeze_header]" value="true" checked="" disabled>
-
-                                    <span class="slider round button-toggle"></span>
-
-                                 </label>
-
-                              </div>
-
-                           </div>
-
-                           <div class="sheet_sorting sheet_formatting mt-30 mb-30">
-
-                              <div class="gscfrmnt-cards">
-
-                                 <div class="toggle-button sheet-sorting-toggle d-flex align-items-center justify-between">
-
-                                    <span class="label-text fw-400"><?php echo esc_html(__('Sheet Sorting', 'cf7-google-sheets-connector')); ?></span>
-
-                                    <label class="switch" for="sheet-sorting-checkbox">
-
-                                       <input type="checkbox" id="sheet-sorting-checkbox" name="gscf-ff[sheet_sorting]" value="1" checked="" disabled>
-
-                                       <span class="slider round button-toggle"></span>
-
-                                    </label>
+                                    <?php echo esc_html__('Google Sheets Connection', 'cf7-google-sheets-connector'); ?>
 
                                  </div>
 
                               </div>
 
-                              <div class="sheet-sorting-settings" id="sheet-sorting-settings">
 
-                                 <div class="settings-grid">
 
-                                    <div class="gscfrmnt-row form-group">
+                              <!-- Description -->
 
-                                       <label for="sort-column-name">
+                              <p class="gsc-sheet-status-desc">
 
-                                          <?php echo esc_html__('Sort Column', 'cf7-google-sheets-connector'); ?>
+                                 <?php echo esc_html__('Your Google Spreadsheet is securely connected and ready to receive form submissions in real time.', 'cf7-google-sheets-connector'); ?>
 
-                                       </label>
+                              </p>
 
-                                       <select id="sort-column-name" name="gscf-ff[sort_column]">
 
-                                       </select>
+
+                              <!-- Email Box -->
+
+                              <div class="gsc-sheet-email-box">
+
+                                 <span class="email-text email-success-service">
+
+                                    <?php echo esc_html($cf7_service_email); ?>
+
+                                 </span>
+
+                                 <span class="gsc-sheet-badge connected">
+
+                                    <?php echo esc_html__('Connected Successfully', 'cf7-google-sheets-connector'); ?>
+
+                                 </span>
+
+                              </div>
+
+
+
+                              <!-- Help Info -->
+
+                              <ul class="gsc-sheet-status-info">
+
+                                 <li class="success">
+
+                                    <?php echo esc_html__('Green status means the spreadsheet access is configured correctly.', 'cf7-google-sheets-connector'); ?>
+
+                                 </li>
+
+                                 <li class="error">
+
+                                    <?php echo esc_html__('Red status means permission is missing. Please grant editor access.', 'cf7-google-sheets-connector'); ?>
+
+                                 </li>
+
+                              </ul>
+
+                           </div>
+
+
+
+                        <?php } else { ?>
+
+
+
+                           <div class="gsc-sheet-info mt-30">
+
+                              <div class="gsc-status-headings fw-600">
+
+                                 <?php echo esc_html__('Sharing Required', 'cf7-google-sheets-connector'); ?>
+
+                              </div>
+
+
+
+                              <p>
+
+                                 <?php echo esc_html__('Please share your Google Spreadsheet with the following service account to enable automatic syncing.', 'cf7-google-sheets-connector'); ?>
+
+                              </p>
+
+
+
+                              <p>
+
+                                 <?php echo esc_html__('After sharing the spreadsheet, refresh the page to view the updated sharing status.', 'cf7-google-sheets-connector'); ?>
+
+                              </p>
+
+
+
+                              <div class="gsc-email-box d-flex align-center justify-between email-unsuccess-service">
+
+                                 <div class="gsc-service-email">
+
+                                    <?php echo esc_html($cf7_service_email); ?>
+
+                                 </div>
+
+
+
+                                 <a
+
+                                    data-email="<?php echo esc_attr($cf7_service_email); ?>"
+
+                                    class="gsc-copy-btn-feed-setting text-decoration-none link-hover-white"
+
+                                    id="copy-service-email">
+
+                                    <?php echo esc_html__('Copy', 'cf7-google-sheets-connector'); ?>
+
+                                 </a>
+
+
+
+                                 <div class="gsc-copy-msg d-none">
+
+                                    <?php echo esc_html__('Copied successfully!', 'cf7-google-sheets-connector'); ?>
+
+                                 </div>
+
+                              </div>
+
+
+
+                              <ul class="gsc-status-list">
+
+                                 <li class="success">
+
+                                    <?php echo esc_html__('Green email indicates the spreadsheet is shared successfully.', 'cf7-google-sheets-connector'); ?>
+
+                                 </li>
+
+                                 <li class="error">
+
+                                    <?php echo esc_html__('Red email indicates access is missing. Please grant permission.', 'cf7-google-sheets-connector'); ?>
+
+                                 </li>
+
+                              </ul>
+
+                           </div>
+
+
+
+                        <?php } ?>
+
+                     </div>
+
+
+
+                  <?php } ?>
+
+                  <!--Start pro Features-->
+
+                  <div class="edit-gs-pro-card shadow-box mt-40 mb-30">
+
+                     <div class="edit-gs-pro-header p-20">
+
+                        <div class="edit-gs-pro-icon">
+
+                           <span class="pro-badge">
+
+                              <i class="fas fa-lock gsc-pro-icon"></i>
+
+                           </span>
+
+                        </div>
+
+                        <div class="edit-gs-pro-title">
+
+                           <div class="heading mt-0">
+
+                              <?php echo esc_html(__('Unlock Advanced Features with Form Feeds', 'cf7-google-sheets-connector')); ?>
+
+                           </div>
+
+                           <div class="d-flex flex-wrap align-items-center gap-15">
+
+                              <span class="edit-gs-pro-badge">
+
+                                 <?php echo esc_html(__('Advanced options are available in PRO', 'cf7-google-sheets-connector')); ?>
+
+                              </span>
+
+                              <span class="edit-gs-upgrade-btn">
+
+                                 <a href="https://www.gsheetconnector.com/docs/cf7-gsheetconnector" target="_blank" class="text-decoration-none link-hover-white">
+
+                                    <?php echo esc_html(__('Get Advanced Features', 'cf7-google-sheets-connector')); ?>
+
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+                                       <path d="M0.166016 10.6584L8.99102 1.83341H3.49935V0.166748H11.8327V8.50008H10.166V3.00841L1.34102 11.8334L0.166016 10.6584Z" fill="white"></path>
+
+                                    </svg>
+
+                                 </a>
+
+                              </span>
+
+                           </div>
+
+                        </div>
+
+                     </div>
+
+
+
+                     <!-- Toggle checkbox -->
+
+                     <input type="checkbox" id="toggle-features">
+
+
+
+                     <div class="edit-gs-pro-features p-20">
+
+
+
+                        <div class="edit-gs-feature-col">
+
+                           <div class="mb-20">
+
+                              <a href="#auto-googlesheet-configuration">
+
+                                 <?php echo esc_html(__('Automatic Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
+
+                              </a>
+
+                           </div>
+
+
+
+                           <div class="gsc-pro-grid">
+
+                              <ul>
+
+                                 <li><?php esc_html_e('Auto fetch Google Sheets list', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Auto detect sheet tabs', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('One-click configuration', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Real-time entry sync', 'cf7-google-sheets-connector'); ?></li>
+
+                              </ul>
+
+                           </div>
+
+                        </div>
+
+
+
+                        <div class="edit-gs-feature-col">
+
+                           <div class="mb-20">
+
+                              <a href="#field-mapping">
+
+                                 <?php echo esc_html(__('Select Fields to Sync', 'cf7-google-sheets-connector')); ?>
+
+                              </a>
+
+                           </div>
+
+
+
+                           <div class="gsc-pro-grid">
+
+                              <ul>
+
+                                 <li><?php esc_html_e('Drag & drop field reordering', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Rename column headers', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Select specific fields to sync', 'cf7-google-sheets-connector'); ?></li>
+
+                              </ul>
+
+                           </div>
+
+                        </div>
+
+
+
+                        <div class="edit-gs-feature-col">
+
+                           <div class="mb-20">
+
+                              <a href="#conditional-logic">
+
+                                 <?php echo esc_html(__('Conditional Logic', 'cf7-google-sheets-connector')); ?>
+
+                              </a>
+
+                           </div>
+
+
+
+                           <div class="gsc-pro-grid">
+
+                              <ul>
+
+                                 <li><?php esc_html_e('Apply rules based on form values', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Sync data only when conditions match', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Filter unwanted or incomplete entries', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Create dynamic workflows automatically', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Map data conditionally to sheet columns', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Support multiple conditions (AND / OR)', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Improve accuracy and reduce extra data', 'cf7-google-sheets-connector'); ?></li>
+
+                              </ul>
+
+                           </div>
+
+                        </div>
+
+
+
+                        <div class="edit-gs-feature-col">
+
+                           <div class="mb-20">
+
+                              <a href="#header-settings-sheet-sorting">
+
+                                 <?php echo esc_html(__('Header Settings', 'cf7-google-sheets-connector')); ?>
+
+                              </a>
+
+                           </div>
+
+
+
+                           <div class="gsc-pro-grid">
+
+                              <ul>
+
+                                 <li><?php esc_html_e('Freeze header row', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Custom font styling', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Header & row color control', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Sort by any column', 'cf7-google-sheets-connector'); ?></li>
+
+                                 <li><?php esc_html_e('Download spreadsheet as file', 'cf7-google-sheets-connector'); ?></li>
+
+                              </ul>
+
+                           </div>
+
+                        </div>
+
+
+
+                     </div>
+                     <div class="edit-gs-pro-footer">
+
+                        <label for="toggle-features" class="edit-gs-show-btn show">
+
+                           <?php echo esc_html(__('Show Features ▼', 'cf7-google-sheets-connector')); ?>
+
+                        </label>
+
+
+
+                        <label for="toggle-features" class="edit-gs-show-btn hide">
+
+                           <?php echo esc_html(__('Hide Features ▲', 'cf7-google-sheets-connector')); ?>
+
+                        </label>
+
+                     </div>
+
+
+
+                  </div>
+
+                  <!--End Pro Feature-->
+
+
+
+
+
+
+
+
+
+                  <div class="feed-informtion-inner shadow-box mt-40 p-30">
+
+                     <!-- Free setting End -->
+
+
+
+                     <div class="system-debug-logs" id="opener">
+
+                        <a href="https://www.gsheetconnector.com/cf7-google-sheets-connector" class="pro-link" target="_blank" style="text-decoration: none;"></a>
+
+                        <div class="auto-section shadow-box p-30" id="auto-googlesheet-configuration" name="auto-googlesheet-configuration" style="display:block;">
+
+                           <div class="gsc-fields">
+
+                              <div class="sheet-details ">
+
+                                 <div class="heading mt-0"><?php echo esc_html(__('Automatic Google Sheets Configuration', 'cf7-google-sheets-connector')); ?>
+
+                                    <span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span>
+
+                                 </div>
+
+                                 <p><?php echo esc_html(__("Automatic configure your Google Sheet and start syncing form submissions in real time.", 'cf7-google-sheets-connector')); ?></p>
+
+                                 <div class="row">
+
+                                    <div class="col-4">
+
+                                       <div class="mr-10">
+
+                                          <label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?></label>
+
+                                          <select name="gscf-ff[gsc-fluentform-sheet-id]" class="auto-select-display w-100 mt-5" id="gsc-fluentform-sheet-id">
+
+                                             <option value="" disabled>
+
+                                                <?php echo esc_html(__('Select', 'cf7-google-sheets-connector')); ?> </option>
+
+                                             <option value="create_new" disabled>
+
+                                                <?php echo esc_html(__('Create New', 'cf7-google-sheets-connector')); ?> </option>
+
+                                          </select>
+
+                                       </div>
 
                                     </div>
 
-                                    <div class="gscfrmnt-row form-group">
+                                    <span class="error_msg" id="error_spread"></span>
 
-                                       <label for="sort-order"><?php echo esc_html__('Sort Order', 'cf7-google-sheets-connector'); ?></label>
+                                    <span class="loading-sign">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
 
-                                       <select id="sort-order" name="gscf-ff[sort_order]">
+                                    <i class="errorSelect errorSelectsheet"></i>
 
-                                          <option value="ASCENDING"><?php echo esc_html__('Ascending', 'cf7-google-sheets-connector'); ?></option>
+                                    <div class="col-4">
 
-                                          <option value="DESCENDING" disabled><?php echo esc_html__('Descending', 'cf7-google-sheets-connector'); ?></option>
+                                       <label><?php echo esc_html(__('Sheet Tab Name', 'cf7-google-sheets-connector')); ?></label>
+
+                                       <select name="gscf-ff[gs-sheet-tab-name]" class="auto-select-display w-100 mt-5" id="gscf7-sheet-tab-name">
+
+                                          <option value="" disabled>
+
+                                             <?php echo esc_html(__('Select', 'cf7-google-sheets-connector')); ?> </option>
 
                                        </select>
 
@@ -3357,77 +3303,309 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                            </div>
 
+                        </div>
+
+                        <div class="feed-setting-pro-wrapper">
+
+                           <div class="form-fields-list gscf7-list-set shadow-box mt-40 p-30" id="field-mapping" name="field-mapping">
+
+                              <div class="gscf7-color-code">
+
+                                 <div class="color-ffgs">
+
+                                    <div class="heading"><?php echo esc_html('Select Fields to Sync', 'cf7-google-sheets-connector'); ?><span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span></div>
+
+                                    <p class="gsc-pro-desc"><?php echo esc_html(__('Enable the fields you want to send to Google Sheets and rename columns if needed.', 'cf7-google-sheets-connector')); ?></p>
 
 
-                           <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html__('Header Style', 'cf7-google-sheets-connector'); ?></div>
 
-                           <div class="sheet_formatting setting-row">
+                                 </div>
 
-                              <div class="gscfrmnt-sheet_formatting gscfrmnt-sheet_formatting">
+                                 <div class="gscf7-color-code flex-wrap d-flex align-center gap-20 pt-10">
 
-                                 <div class="toggle-button sheet_formatting-header-toggle d-flex align-items-center justify-between mb-15">
+                                    <div class="color-ffgs field-type-form">
 
-                                    <span class="label-texts  fw-400"><?php echo esc_html(__('Header Appearance', 'cf7-google-sheets-connector')); ?> </span>
+                                       <span class="field-list-pill align-center fw-700"><?php echo esc_html(__('Field List', 'cf7-google-sheets-connector')); ?></span>
 
-                                    <label class="switch" for="sheet_formatting-header-checkbox">
 
-                                       <input type="checkbox" id="sheet_formatting-header-checkbox" name="gscf-ff[sheet_formatting_header]" value="1" checked="" disabled>
 
-                                       <span class="slider round button-toggle"></span>
+                                    </div>
 
-                                    </label>
+                                    <div class="color-ffgs field-type-system">
+
+                                       <span class="align-center fw-700"><?php echo esc_html(__('Submission Info', 'cf7-google-sheets-connector')); ?></span>
+
+                                    </div>
+
+                                    <div class="color-ffgs custom-mail-tags">
+
+                                       <span class="align-center fw-700"><?php echo esc_html(__('Custom Mail Tags', 'cf7-google-sheets-connector')); ?></span>
+
+                                    </div>
 
                                  </div>
 
                               </div>
 
-                              <div class="font-styling-settings" id="font-styling-settings">
+                              <div class="toggle-button select-all-toggle gsc-pro-content">
 
-                                 <div class="settings-grid">
+                                 <div class="mt-40 select-all-field mb-20">
 
-                                    <div class="font-style row-format form-group">
+                                    <label class="switch">
 
-                                       <label for="font-size"><?php echo esc_html__('Font Style', 'cf7-google-sheets-connector'); ?></label>
+                                       <input type="checkbox" id="select-all-checkbox" checked disabled>
 
-                                       <div class="d-flex gap-5">
+                                       <span class="slider round button-toggle"></span> </label>
 
-                                          <label class="style-btn active"><input type="checkbox" name="font_styles[]" class="toggle-input active" value="normal">
+                                    <span class="label-text"><?php echo esc_html('Select All Fields', 'cf7-google-sheets-connector'); ?></span>
 
-                                             <?php echo esc_html__('Normal', 'cf7-google-sheets-connector'); ?></label>
+                                 </div>
 
-                                             <label class="style-btn"><input type="checkbox" name="font_styles[]" value="italic" disabled>
+                                 <div id="gscf7-sortable" class="ui-sortable connected-sortable">
 
-                                                <?php echo esc_html__('Italic', 'cf7-google-sheets-connector'); ?></label>
+                                    <?php $this->display_form_fields($form_id, $post); ?>
 
-                                                <label class="style-btn"><input type="checkbox" name="font_styles[]" value="bold" disabled><?php echo esc_html__('Bold', 'cf7-google-sheets-connector'); ?></label>
+                                 </div>
+
+                              </div>
+
+                           </div>
+
+
+
+                           <!-- SECTION 2:Conditional Logic-->
+
+                           <div class="settings-card  shadow-box mt-40 p-30" id="conditional-logic">
+
+
+
+                              <div class="mt-0 heading">
+
+                                 <?php echo esc_html(__('Conditional Logic', 'cf7-google-sheets-connector')); ?>
+
+                                 <span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span>
+
+                              </div>
+
+                              <p class="mb-30">
+
+                                 <?php echo esc_html__('Control how and when your form data is sent to Google Sheets using powerful conditional rules. Automatic filter, route, and manage submissions based on user input.', 'cf7-google-sheets-connector'); ?>
+
+                              </p>
+
+
+
+                              <div class="gscfrmnt-cards gscfrmnt-card setting-row">
+
+
+
+                                 <div class="misc-conditional-inner30 misc-options-inner-color-multi-cf7gs-hidden">
+
+
+
+                                    <input type="hidden"
+
+                                       id="getfieldList"
+
+                                       value="">
+
+
+
+                                    <div>
+
+                                       <?php echo esc_html(__('Process this feed if', 'cf7-google-sheets-connector')); ?>
+
+                                       <select name="cf7-gs30[enable_conditional_logic_type_feed]" class="enableConditionalLogic conditional-logic">
+
+                                          <option value="all"><?php echo esc_html(__('All', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="any" disabled><?php echo esc_html(__('Any', 'cf7-google-sheets-connector')); ?></option>
+
+                                       </select>
+
+                                       <?php echo esc_html(__('of the following match:', 'cf7-google-sheets-connector')); ?>
+
+                                    </div>
+
+
+
+                                    <div class="mt-30 d-flex flex-wrap gap-10">
+
+
+
+                                       <select name="cf7-gs30[conditional_feed][0][enable_conditional_logic_field_name_feed]" class="enableConditionalLogic">
+
+                                          <option value="your-name"><?php echo esc_html(__('your-name', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="your-email" disabled><?php echo esc_html(__('your-email', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="your-subject" disabled><?php echo esc_html(__('your-subject', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="your-message" disabled><?php echo esc_html(__('your-message', 'cf7-google-sheets-connector')); ?></option>
+
+                                       </select>
+
+
+
+                                       <select name="cf7-gs30[conditional_feed][0][enable_conditional_logic_rule_select_feed]" class="enableConditionalLogic">
+
+                                          <option value="is"><?php echo esc_html(__('is', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="isnot" disabled><?php echo esc_html(__('is not', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="greaterthan" disabled><?php echo esc_html(__('greater than', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="lessthan" disabled><?php echo esc_html(__('less than', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="contains" disabled><?php echo esc_html(__('contains', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="starts_with" disabled><?php echo esc_html(__('starts with', 'cf7-google-sheets-connector')); ?></option>
+
+                                          <option value="ends_with" disabled><?php echo esc_html(__('ends with', 'cf7-google-sheets-connector')); ?></option>
+
+                                       </select>
+
+
+
+                                       <input type="text"
+
+                                          name="cf7-gs30[conditional_feed][0][enable_conditional_logic_rule_value_feed]"
+
+                                          value=""
+
+                                          placeholder="Enter a value"
+
+                                          class="enableConditionalLogic form-control conditional-form-control" disabled>
+
+
+
+                                       <button type="button"
+
+                                          class="add_field_choice-multi circle-plus"
+
+                                          data-id="30">
+
+                                          +
+
+                                       </button>
+
+
+
+                                    </div>
+
+
+
+                                    <div class="conditional-logic-container-multi30"></div>
+
+
+
+                                    <table class="alt-color-fields gsheet-table three-cols">
+
+                                       <input type="hidden"
+
+                                          name="selected_field_lists_num_multi"
+
+                                          class="selected_field_lists_num_multi"
+
+                                          value="1">
+
+                                    </table>
+
+
+
+                                 </div>
+
+
+
+                              </div>
+
+
+
+                           </div>
+
+
+
+                           <div class="freez_order_sort form-fields-list gscf7-list-set shadow-box mt-40 p-30">
+
+                              <div id="header-settings-sheet-sorting" name="header-settings-sheet-sorting">
+
+                                 <div class="heading mt-0"><?php echo esc_html(__('Header Settings', 'cf7-google-sheets-connector')); ?><span class="pro-ver"><?php echo esc_html(__('Pro', 'cf7-google-sheets-connector')); ?></span></div>
+
+                                 <p><?php echo esc_html(__('Customize the appearance and behavior of your sheet headers and rows for better readability and organization.', 'cf7-google-sheets-connector')); ?></p>
+
+                                 <!-- SECTION 1: Header Behavior -->
+
+                                 <div class="header-styling-sheet d-flex gap-20">
+
+                                    <div class="settings-card mb-20 w-100 bg-white">
+
+                                       <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html(__('Header Behavior', 'cf7-google-sheets-connector')); ?></div>
+
+                                       <div class="gscfrmnt-cards gscfrmnt-card setting-row">
+
+                                          <div class="toggle-button freeze-header-toggle d-flex align-items-center justify-between mb-15">
+
+                                             <span class="label-text fw-400"><?php echo esc_html(__('Freeze Header', 'cf7-google-sheets-connector')); ?></span>
+
+                                             <label class="switch">
+
+                                                <input type="checkbox" id="freeze-header-checkbox" name="gscf-ff[freeze_header]" value="true" checked="" disabled>
+
+                                                <span class="slider round button-toggle"></span>
+
+                                             </label>
+
+                                          </div>
+
+                                       </div>
+
+                                       <div class="sheet_sorting sheet_formatting mt-30 mb-30">
+
+                                          <div class="gscfrmnt-cards">
+
+                                             <div class="toggle-button sheet-sorting-toggle d-flex align-items-center justify-between">
+
+                                                <span class="label-text fw-400"><?php echo esc_html(__('Sheet Sorting', 'cf7-google-sheets-connector')); ?></span>
+
+                                                <label class="switch" for="sheet-sorting-checkbox">
+
+                                                   <input type="checkbox" id="sheet-sorting-checkbox" name="gscf-ff[sheet_sorting]" value="1" checked="" disabled>
+
+                                                   <span class="slider round button-toggle"></span>
+
+                                                </label>
 
                                              </div>
 
                                           </div>
 
+                                          <div class="sheet-sorting-settings" id="sheet-sorting-settings">
 
+                                             <div class="settings-grid">
 
-                                          <div class="font-size row-format form-group">
+                                                <div class="gscfrmnt-row form-group">
 
-                                             <label for="font-size"><?php echo esc_html__('Font Size', 'cf7-google-sheets-connector'); ?></label>
+                                                   <label for="sort-column-name">
 
-                                             <div class="gs-font-size">
+                                                      <?php echo esc_html__('Sort Column', 'cf7-google-sheets-connector'); ?>
 
-                                                <div class="gs-select-box">
+                                                   </label>
 
-                                                   <select id="font-size" name="gscf-ff[font_size]" disabled>
+                                                   <select id="sort-column-name" name="gscf-ff[sort_column]">
 
-                                                      <option value="" selected><?php echo esc_html__('Select size', 'cf7-google-sheets-connector'); ?></option>
+                                                   </select>
 
-                                                      <option><?php echo esc_html__('11', 'cf7-google-sheets-connector'); ?></option>
+                                                </div>
 
-                                                      <option><?php echo esc_html__('12', 'cf7-google-sheets-connector'); ?></option>
+                                                <div class="gscfrmnt-row form-group">
 
-                                                      <option><?php echo esc_html__('13', 'cf7-google-sheets-connector'); ?></option>
+                                                   <label for="sort-order"><?php echo esc_html__('Sort Order', 'cf7-google-sheets-connector'); ?></label>
 
-                                                      <option><?php echo esc_html__('14', 'cf7-google-sheets-connector'); ?></option>
+                                                   <select id="sort-order" name="gscf-ff[sort_order]">
 
-                                                      <option><?php echo esc_html__('15', 'cf7-google-sheets-connector'); ?></option>
+                                                      <option value="ASCENDING"><?php echo esc_html__('Ascending', 'cf7-google-sheets-connector'); ?></option>
+
+                                                      <option value="DESCENDING" disabled><?php echo esc_html__('Descending', 'cf7-google-sheets-connector'); ?></option>
 
                                                    </select>
 
@@ -3437,111 +3615,97 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                                           </div>
 
-                                          <div class="font-color row-format form-group">
+                                       </div>
 
-                                             <label for="font-color"><?php echo esc_html__('Font Color', 'cf7-google-sheets-connector'); ?></label>
 
-                                             <input type="color" id="font-color" name="gscf-ff[font_color]" class="bg-color-set-input" value="#000000" disabled>
+
+                                       <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html__('Header Style', 'cf7-google-sheets-connector'); ?></div>
+
+                                       <div class="sheet_formatting setting-row">
+
+                                          <div class="gscfrmnt-sheet_formatting gscfrmnt-sheet_formatting">
+
+                                             <div class="toggle-button sheet_formatting-header-toggle d-flex align-items-center justify-between mb-15">
+
+                                                <span class="label-texts  fw-400"><?php echo esc_html(__('Header Appearance', 'cf7-google-sheets-connector')); ?> </span>
+
+                                                <label class="switch" for="sheet_formatting-header-checkbox">
+
+                                                   <input type="checkbox" id="sheet_formatting-header-checkbox" name="gscf-ff[sheet_formatting_header]" value="1" checked="" disabled>
+
+                                                   <span class="slider round button-toggle"></span>
+
+                                                </label>
+
+                                             </div>
 
                                           </div>
 
-
-
-                                       </div>
-
-                                    </div>
-
-                                 </div>
-
-                              </div>
-
-
-
-                              <!-- SECTION 2: Header Appearance -->
-
-                              <div class="settings-card  mb-20 w-100 bg-white">
-
-                                 <div class="sheet_formatting">
-
-                                    <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html__('Row Style', 'cf7-google-sheets-connector'); ?></div>
-
-                                    <div class="gscfrmnt-sheet_formatting_row gscfrmnt-sheet_formatting_row">
-
-                                       <div class="toggle-button sheet_formatting-row-toggle d-flex align-items-center justify-between">
-
-                                          <span class="label-texts  fw-400"><?php echo esc_html__('Color Appearance', 'cf7-google-sheets-connector'); ?> </span>
-
-                                          <label class="switch" for="sheet_formatting-row-checkbox">
-
-                                             <input type="checkbox" id="sheet_formatting-row-checkbox" name="gscf-ff[sheet_formatting_row]" value="1" checked="" disabled>
-
-                                             <span class="slider round button-toggle"></span>
-
-                                          </label>
-
-                                       </div>
-
-                                    </div>
-
-                                    <div class="font-styling-settings-row" id="font-styling-settings-row">
-
-                                       <div class="settings-grid">
-
-
-
-                                          <div class="gscfrmnt-cards-sbg gscfrmnt-cards-sbg form-group">
-
-
-
-                                             <label for="gscfrmnt-header-color" class="button-gscfrmnt-toggle-color"></label>
-
-                                             <label>
-
-                                                <?php echo esc_html__('Header Background', 'cf7-google-sheets-connector'); ?> </label>
-
-                                                <input type="color" id="header-color" name="gscf-ff[header-color]" class="bg-color-set-input" value="#000000" disabled>
-
-                                             </div>
+                                          <div class="font-styling-settings" id="font-styling-settings">
 
                                              <div class="settings-grid">
 
-                                                <!-- ODD ROW COLOR -->
+                                                <div class="font-style row-format form-group">
 
-                                                <div class="form-group">
+                                                   <label for="font-size"><?php echo esc_html__('Font Style', 'cf7-google-sheets-connector'); ?></label>
 
-                                                   <label for="odd-color"><?php echo esc_html__('Odd Row Color', 'cf7-google-sheets-connector'); ?></label>
+                                                   <div class="d-flex gap-5">
 
-                                                   <input type="color"
+                                                      <label class="style-btn active"><input type="checkbox" name="font_styles[]" class="toggle-input active" value="normal">
 
-                                                   id="odd-color"
+                                                         <?php echo esc_html__('Normal', 'cf7-google-sheets-connector'); ?></label>
 
-                                                   name="gscf-ff[odd_color]"
+                                                      <label class="style-btn"><input type="checkbox" name="font_styles[]" value="italic" disabled>
 
-                                                   class="bg-color-set-input"
+                                                         <?php echo esc_html__('Italic', 'cf7-google-sheets-connector'); ?></label>
 
-                                                   value="#ffffff" disabled>
+                                                      <label class="style-btn"><input type="checkbox" name="font_styles[]" value="bold" disabled><?php echo esc_html__('Bold', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   </div>
+
+                                                </div>
+
+
+
+                                                <div class="font-size row-format form-group">
+
+                                                   <label for="font-size"><?php echo esc_html__('Font Size', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   <div class="gs-font-size">
+
+                                                      <div class="gs-select-box">
+
+                                                         <select id="font-size" name="gscf-ff[font_size]" disabled>
+
+                                                            <option value="" selected><?php echo esc_html__('Select size', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('11', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('12', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('13', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('14', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('15', 'cf7-google-sheets-connector'); ?></option>
+
+                                                         </select>
+
+                                                      </div>
+
+                                                   </div>
+
+                                                </div>
+
+                                                <div class="font-color row-format form-group">
+
+                                                   <label for="font-color"><?php echo esc_html__('Font Color', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   <input type="color" id="font-color" name="gscf-ff[font_color]" class="bg-color-set-input" value="#000000" disabled>
 
                                                 </div>
 
 
-
-                                                <!-- EVEN ROW COLOR -->
-
-                                                <div class="form-group">
-
-                                                   <label for="even-color"><?php echo esc_html__('Even Row Color', 'cf7-google-sheets-connector'); ?></label>
-
-                                                   <input type="color"
-
-                                                   id="even-color"
-
-                                                   name="gscf-ff[even_color]"
-
-                                                   class="bg-color-set-input"
-
-                                                   value="#f5f5f5" disabled>
-
-                                                </div>
 
                                              </div>
 
@@ -3551,93 +3715,91 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                                     </div>
 
-                                    <!-- SECTION 3: Row Appearance -->
-
-                                    <div class="sheet_formatting">
 
 
+                                    <!-- SECTION 2: Header Appearance -->
 
-                                       <div class="gscfrmnt-sheet_formatting_row gscfrmnt-sheet_formatting_row">
+                                    <div class="settings-card  mb-20 w-100 bg-white">
 
-                                          <div class="toggle-button sheet_formatting-row-toggle d-flex align-items-center justify-between">
+                                       <div class="sheet_formatting">
 
-                                             <span class="label-texts  fw-400"><?php echo esc_html__('Row Appearance', 'cf7-google-sheets-connector'); ?> </span>
+                                          <div class="mt-0 header-settings-ineer-size fw-600 mb-20"><?php echo esc_html__('Row Style', 'cf7-google-sheets-connector'); ?></div>
 
-                                             <label class="switch" for="sheet_formatting-row-checkbox">
+                                          <div class="gscfrmnt-sheet_formatting_row gscfrmnt-sheet_formatting_row">
 
-                                                <input type="checkbox" id="sheet_formatting-row-checkbox" name="gscf-ff[sheet_formatting_row]" value="1" checked="" disabled>
+                                             <div class="toggle-button sheet_formatting-row-toggle d-flex align-items-center justify-between">
 
-                                                <span class="slider round button-toggle"></span>
+                                                <span class="label-texts  fw-400"><?php echo esc_html__('Color Appearance', 'cf7-google-sheets-connector'); ?> </span>
 
-                                             </label>
+                                                <label class="switch" for="sheet_formatting-row-checkbox">
 
-                                          </div>
+                                                   <input type="checkbox" id="sheet_formatting-row-checkbox" name="gscf-ff[sheet_formatting_row]" value="1" checked="" disabled>
 
-                                       </div>
+                                                   <span class="slider round button-toggle"></span>
 
-                                       <div class="font-styling-settings-row" id="font-styling-settings-row">
-
-                                          <div class="settings-grid">
-
-
-
-                                             <!-- FONT STYLE -->
-
-                                             <div class="font-style row-format form-group">
-
-                                                <label><?php echo esc_html__('Font Style', 'cf7-google-sheets-connector'); ?></label>
-
-                                                <div class="d-flex gap-5">
-
-                                                   <label class="style-btn active">
-
-                                                      <input type="checkbox" name="font_styles[]" value="normal" checked> <?php echo esc_html__('Normal', 'cf7-google-sheets-connector'); ?>
-
-                                                   </label>
-
-                                                   <label class="style-btn">
-
-                                                      <input type="checkbox" name="font_styles[]" value="italic" disabled> <?php echo esc_html__('Italic', 'cf7-google-sheets-connector'); ?>
-
-                                                   </label>
-
-                                                   <label class="style-btn">
-
-                                                      <input type="checkbox" name="font_styles[]" value="bold" disabled> <?php echo esc_html__('Bold', 'cf7-google-sheets-connector'); ?>
-
-                                                   </label>
-
-                                                </div>
+                                                </label>
 
                                              </div>
 
+                                          </div>
+
+                                          <div class="font-styling-settings-row" id="font-styling-settings-row">
+
+                                             <div class="settings-grid">
 
 
-                                             <!-- FONT SIZE -->
 
-                                             <div class="font-size row-format form-group">
+                                                <div class="gscfrmnt-cards-sbg gscfrmnt-cards-sbg form-group">
 
-                                                <label for="font-size-row"><?php echo esc_html__('Font Size', 'cf7-google-sheets-connector'); ?></label>
 
-                                                <div class="gs-font-size">
 
-                                                   <div class="gs-select-box">
+                                                   <label for="gscfrmnt-header-color" class="button-gscfrmnt-toggle-color"></label>
 
-                                                      <select id="font-size-row" name="gscf-ff[font_size_row]" disabled>
+                                                   <label>
 
-                                                         <option value="14" selected><?php echo esc_html__('Select size', 'cf7-google-sheets-connector'); ?></option>
+                                                      <?php echo esc_html__('Header Background', 'cf7-google-sheets-connector'); ?> </label>
 
-                                                         <option><?php echo esc_html__('11', 'cf7-google-sheets-connector'); ?></option>
+                                                   <input type="color" id="header-color" name="gscf-ff[header-color]" class="bg-color-set-input" value="#000000" disabled>
 
-                                                         <option><?php echo esc_html__('12', 'cf7-google-sheets-connector'); ?></option>
+                                                </div>
 
-                                                         <option><?php echo esc_html__('13', 'cf7-google-sheets-connector'); ?></option>
+                                                <div class="settings-grid">
 
-                                                         <option><?php echo esc_html__('14', 'cf7-google-sheets-connector'); ?></option>
+                                                   <!-- ODD ROW COLOR -->
 
-                                                         <option><?php echo esc_html__('15', 'cf7-google-sheets-connector'); ?></option>
+                                                   <div class="form-group">
 
-                                                      </select>
+                                                      <label for="odd-color"><?php echo esc_html__('Odd Row Color', 'cf7-google-sheets-connector'); ?></label>
+
+                                                      <input type="color"
+
+                                                         id="odd-color"
+
+                                                         name="gscf-ff[odd_color]"
+
+                                                         class="bg-color-set-input"
+
+                                                         value="#ffffff" disabled>
+
+                                                   </div>
+
+
+
+                                                   <!-- EVEN ROW COLOR -->
+
+                                                   <div class="form-group">
+
+                                                      <label for="even-color"><?php echo esc_html__('Even Row Color', 'cf7-google-sheets-connector'); ?></label>
+
+                                                      <input type="color"
+
+                                                         id="even-color"
+
+                                                         name="gscf-ff[even_color]"
+
+                                                         class="bg-color-set-input"
+
+                                                         value="#f5f5f5" disabled>
 
                                                    </div>
 
@@ -3645,23 +3807,123 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                                              </div>
 
+                                          </div>
+
+                                       </div>
+
+                                       <!-- SECTION 3: Row Appearance -->
+
+                                       <div class="sheet_formatting">
 
 
-                                             <!-- FONT COLOR -->
 
-                                             <div class="font-color row-format form-group">
+                                          <div class="gscfrmnt-sheet_formatting_row gscfrmnt-sheet_formatting_row">
 
-                                                <label for="font-color-row"><?php echo esc_html__('Font Color', 'cf7-google-sheets-connector'); ?></label>
+                                             <div class="toggle-button sheet_formatting-row-toggle d-flex align-items-center justify-between">
 
-                                                <input type="color"
+                                                <span class="label-texts  fw-400"><?php echo esc_html__('Row Appearance', 'cf7-google-sheets-connector'); ?> </span>
 
-                                                id="font-color-row"
+                                                <label class="switch" for="sheet_formatting-row-checkbox">
 
-                                                name="gscf-ff[font_color]"
+                                                   <input type="checkbox" id="sheet_formatting-row-checkbox" name="gscf-ff[sheet_formatting_row]" value="1" checked="" disabled>
 
-                                                class="bg-color-set-input"
+                                                   <span class="slider round button-toggle"></span>
 
-                                                value="#000000" disabled>
+                                                </label>
+
+                                             </div>
+
+                                          </div>
+
+                                          <div class="font-styling-settings-row" id="font-styling-settings-row">
+
+                                             <div class="settings-grid">
+
+
+
+                                                <!-- FONT STYLE -->
+
+                                                <div class="font-style row-format form-group">
+
+                                                   <label><?php echo esc_html__('Font Style', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   <div class="d-flex gap-5">
+
+                                                      <label class="style-btn active">
+
+                                                         <input type="checkbox" name="font_styles[]" value="normal" checked> <?php echo esc_html__('Normal', 'cf7-google-sheets-connector'); ?>
+
+                                                      </label>
+
+                                                      <label class="style-btn">
+
+                                                         <input type="checkbox" name="font_styles[]" value="italic" disabled> <?php echo esc_html__('Italic', 'cf7-google-sheets-connector'); ?>
+
+                                                      </label>
+
+                                                      <label class="style-btn">
+
+                                                         <input type="checkbox" name="font_styles[]" value="bold" disabled> <?php echo esc_html__('Bold', 'cf7-google-sheets-connector'); ?>
+
+                                                      </label>
+
+                                                   </div>
+
+                                                </div>
+
+
+
+                                                <!-- FONT SIZE -->
+
+                                                <div class="font-size row-format form-group">
+
+                                                   <label for="font-size-row"><?php echo esc_html__('Font Size', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   <div class="gs-font-size">
+
+                                                      <div class="gs-select-box">
+
+                                                         <select id="font-size-row" name="gscf-ff[font_size_row]" disabled>
+
+                                                            <option value="14" selected><?php echo esc_html__('Select size', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('11', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('12', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('13', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('14', 'cf7-google-sheets-connector'); ?></option>
+
+                                                            <option><?php echo esc_html__('15', 'cf7-google-sheets-connector'); ?></option>
+
+                                                         </select>
+
+                                                      </div>
+
+                                                   </div>
+
+                                                </div>
+
+
+
+                                                <!-- FONT COLOR -->
+
+                                                <div class="font-color row-format form-group">
+
+                                                   <label for="font-color-row"><?php echo esc_html__('Font Color', 'cf7-google-sheets-connector'); ?></label>
+
+                                                   <input type="color"
+
+                                                      id="font-color-row"
+
+                                                      name="gscf-ff[font_color]"
+
+                                                      class="bg-color-set-input"
+
+                                                      value="#000000" disabled>
+
+                                                </div>
 
                                              </div>
 
@@ -3669,37 +3931,35 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                                        </div>
 
-                                    </div>
 
 
+                                       <!-- SECTION 4: Spreadsheet Download -->
 
-                                    <!-- SECTION 4: Spreadsheet Download -->
+                                       <div id="spreadsheet-download-sync" name="spreadsheet-download-sync">
 
-                                    <div id="spreadsheet-download-sync" name="spreadsheet-download-sync">
+                                          <div class="settings-card mt-30 w-100 bg-white">
 
-                                       <div class="settings-card mt-30 w-100 bg-white">
+                                             <div class="toggle-button sheet-sorting-toggle d-flex align-items-center justify-between" id="downloads-toggle-checkbox">
 
-                                          <div class="toggle-button sheet-sorting-toggle d-flex align-items-center justify-between" id="downloads-toggle-checkbox">
+                                                <span class="label-text  fw-400"><?php echo esc_html(__('Spreadsheet Download', 'cf7-google-sheets-connector')); ?></span>
 
-                                             <span class="label-text  fw-400"><?php echo esc_html(__('Spreadsheet Download', 'cf7-google-sheets-connector')); ?></span>
+                                                <label class="switch" for="download-toggle-checkbox">
 
-                                             <label class="switch" for="download-toggle-checkbox">
+                                                   <input type="checkbox" id="download-toggle-checkbox" name="gscf-ff[download_spreadsheet]" value="1" checked="" disabled>
 
-                                                <input type="checkbox" id="download-toggle-checkbox" name="gscf-ff[download_spreadsheet]" value="1" checked="" disabled>
+                                                   <span class="slider round button-toggle"></span>
 
-                                                <span class="slider round button-toggle"></span>
+                                                </label>
 
-                                             </label>
+                                             </div>
 
-                                          </div>
+                                             <div id="download-button-wrapper" class="mt-15">
 
-                                          <div id="download-button-wrapper" class="mt-15">
+                                                <!-- style="display:none;"> -->
 
-                                             <!-- style="display:none;"> -->
+                                                <a class="sheet-url-fluentform common-sheet-url text-dark fw-700 download-spreadsheet" hover-tooltip="Spreadsheet Download">
 
-                                             <a class="sheet-url-fluentform common-sheet-url text-dark fw-700 download-spreadsheet" hover-tooltip="Spreadsheet Download">
-
-                                                <i class="fa-regular fa-file-zipper text-dark fw-500 mr-5"></i><?php echo esc_html(__('Download', 'cf7-google-sheets-connector')); ?> </a>
+                                                   <i class="fa-regular fa-file-zipper text-dark fw-500 mr-5"></i><?php echo esc_html(__('Download', 'cf7-google-sheets-connector')); ?> </a>
 
                                              </div>
 
@@ -3733,49 +3993,49 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
 
 
-                     <?php
-
-
-
-
-
-                     include(GS_CONNECTOR_PATH . "includes/pages/gs-field-list.php");
-                  }
-
-                  ?>
-
-
-
-               </div>
-
-            </div><!-- #end -->
-
-
-
-            <!-- Multi sheet connection START-->
-
-            <div class="cf7-sub-tab-multi cf7-sub-tab multisheetcf7">
-
-               <div id="opener2">
-
                   <?php
 
-                  if ($show_setting == 1) {
 
-                     include(GS_CONNECTOR_PATH . "includes/pages/multisheet-sheets-connection.php");
-                  }
+
+
+
+                  include(GS_CONNECTOR_PATH . "includes/pages/gs-field-list.php");
+               }
 
                   ?>
 
+
+
+                  </div>
+
+               </div><!-- #end -->
+
+
+
+               <!-- Multi sheet connection START-->
+
+               <div class="cf7-sub-tab-multi cf7-sub-tab multisheetcf7">
+
+                  <div id="opener2">
+
+                     <?php
+
+                     if ($show_setting == 1) {
+
+                        include(GS_CONNECTOR_PATH . "includes/pages/multisheet-sheets-connection.php");
+                     }
+
+                     ?>
+
+                  </div>
+
                </div>
 
-            </div>
-
-            <!-- Multi sheet connection END-->
+               <!-- Multi sheet connection END-->
 
 
 
-         <?php }
+            <?php }
 
 
 
@@ -3794,7 +4054,7 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table join, no caching needed.
             $query = $wpdb->get_results(
                $wpdb->prepare(
-                   "SELECT
+                  "SELECT
                        p.ID,
                        p.post_title,
                        s.sheet_name,
@@ -3813,9 +4073,9 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
                        ON p.ID = f.form_id
                    WHERE p.post_type = %s
                    ORDER BY p.ID DESC",
-                   'wpcf7_contact_form'
+                  'wpcf7_contact_form'
                )
-           );
+            );
 
             return $query;
          }
@@ -3836,7 +4096,7 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
 
 
-            <?php
+               <?php
 
                // ================================================================
 
@@ -3844,246 +4104,417 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                // ================================================================
 
-            $entry_placeholder = 'entry-id';
+               $entry_placeholder = 'entry-id';
 
-            ?>
+               ?>
 
-            <div class="card form-field-toggle active ui-sortable-handle">
+               <div class="card form-field-toggle active ui-sortable-handle">
 
-               <div class="card-content">
+                  <div class="card-content">
 
-                  <div class="toggle-button field_list_bg">
+                     <div class="toggle-button field_list_bg">
 
-                     <i class="dashicons dashicons-edit field-edit-icon"></i>
-
-
-
-                     <!-- Toggle: always checked + disabled (locked) -->
-
-                     <label for="gs-custom-ck"
-
-                     class="switch entry-lock">
+                        <i class="dashicons dashicons-edit field-edit-icon"></i>
 
 
 
-                     <input
+                        <!-- Toggle: always checked + disabled (locked) -->
 
-                     type="checkbox"
+                        <label for="gs-custom-ck"
 
-                     class="fcheckBoxClass toggle-input child-toggle checkAllClass check-toggle-cf7"
-
-                     id="gs-custom-ck"
-
-                     name="gs-custom-ck"
-
-                     data-id="gs-cstm-chk"
-
-                     data-list="field_list"
-
-                     list-design="field_listClass"
-
-                     data-value="entry_id"
-
-                     data-place="<?php echo esc_attr($entry_placeholder); ?>"
-
-                     value="1"
-
-                     checked
-
-                     disabled>
-
-                     <span class="slider round button-toggle  field-list-new"></span>
-
-                  </label>
+                           class="switch entry-lock">
 
 
 
-                  <span class="drag-icon">
+                           <input
 
-                     <i class="fas fa-grip-vertical drag-icon"></i>
+                              type="checkbox"
 
-                  </span>
+                              class="fcheckBoxClass toggle-input child-toggle checkAllClass check-toggle-cf7"
+
+                              id="gs-custom-ck"
+
+                              name="gs-custom-ck"
+
+                              data-id="gs-cstm-chk"
+
+                              data-list="field_list"
+
+                              list-design="field_listClass"
+
+                              data-value="entry_id"
+
+                              data-place="<?php echo esc_attr($entry_placeholder); ?>"
+
+                              value="1"
+
+                              checked
+
+                              disabled>
+
+                           <span class="slider round button-toggle  field-list-new"></span>
+
+                        </label>
 
 
 
-                  <!-- Label -->
+                        <span class="drag-icon">
 
-                  <div class="label label-text card-label">
+                           <i class="fas fa-grip-vertical drag-icon"></i>
 
-                     entry_id
+                        </span>
+
+
+
+                        <!-- Label -->
+
+                        <div class="label label-text card-label">
+
+                           entry_id
+
+                        </div>
+
+
+
+                        <!-- Hidden: key -->
+
+                        <input
+
+                           type="hidden"
+
+                           value="entry_id"
+
+                           name="gs-custom-header-key">
+
+
+
+                        <!-- Hidden: placeholder -->
+
+                        <input
+
+                           type="hidden"
+
+                           value="<?php echo esc_attr($entry_placeholder); ?>"
+
+                           name="gs-custom-header-placeholde">
+
+
+
+                        <!-- Text input: always readonly, always "entry_id" -->
+
+                        <input
+
+                           type="text"
+
+                           data-id="gs-entry-id"
+
+                           class="field-input from-input-change d-none"
+
+                           name="gs-custom-header"
+
+                           value="entry_id"
+
+                           placeholder="<?php echo esc_attr($entry_placeholder); ?>"
+
+                           readonly>
+
+
+
+                        <!-- Hidden: custom-value -->
+
+                        <input
+
+                           type="hidden"
+
+                           name="custom-value"
+
+                           value="<?php echo esc_attr($entry_placeholder); ?>">
+
+
+
+                     </div>
 
                   </div>
 
+               </div><?php
 
 
-                  <!-- Hidden: key -->
 
-                  <input
+                     $assoc_arr = [];
 
-                  type="hidden"
+                     $meta = get_post_meta($form_id, '_form', true);
 
-                  value="entry_id"
 
-                  name="gs-custom-header-key">
 
+                     $fields = $this->get_contact_form_fields($meta);
 
 
-                  <!-- Hidden: placeholder -->
 
-                  <input
+                     if ($fields) {
 
-                  type="hidden"
+                        foreach ($fields as $field) {
 
-                  value="<?php echo esc_attr($entry_placeholder); ?>"
+                           $single = $this->get_field_assoc($field);
 
-                  name="gs-custom-header-placeholde">
+                           if ($single) {
 
-
-
-                  <!-- Text input: always readonly, always "entry_id" -->
-
-                  <input
-
-                  type="text"
-
-                  data-id="gs-entry-id"
-
-                  class="field-input from-input-change d-none"
-
-                  name="gs-custom-header"
-
-                  value="entry_id"
-
-                  placeholder="<?php echo esc_attr($entry_placeholder); ?>"
-
-                  readonly>
-
-
-
-                  <!-- Hidden: custom-value -->
-
-                  <input
-
-                  type="hidden"
-
-                  name="custom-value"
-
-                  value="<?php echo esc_attr($entry_placeholder); ?>">
-
-
-
-               </div>
-
-            </div>
-
-            </div><?php
-
-
-
-            $assoc_arr = [];
-
-            $meta = get_post_meta($form_id, '_form', true);
-
-
-
-            $fields = $this->get_contact_form_fields($meta);
-
-
-
-            if ($fields) {
-
-               foreach ($fields as $field) {
-
-                  $single = $this->get_field_assoc($field);
-
-                  if ($single) {
-
-                     $assoc_arr[] = $single;
-                  }
-               }
-            }
-
-            ?>
-
-
-
-            <?php if (!empty($assoc_arr)) : ?>
-
-
-
-               <?php
-
-               $count = 0;
-
-
-
-               foreach ($assoc_arr as $key => $value) {
-
-
-
-                  foreach ($value as $k => $v) {
-
-
-
-                        //  ONLY render real field name
-
-                     if ($k !== 'name') {
-
-                        continue;
+                              $assoc_arr[] = $single;
+                           }
+                        }
                      }
-
-
-
-                     $saved_val = "";
-
-                     if (!empty($saved_mail_tags) && array_key_exists($v, $saved_mail_tags[0])) {
-
-                        $saved_val = $saved_mail_tags[0][$v];
-                     }
-
-
-
-                     $placeholder = preg_replace('/[\\_]|\\s+/', '-', $v);
-
-
-
-                        //  FIXED
-
-                     $field_name = $value['name'];
-
-
-
-                        //  FIXED
-
-                     $unique_id = 'gs-field-' . sanitize_key($v) . '-' . $count;
-
-
-
-                     $has_pipe = isset($value['pi']) ? $value['pi'] : 0;
 
                      ?>
 
 
 
+               <?php if (!empty($assoc_arr)) : ?>
+
+
+
+                  <?php
+
+                  $count = 0;
+
+
+
+                  foreach ($assoc_arr as $key => $value) {
+
+
+
+                     foreach ($value as $k => $v) {
+
+
+
+                        //  ONLY render real field name
+
+                        if ($k !== 'name') {
+
+                           continue;
+                        }
+
+
+
+                        $saved_val = "";
+
+                        if (!empty($saved_mail_tags) && array_key_exists($v, $saved_mail_tags[0])) {
+
+                           $saved_val = $saved_mail_tags[0][$v];
+                        }
+
+
+
+                        $placeholder = preg_replace('/[\\_]|\\s+/', '-', $v);
+
+
+
+                        //  FIXED
+
+                        $field_name = $value['name'];
+
+
+
+                        //  FIXED
+
+                        $unique_id = 'gs-field-' . sanitize_key($v) . '-' . $count;
+
+
+
+                        $has_pipe = isset($value['pi']) ? $value['pi'] : 0;
+
+                  ?>
+
+
+
+                        <div class="card form-field-toggle active ui-sortable-handle">
+
+                           <div class="card-content">
+
+                              <div class="toggle-button field_list_bg">
+
+                                 <i class="dashicons dashicons-edit field-edit-icon"></i>
+
+                                 <label class="switch">
+
+                                    <input type="checkbox"
+
+                                       class="fcheckBoxClass toggle-input"
+
+                                       data-value="<?php echo esc_attr($saved_val); ?>"
+
+                                       data-place="<?php echo esc_attr($placeholder); ?>"
+
+                                       checked disabled>
+
+                                    <span class="slider round button-toggle  field-list-new"></span>
+
+                                 </label>
+
+
+
+                                 <span class="drag-icon">
+
+                                    <i class="fas fa-grip-vertical"></i>
+
+                                 </span>
+
+
+
+                                 <div class="label label-text card-label">
+
+                                    <?php echo esc_html($v); ?>
+
+                                 </div>
+
+
+
+                                 <circle cx="14" cy="15" r="1.5" fill="currentColor"></circle>
+
+                                 </svg>
+
+                                 </span>
+
+                                 <input type="hidden"
+
+                                    value="<?php echo esc_attr($field_name); ?>"
+
+                                    name="gs-custom-header-key">
+
+
+
+                                 <input type="hidden"
+
+                                    value="<?php echo esc_attr($placeholder); ?>"
+
+                                    name="gs-custom-header-placeholder">
+
+
+
+                                 <input type="text"
+
+                                    data-id="<?php echo esc_attr($unique_id); ?>"
+
+                                    class="field-input d-none"
+
+                                    name="gs-custom-header[<?php echo esc_attr($count); ?>]"
+
+                                    value="<?php echo esc_attr($saved_val); ?>"
+
+                                    placeholder="<?php echo esc_attr($placeholder); ?>" disabled>
+
+
+
+                                 <!--  PIPE UI -->
+
+                                 <?php if ($has_pipe == 1) : ?>
+
+                                    <div class="pipe-select-box">
+
+                                       <select name="gs-custom-pi[<?php echo esc_attr($field_name); ?>]">
+
+                                          <option value="after">After PIPE</option>
+
+                                          <option value="before" disabled>Before PIPE</option>
+
+                                          <option value="both" disabled>Both</option>
+
+                                       </select>
+
+                                    </div>
+
+                                 <?php endif; ?>
+
+
+
+                              </div>
+
+                           </div>
+
+                        </div>
+
+
+
+                  <?php
+
+                        $count++;
+                     }
+                  }
+
+                  ?>
+
+
+
+               <?php else : ?>
+
+                  <p><span class="gs-info">No mail tags available.</span></p>
+
+               <?php endif;
+
+               $this->special_mail_tags;
+
+
+
+               $tags_count = count($this->special_mail_tags);
+
+               ?>
+
+
+
+               <?php if ($tags_count > 0) : ?>
+
+
+
+                  <?php
+
+                  foreach ($this->special_mail_tags as $count => $tag_name) :
+
+
+
+                     $is_entry_id = ($tag_name === 'entry_id');
+
+                     $placeholder = str_replace('_', '-', $tag_name);
+
+
+
+                     // Fetch saved value
+
+                     $saved_val = '';
+
+                     $checked   = '';
+
+                     if (!empty($saved_mail_tags) && array_key_exists($tag_name, $saved_mail_tags[0])) {
+
+                        $saved_val = $saved_mail_tags[0][$tag_name];
+
+                        $checked   = 'checked';
+                     }
+
+                  ?>
+
                      <div class="card form-field-toggle active ui-sortable-handle">
 
                         <div class="card-content">
 
-                           <div class="toggle-button field_list_bg">
+                           <div class="toggle-button special_mail_tags_bg">
 
                               <i class="dashicons dashicons-edit field-edit-icon"></i>
 
-                              <label class="switch">
+                              <!-- Toggle Switch -->
 
-                                 <input type="checkbox"
+                              <label for="gs-st-ck"
 
-                                 class="fcheckBoxClass toggle-input"
+                                 class="switch <?php echo $is_entry_id ? 'entry-lock' : ''; ?>">
 
-                                 data-value="<?php echo esc_attr($saved_val); ?>"
+                                 <input
 
-                                 data-place="<?php echo esc_attr($placeholder); ?>"
+                                    type="checkbox"
 
-                                 checked disabled>
+                                    class="fcheckBoxClass toggle-input child-toggle check-toggle-cf7"
+
+                                    id="gs-st-ck-<?php echo esc_attr($count); ?>"
+
+                                    name="gs-st-ck[<?php echo esc_attr($count); ?>]"
+
+                                    value="1">
 
                                  <span class="slider round button-toggle  field-list-new"></span>
 
@@ -4093,75 +4524,221 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                               <span class="drag-icon">
 
-                                 <i class="fas fa-grip-vertical"></i>
+                                 <i class="fas fa-grip-vertical drag-icon"></i>
 
                               </span>
 
 
 
+                              <!-- Tag Label -->
+
                               <div class="label label-text card-label">
 
-                                 <?php echo esc_html($v); ?>
+                                 <?php echo esc_html($tag_name); ?>
 
                               </div>
 
 
 
-                              <circle cx="14" cy="15" r="1.5" fill="currentColor"></circle>
+                              <!-- Hidden: key -->
 
-                           </svg>
+                              <input
 
-                        </span>
+                                 type="hidden"
 
-                        <input type="hidden"
+                                 value="<?php echo esc_attr($tag_name); ?>"
 
-                        value="<?php echo esc_attr($field_name); ?>"
-
-                        name="gs-custom-header-key">
+                                 name="gs-st-header-key[<?php echo esc_attr($count); ?>]">
 
 
 
-                        <input type="hidden"
+                              <!-- Hidden: placeholder -->
 
-                        value="<?php echo esc_attr($placeholder); ?>"
+                              <input
 
-                        name="gs-custom-header-placeholder">
+                                 type="hidden"
 
+                                 value="<?php echo esc_attr($placeholder); ?>"
 
-
-                        <input type="text"
-
-                        data-id="<?php echo esc_attr($unique_id); ?>"
-
-                        class="field-input d-none"
-
-                        name="gs-custom-header[<?php echo esc_attr($count); ?>]"
-
-                        value="<?php echo esc_attr($saved_val); ?>"
-
-                        placeholder="<?php echo esc_attr($placeholder); ?>" disabled>
+                                 name="gs-st-header-placeholder[<?php echo esc_attr($count); ?>]">
 
 
 
-                        <!--  PIPE UI -->
+                              <!-- Text Input -->
 
-                        <?php if ($has_pipe == 1) : ?>
+                              <input
 
-                           <div class="pipe-select-box">
+                                 type="text"
 
-                              <select name="gs-custom-pi[<?php echo esc_attr($field_name); ?>]">
+                                 data-id="gs-st-<?php echo esc_attr($tag_name); ?>"
 
-                                 <option value="after">After PIPE</option>
+                                 class="field-input from-input-change d-none"
 
-                                 <option value="before" disabled>Before PIPE</option>
+                                 name="gs-st-custom-header[<?php echo esc_attr($count); ?>]"
 
-                                 <option value="both" disabled>Both</option>
+                                 value="<?php echo $is_entry_id ? 'entry_id' : esc_attr($saved_val); ?>"
 
-                              </select>
+                                 placeholder="<?php echo esc_attr($placeholder); ?>"
+
+
+
+                                 <?php echo $is_entry_id ? 'readonly' : ''; ?>>
+
+
+
+                              <!-- Hidden: custom-value -->
+
+                              <input
+
+                                 type="hidden"
+
+                                 name="gs-st-custom-value"
+
+                                 value="<?php echo esc_attr($placeholder); ?>">
+
+
 
                            </div>
 
-                        <?php endif; ?>
+                        </div>
+
+                     </div>
+
+
+
+                  <?php endforeach; ?>
+
+
+
+               <?php else : ?>
+
+
+
+                  <p>
+
+                     <span class="gs-info">
+
+                        <?php echo esc_html__('No special mail tags available.', 'cf7-google-sheets-connector'); ?>
+
+                     </span>
+
+                  </p>
+
+
+
+               <?php endif;
+
+               ?>
+
+
+
+               <?php
+
+               $count = 999;
+
+               $tag_name = '_datetime';
+
+               $placeholder = 'Date & Time';
+
+               ?>
+
+
+
+               <div class="card form-field-toggle active ui-sortable-handle">
+
+                  <div class="card-content">
+
+                     <div class="toggle-button custom-mail-tags-bg">
+
+
+
+                        <i class="dashicons dashicons-edit field-edit-icon"></i>
+
+
+
+                        <label for="gs-st-ck-<?php echo esc_attr($count); ?>" class="switch">
+
+
+
+                           <input
+
+                              type="checkbox"
+
+                              class="fcheckBoxClass toggle-input child-toggle check-toggle-cf7"
+
+                              id="gs-st-ck-<?php echo esc_attr($count); ?>"
+
+                              name="gs-st-ck[<?php echo esc_attr($count); ?>]"
+
+                              value="1">
+
+
+
+                           <span class="slider round button-toggle field-list-new"></span>
+
+                        </label>
+
+
+
+                        <span class="drag-icon">
+
+                           <i class="fas fa-grip-vertical drag-icon"></i>
+
+                        </span>
+
+
+
+                        <div class="label label-text card-label">
+
+                           <?php echo esc_html($tag_name); ?>
+
+                        </div>
+
+
+
+                        <input
+
+                           type="hidden"
+
+                           value="<?php echo esc_attr($tag_name); ?>"
+
+                           name="gs-st-header-key[<?php echo esc_attr($count); ?>]">
+
+
+
+                        <input
+
+                           type="hidden"
+
+                           value="<?php echo esc_attr($placeholder); ?>"
+
+                           name="gs-st-header-placeholder[<?php echo esc_attr($count); ?>]">
+
+
+
+                        <input
+
+                           type="text"
+
+                           data-id="gs-st-<?php echo esc_attr($tag_name); ?>"
+
+                           class="field-input from-input-change d-none"
+
+                           name="gs-st-custom-header[<?php echo esc_attr($count); ?>]"
+
+                           value="_datetime"
+
+                           placeholder="<?php echo esc_attr($placeholder); ?>">
+
+
+
+                        <input
+
+                           type="hidden"
+
+                           name="gs-st-custom-value"
+
+                           value="<?php echo esc_attr($placeholder); ?>">
 
 
 
@@ -4171,326 +4748,9 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                </div>
 
+            <?php
 
-
-               <?php
-
-               $count++;
-            }
          }
-
-         ?>
-
-
-
-      <?php else : ?>
-
-         <p><span class="gs-info">No mail tags available.</span></p>
-
-      <?php endif;
-
-      $this->special_mail_tags;
-
-
-
-      $tags_count = count($this->special_mail_tags);
-
-      ?>
-
-
-
-      <?php if ($tags_count > 0) : ?>
-
-
-
-         <?php
-
-         foreach ($this->special_mail_tags as $count => $tag_name) :
-
-
-
-            $is_entry_id = ($tag_name === 'entry_id');
-
-            $placeholder = str_replace('_', '-', $tag_name);
-
-
-
-                     // Fetch saved value
-
-            $saved_val = '';
-
-            $checked   = '';
-
-            if (!empty($saved_mail_tags) && array_key_exists($tag_name, $saved_mail_tags[0])) {
-
-               $saved_val = $saved_mail_tags[0][$tag_name];
-
-               $checked   = 'checked';
-            }
-
-            ?>
-
-            <div class="card form-field-toggle active ui-sortable-handle">
-
-               <div class="card-content">
-
-                  <div class="toggle-button special_mail_tags_bg">
-
-                     <i class="dashicons dashicons-edit field-edit-icon"></i>
-
-                     <!-- Toggle Switch -->
-
-                     <label for="gs-st-ck"
-
-                     class="switch <?php echo $is_entry_id ? 'entry-lock' : ''; ?>">
-
-                     <input
-
-                     type="checkbox"
-
-                     class="fcheckBoxClass toggle-input child-toggle check-toggle-cf7"
-
-                     id="gs-st-ck-<?php echo esc_attr($count); ?>"
-
-                     name="gs-st-ck[<?php echo esc_attr($count); ?>]"
-
-                     value="1">
-
-                     <span class="slider round button-toggle  field-list-new"></span>
-
-                  </label>
-
-
-
-                  <span class="drag-icon">
-
-                     <i class="fas fa-grip-vertical drag-icon"></i>
-
-                  </span>
-
-
-
-                  <!-- Tag Label -->
-
-                  <div class="label label-text card-label">
-
-                     <?php echo esc_html($tag_name); ?>
-
-                  </div>
-
-
-
-                  <!-- Hidden: key -->
-
-                  <input
-
-                  type="hidden"
-
-                  value="<?php echo esc_attr($tag_name); ?>"
-
-                  name="gs-st-header-key[<?php echo esc_attr($count); ?>]">
-
-
-
-                  <!-- Hidden: placeholder -->
-
-                  <input
-
-                  type="hidden"
-
-                  value="<?php echo esc_attr($placeholder); ?>"
-
-                  name="gs-st-header-placeholder[<?php echo esc_attr($count); ?>]">
-
-
-
-                  <!-- Text Input -->
-
-                  <input
-
-                  type="text"
-
-                  data-id="gs-st-<?php echo esc_attr($tag_name); ?>"
-
-                  class="field-input from-input-change d-none"
-
-                  name="gs-st-custom-header[<?php echo esc_attr($count); ?>]"
-
-                  value="<?php echo $is_entry_id ? 'entry_id' : esc_attr($saved_val); ?>"
-
-                  placeholder="<?php echo esc_attr($placeholder); ?>"
-
-
-
-                  <?php echo $is_entry_id ? 'readonly' : ''; ?>>
-
-
-
-                  <!-- Hidden: custom-value -->
-
-                  <input
-
-                  type="hidden"
-
-                  name="gs-st-custom-value"
-
-                  value="<?php echo esc_attr($placeholder); ?>">
-
-
-
-               </div>
-
-            </div>
-
-         </div>
-
-
-
-      <?php endforeach; ?>
-
-
-
-   <?php else : ?>
-
-
-
-      <p>
-
-         <span class="gs-info">
-
-            <?php echo esc_html__('No special mail tags available.', 'cf7-google-sheets-connector'); ?>
-
-         </span>
-
-      </p>
-
-
-
-   <?php endif;
-
-   ?>
-
-
-
-   <?php
-
-   $count = 999;
-
-   $tag_name = '_datetime';
-
-   $placeholder = 'Date & Time';
-
-   ?>
-
-
-
-   <div class="card form-field-toggle active ui-sortable-handle">
-
-      <div class="card-content">
-
-         <div class="toggle-button custom-mail-tags-bg">
-
-
-
-            <i class="dashicons dashicons-edit field-edit-icon"></i>
-
-
-
-            <label for="gs-st-ck-<?php echo esc_attr($count); ?>" class="switch">
-
-
-
-               <input
-
-               type="checkbox"
-
-               class="fcheckBoxClass toggle-input child-toggle check-toggle-cf7"
-
-               id="gs-st-ck-<?php echo esc_attr($count); ?>"
-
-               name="gs-st-ck[<?php echo esc_attr($count); ?>]"
-
-               value="1">
-
-
-
-               <span class="slider round button-toggle field-list-new"></span>
-
-            </label>
-
-
-
-            <span class="drag-icon">
-
-               <i class="fas fa-grip-vertical drag-icon"></i>
-
-            </span>
-
-
-
-            <div class="label label-text card-label">
-
-               <?php echo esc_html($tag_name); ?>
-
-            </div>
-
-
-
-            <input
-
-            type="hidden"
-
-            value="<?php echo esc_attr($tag_name); ?>"
-
-            name="gs-st-header-key[<?php echo esc_attr($count); ?>]">
-
-
-
-            <input
-
-            type="hidden"
-
-            value="<?php echo esc_attr($placeholder); ?>"
-
-            name="gs-st-header-placeholder[<?php echo esc_attr($count); ?>]">
-
-
-
-            <input
-
-            type="text"
-
-            data-id="gs-st-<?php echo esc_attr($tag_name); ?>"
-
-            class="field-input from-input-change d-none"
-
-            name="gs-st-custom-header[<?php echo esc_attr($count); ?>]"
-
-            value="_datetime"
-
-            placeholder="<?php echo esc_attr($placeholder); ?>">
-
-
-
-            <input
-
-            type="hidden"
-
-            name="gs-st-custom-value"
-
-            value="<?php echo esc_attr($placeholder); ?>">
-
-
-
-         </div>
-
-      </div>
-
-   </div>
-
-   <?php
-
-}
 
          /**
 
@@ -4672,30 +4932,30 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
             ?>
 
-            <h2 class="inner-title"><span class="gs-info"><?php echo esc_html(__('Map special mail tags with custom header name and save automatically to google sheet. ', 'cf7-google-sheets-connector')); ?></span></h2>
+               <h2 class="inner-title"><span class="gs-info"><?php echo esc_html(__('Map special mail tags with custom header name and save automatically to google sheet. ', 'cf7-google-sheets-connector')); ?></span></h2>
 
-            <ul class="gs-field-list special">
+               <ul class="gs-field-list special">
 
-               <?php
-
-
-
-               for ($i = 0; $i <= $tags_count; $i++) {
-
-                  if ($i == $tags_count) {
-
-                     break;
-                  }
-
-                  $tag_name = $this->special_mail_tags[$i];
+                  <?php
 
 
 
-                  $placeholder = str_replace('_', '-', $tag_name);
+                  for ($i = 0; $i <= $tags_count; $i++) {
 
-                  echo '<li>';
+                     if ($i == $tags_count) {
 
-                  echo '<div class="input-field">
+                        break;
+                     }
+
+                     $tag_name = $this->special_mail_tags[$i];
+
+
+
+                     $placeholder = str_replace('_', '-', $tag_name);
+
+                     echo '<li>';
+
+                     echo '<div class="input-field">
 
 
 
@@ -4703,23 +4963,23 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                   </div>';
 
-                  echo '<div class="special-tags label">[_' . esc_attr($tag_name) . '] </div>';
+                     echo '<div class="special-tags label">[_' . esc_attr($tag_name) . '] </div>';
 
-                  echo '<div class="gs-r-pad field-input  d-none"><input type="text" class="name-field" name="gs-st-custom-header[' . esc_attr($i) . ']" value="" disabled placeholder="' . esc_attr($placeholder) . '"> </div>';
+                     echo '<div class="gs-r-pad field-input  d-none"><input type="text" class="name-field" name="gs-st-custom-header[' . esc_attr($i) . ']" value="" disabled placeholder="' . esc_attr($placeholder) . '"> </div>';
 
-                  if ($i % $num_of_cols == 1) {
+                     if ($i % $num_of_cols == 1) {
 
-                     echo '</li>';
+                        echo '</li>';
+                     }
                   }
-               }
 
-               ?>
+                  ?>
 
-            </ul>
+               </ul>
 
-            <?php
+               <?php
 
-         }
+            }
 
             /**
 
@@ -4769,7 +5029,7 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                   $saved_cmail_tags = get_post_meta($form_id, 'gs_map_custom_mail_tags');
 
-                  ?>
+               ?>
 
                   <ul class="gs-field-list">
 
@@ -4796,29 +5056,29 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                            $saved_val = $saved_cmail_tags[0][$modify_tag];
 
-                        $checked = "checked";
+                           $checked = "checked";
 
-                     endif;
+                        endif;
 
 
 
                         //hack - todo
 
-                     $placeholder_explode = explode('_', $tag_name, 2);
+                        $placeholder_explode = explode('_', $tag_name, 2);
 
-                     $placeholder = str_replace('_', '-', $placeholder_explode[1]);
+                        $placeholder = str_replace('_', '-', $placeholder_explode[1]);
 
 
 
-                     echo '<div class="input-field">
+                        echo '<div class="input-field">
 
                      <label for="enable-sorting-option" class="button-woo-toggle-cf7" id="sorting-toggle"></label>
 
                      </div>';
 
-                     echo '<div class="label">[' . esc_attr($tag_name) . ']</div>';
+                        echo '<div class="label">[' . esc_attr($tag_name) . ']</div>';
 
-                     echo '<div class="gs-r-pad field-input d-none"><input type="hidden" name="gs-ct-key[' . esc_attr($i) . ']" value="' . esc_attr($tag_name) . '" ><input type="hidden" name="gs-ct-placeholder[' . esc_attr($i) . ']" value="' . esc_attr($placeholder) . '" >
+                        echo '<div class="gs-r-pad field-input d-none"><input type="hidden" name="gs-ct-key[' . esc_attr($i) . ']" value="' . esc_attr($tag_name) . '" ><input type="hidden" name="gs-ct-placeholder[' . esc_attr($i) . ']" value="' . esc_attr($placeholder) . '" >
 
                      <input type="text" name="gs-ct-custom-header[' . esc_attr($i) . ']" value="' . esc_attr($saved_val) . '" placeholder="' . esc_attr($placeholder) . '" disabled>
 
@@ -4826,23 +5086,23 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                      </div>';
 
-                     if ($i % $num_of_cols == 1) {
+                        if ($i % $num_of_cols == 1) {
 
-                        echo '</li>';
+                           echo '</li>';
+                        }
                      }
-                  }
 
-                  ?>
+                     ?>
 
-               </ul>
+                  </ul>
 
                <?php
 
-            } else {
+               } else {
 
-               echo '<p><span class="gs-info">' . esc_html__('No custom mail tags available.', 'cf7-google-sheets-connector') . '</span></p>';
+                  echo '<p><span class="gs-info">' . esc_html__('No custom mail tags available.', 'cf7-google-sheets-connector') . '</span></p>';
+               }
             }
-         }
 
             /**
              * Display Conditional Logic toggle UI for CF7 form feed settings.
@@ -4874,7 +5134,7 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
 
                         <input type="checkbox" name="cf7-gs[enable_conditional_logic]" id="enable-conditional-logic" value="1"
 
-                        style="display: none;">
+                           style="display: none;">
 
                         <label for="enable-conditional-logic" class="button-woo-toggle-cf7" id="conditional-toggle"></label>
 
@@ -4900,7 +5160,7 @@ if (!empty($cf7_service_email) && $gs_cf7_auth_method === "cf7_service") { ?>
                      </span>
                   </div>
                </div>
-               <?php
+         <?php
             }
 
 

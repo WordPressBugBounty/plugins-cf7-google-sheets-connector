@@ -13,7 +13,7 @@ $gscf7_active_tab = 'dashboard';
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 if (isset($_GET['tab'])) {
     $gscf7_active_tab = sanitize_text_field(
-        wp_unslash($_GET['tab'])// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
+        wp_unslash($_GET['tab']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
     );
 }
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
@@ -72,7 +72,12 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
         }
     } else if ((!empty($gscf7_authenticatedService) && $gscf7_auth_method === "cf7_service")) {
         $gscf7_is_authenticated = true;
-        $gscf7_selected_method = esc_html(__('Service', 'cf7-google-sheets-connector'));
+        $gscf7_decoded_json = json_decode($gscf7_authenticatedService, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && isset($gscf7_decoded_json['client_email'])) {
+
+            $gscf7_selected_method = esc_html(__('Service', 'cf7-google-sheets-connector'));
+        }
     } else {
         $gscf7_selected_method = esc_html(__('Auth Required', 'cf7-google-sheets-connector'));
     }
@@ -281,7 +286,7 @@ $gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION :
 
                         <div class="gsc-upgrade-content">
                             <div class="gsc-upgrade-heading">
-                                <?php esc_html_e('Unlock Advance Features of CF7 GSheetConnector Pro', 'cf7-google-sheets-connector'); ?>
+                                <?php esc_html_e('Unlock Advance Features of CF7 Google Sheet Connector Pro', 'cf7-google-sheets-connector'); ?>
                             </div>
 
                             <p>

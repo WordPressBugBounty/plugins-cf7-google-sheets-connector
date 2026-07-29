@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 if (!defined('ABSPATH'))
     exit;
@@ -93,11 +93,12 @@ public static function updateToken( $tokenData ) {
     if (empty($tokenData['access_token'])) {
 
 
-        update_option('cf7gf_email_account', '');
+        update_option('cf7gf_email_account', '', false);
 
         update_option(
             'gs_token',
-            wp_json_encode($tokenData)
+            wp_json_encode($tokenData),
+            false
         );
 
         if (class_exists('gscf7_error_logs')) {
@@ -145,8 +146,8 @@ public static function updateToken( $tokenData ) {
                 }
             }
         }
-        $tokenJson = json_encode( $tokenData );
-        update_option( 'gs_token', $tokenJson );
+        $tokenJson = wp_json_encode( $tokenData );
+        update_option( 'gs_token', $tokenJson, false );
     } catch ( Exception $e ) {
         Gs_Connector_Free_Utility::gs_debug_log($e->getMessage());
         return;
@@ -431,6 +432,174 @@ private function generate_gscf7_service_token($creds)
 }
 }
 
+/**
+ * Default timeout, in seconds, for every Google API request.
+ *
+ * wp_remote_* defaults to 5 seconds per request. Because the submission path
+ * issues several requests in sequence, an explicit shared value keeps the
+ * worst-case latency predictable.
+ *
+ * @since 5.2.1
+ */
+const GSC_API_TIMEOUT = 10;
+
+/**
+ * Build the shared request arguments for a Google API call.
+ *
+ * @since 5.2.1
+ *
+ * @param string $token  Bearer token.
+ * @param array  $extra  Additional wp_remote_* arguments.
+ * @return array Request arguments.
+ */
+private static function gsc_request_args($token, $extra = array())
+{
+    $args = array(
+        'timeout' => self::GSC_API_TIMEOUT,
+        'headers' => array(
+            'Authorization' => 'Bearer ' . $token,
+        ),
+    );
+
+    if (isset($extra['headers'])) {
+        $args['headers'] = array_merge($args['headers'], $extra['headers']);
+        unset($extra['headers']);
+    }
+
+    return array_merge($args, $extra);
+}
+
+/**
+ * Convert a zero-based column index into its A1 notation letters.
+ *
+ * @since 5.2.1
+ *
+ * @param int $index Zero-based column index.
+ * @return string Column letters, e.g. 0 => A, 26 => AA.
+ */
+private static function gsc_column_letter($index)
+{
+    $index  = max(0, (int) $index);
+    $letter = '';
+
+    do {
+        $letter = chr(65 + ($index % 26)) . $letter;
+        $index  = intdiv($index, 26) - 1;
+    } while ($index >= 0);
+
+    return $letter;
+}
+
+/**
+ * Retrieve spreadsheet metadata, using a short-lived cache.
+ *
+ * Sheet titles and IDs change very rarely, but this request previously ran on
+ * every single form submission. Caching it removes one blocking round-trip
+ * from the critical path without affecting the data that is written.
+ *
+ * @since 5.2.1
+ *
+ * @param string $spreadsheet_id Spreadsheet ID.
+ * @param string $token          Bearer token.
+ * @return array|WP_Error Decoded metadata, or WP_Error on failure.
+ */
+private function gsc_get_spreadsheet_meta($spreadsheet_id, $token)
+{
+    $cache_key = 'cf7gsc_meta_' . md5($spreadsheet_id);
+    $cached    = get_transient($cache_key);
+
+    if (is_array($cached)) {
+        return $cached;
+    }
+
+    $response = wp_remote_get(
+        'https://sheets.googleapis.com/v4/spreadsheets/' . rawurlencode($spreadsheet_id),
+        self::gsc_request_args($token)
+    );
+
+    $body = self::gsc_parse_response($response, 'spreadsheet metadata');
+
+    if (is_wp_error($body)) {
+        return $body;
+    }
+
+    if (empty($body['sheets']) || ! is_array($body['sheets'])) {
+        return new WP_Error(
+            'cf7gsc_no_sheets',
+            __('The spreadsheet returned no worksheets.', 'cf7-google-sheets-connector')
+        );
+    }
+
+    set_transient($cache_key, $body, 15 * MINUTE_IN_SECONDS);
+
+    return $body;
+}
+
+/**
+ * Validate a Google API response and return its decoded body.
+ *
+ * Previously the submission path dereferenced response bodies without any
+ * checks, so a transport error, an expired token or a rate-limit response
+ * produced PHP warnings and silently discarded the submission.
+ *
+ * @since 5.2.1
+ *
+ * @param array|WP_Error $response Response from a wp_remote_* call.
+ * @param string         $context  Short description used in the log entry.
+ * @return array|WP_Error Decoded body, or WP_Error on failure.
+ */
+private static function gsc_parse_response($response, $context)
+{
+    if (is_wp_error($response)) {
+        Gs_Connector_Free_Utility::gs_debug_log(array(
+            'context' => 'google_sheets:' . $context,
+            'error'   => $response->get_error_message(),
+        ));
+
+        return $response;
+    }
+
+    $code = wp_remote_retrieve_response_code($response);
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+
+    if (! is_array($body)) {
+        $body = array();
+    }
+
+    if ($code < 200 || $code > 299) {
+        $message = isset($body['error']['message'])
+            ? $body['error']['message']
+            : __('Unexpected response from the Google Sheets API.', 'cf7-google-sheets-connector');
+
+        Gs_Connector_Free_Utility::gs_debug_log(array(
+            'context' => 'google_sheets:' . $context,
+            'status'  => $code,
+            'error'   => $message,
+        ));
+
+        return new WP_Error('cf7gsc_api_error', $message, array('status' => $code));
+    }
+
+    return $body;
+}
+
+/**
+ * Clear cached spreadsheet metadata.
+ *
+ * @since 5.2.1
+ *
+ * @param string $spreadsheet_id Spreadsheet ID, or empty to skip.
+ * @return void
+ */
+public static function gsc_flush_meta_cache($spreadsheet_id = '')
+{
+    if (! empty($spreadsheet_id)) {
+        delete_transient('cf7gsc_meta_' . md5($spreadsheet_id));
+    }
+
+    delete_transient('cf7gsc_connected_email');
+}
+
 //preg_match is a key of error handle in this case
 public function setSpreadsheetId($id)
 {
@@ -465,282 +634,286 @@ public function add_row($data)
             return;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | 1. RESOLVE THE TARGET WORKSHEET (cached)
+        |--------------------------------------------------------------------------
+        */
 
-        $response = wp_remote_get(
-            "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}",
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token,
-                ],
-            ]
-        );
+        $meta = $this->gsc_get_spreadsheet_meta( $spreadsheetId, $token );
 
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( is_wp_error( $meta ) ) {
+            return $meta;
+        }
 
-        foreach ( $body['sheets'] as $sheet ) {
+        $sheet_id    = null;
+        $sheet_title = null;
 
-            $properties = $sheet['properties'];
-            $sheet_id = $properties['sheetId'];
-            $sheet_title = $properties['title'];
+        foreach ( $meta['sheets'] as $sheet ) {
 
-            if ( $sheet_id != $worksheet_id && $sheet_title != $worksheet_id ) {
+            $properties = isset( $sheet['properties'] ) ? $sheet['properties'] : array();
+
+            if ( ! isset( $properties['sheetId'], $properties['title'] ) ) {
                 continue;
             }
 
-                /*
-            |--------------------------------------------------------------------------
-            | 1. READ HEADER
-            |--------------------------------------------------------------------------
-            */
+            if ( $properties['sheetId'] != $worksheet_id && $properties['title'] != $worksheet_id ) {
+                continue;
+            }
 
-            $header_range = $sheet_title . '!1:1';
+            $sheet_id    = $properties['sheetId'];
+            $sheet_title = $properties['title'];
+            break;
+        }
+
+        if ( null === $sheet_title ) {
+
+            // The tab may have been renamed or deleted; drop the cache so the
+            // next submission re-reads the spreadsheet structure.
+            self::gsc_flush_meta_cache( $spreadsheetId );
+
+            return new WP_Error(
+                'cf7gsc_tab_not_found',
+                __( 'The configured worksheet tab could not be found in the spreadsheet.', 'cf7-google-sheets-connector' )
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. READ HEADER ROW
+        |--------------------------------------------------------------------------
+        |
+        | Read live rather than cached: a column added in Google Sheets must be
+        | picked up immediately, otherwise values would be written to the wrong
+        | columns until the cache expired.
+        */
+
+        $header_range = $sheet_title . '!1:1';
+
+        $response = wp_remote_get(
+            "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" . rawurlencode( $header_range ),
+            self::gsc_request_args( $token )
+        );
+
+        $body = self::gsc_parse_response( $response, 'read header row' );
+
+        if ( is_wp_error( $body ) ) {
+            return $body;
+        }
+
+        $headers = isset( $body['values'][0] ) ? $body['values'][0] : array();
+
+        if ( empty( $headers ) ) {
+            return new WP_Error(
+                'cf7gsc_no_headers',
+                __( 'The worksheet has no header row, so submitted fields cannot be mapped to columns.', 'cf7-google-sheets-connector' )
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. PREPARE INSERT DATA
+        |--------------------------------------------------------------------------
+        */
+
+        $insert_data = array();
+
+        foreach ( $headers as $colName ) {
+            $insert_data[] = isset( $data[ $colName ] ) ? $data[ $colName ] : '';
+        }
+
+        // Force Entry ID to be treated as a string.
+        $entry_id_col = array_search( 'Entry ID', $headers, true );
+
+        if ( false !== $entry_id_col && isset( $insert_data[ $entry_id_col ] ) ) {
+            $insert_data[ $entry_id_col ] = (string) $insert_data[ $entry_id_col ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. LOCATE AN EXISTING ROW WITH THE SAME ENTRY ID
+        |--------------------------------------------------------------------------
+        |
+        | Only the Entry ID column is read. The previous implementation fetched
+        | the whole A:Z range of the sheet on every submission purely to work out
+        | the next free row; appending (step 5) makes that unnecessary.
+        */
+
+        $existing_row = false;
+
+        if ( false !== $entry_id_col && ! empty( $data['Entry ID'] ) ) {
+
+            $column_letter = self::gsc_column_letter( $entry_id_col );
+            $column_range  = $sheet_title . '!' . $column_letter . ':' . $column_letter;
+
             $response = wp_remote_get(
-                "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" . urlencode($header_range),
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $token,
-                    ],
-                ]
+                "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" . rawurlencode( $column_range ),
+                self::gsc_request_args( $token )
             );
 
-            $body = json_decode( wp_remote_retrieve_body( $response ), true );
+            $column_body = self::gsc_parse_response( $response, 'read entry id column' );
 
-            $headers = $body['values'][0] ?? [];
+            if ( ! is_wp_error( $column_body ) ) {
 
-                /*
-            |--------------------------------------------------------------------------
-            | 2. PREPARE INSERT DATA
-            |--------------------------------------------------------------------------
-            */
+                $column_values = isset( $column_body['values'] ) ? $column_body['values'] : array();
 
-            $insert_data = [];
+                foreach ( $column_values as $index => $row ) {
 
-            foreach ($headers as $colName) {
-                $insert_data[] = $data[$colName] ?? '';
-            }
-
-                /*
-            |--------------------------------------------------------------------------
-            | Force Entry ID as string
-            |--------------------------------------------------------------------------
-            */
-
-            foreach ($headers as $index => $colName) {
-
-                if ($colName === 'Entry ID' && isset($insert_data[$index])) {
-                    $insert_data[$index] = (string)$insert_data[$index];
-                }
-            }
-
-                /*
-            |--------------------------------------------------------------------------
-            | 3. GET SHEET DATA
-            |--------------------------------------------------------------------------
-            */
-
-            $full_range = $sheet_title . '!A:Z';
-
-            $response = wp_remote_get(
-                "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" . urlencode($full_range),
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $token,
-                    ],
-                ]
-            );
-
-            $body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-            $existing_values = $body['values'] ?? [];
-
-            $existing_row = false;
-
-                /*
-            |--------------------------------------------------------------------------
-            | Find REAL last row
-            |--------------------------------------------------------------------------
-            */
-
-            $row_number = 1;
-
-            foreach ($existing_values as $index => $row) {
-
-                $hasData = false;
-
-                foreach ($row as $cell) {
-
-                    if (trim((string)$cell) !== '') {
-                        $hasData = true;
-                        break;
-                    }
-                }
-
-                if ($hasData) {
-                    $row_number = $index + 1;
-                }
-            }
-
-                // next available row
-            $row_number++;
-
-                /*
-            |--------------------------------------------------------------------------
-            | 4. CHECK DUPLICATE ENTRY ID
-            |--------------------------------------------------------------------------
-            */
-
-            $entry_id_col = array_search('Entry ID', $headers);
-
-            if ($entry_id_col !== false && !empty($data['Entry ID'])) {
-
-                foreach ($existing_values as $index => $row) {
-
-                    if ($index === 0) {
+                    if ( 0 === $index ) {
                         continue;
                     }
 
-                    $sheet_entry_id = $row[$entry_id_col] ?? '';
+                    $sheet_entry_id = isset( $row[0] ) ? $row[0] : '';
 
-                    if ((string)$sheet_entry_id === (string)$data['Entry ID']) {
-
+                    if ( (string) $sheet_entry_id === (string) $data['Entry ID'] ) {
                         $existing_row = $index + 1;
                         break;
                     }
                 }
             }
+        }
 
-           /*
-            |--------------------------------------------------------------------------
-            | 5. UPDATE OR APPEND
-            |--------------------------------------------------------------------------
-            */
+        /*
+        |--------------------------------------------------------------------------
+        | 5. UPDATE OR APPEND
+        |--------------------------------------------------------------------------
+        |
+        | New rows use values:append, which resolves the target row server-side.
+        | This removes the read-then-write race that allowed two concurrent
+        | submissions to compute the same row number and overwrite each other.
+        */
 
-            if ($existing_row) {
+        if ( $existing_row ) {
 
-                $update_range = $sheet_title . '!A' . $existing_row;
+            $update_range = $sheet_title . '!A' . $existing_row;
 
-                $result = wp_remote_request(
-                    "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
-                    urlencode($update_range) .
-                    "?valueInputOption=RAW",
-                    [
-                        'method' => 'PUT',
-                        'headers' => [
-                            'Authorization' => 'Bearer ' . $token,
-                            'Content-Type'  => 'application/json',
-                        ],
-                        'body' => wp_json_encode([
-                            'values' => [ $insert_data ],
-                        ]),
-                    ]
-                );
+            $response = wp_remote_request(
+                "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
+                rawurlencode( $update_range ) .
+                '?valueInputOption=RAW',
+                self::gsc_request_args(
+                    $token,
+                    array(
+                        'method'  => 'PUT',
+                        'headers' => array( 'Content-Type' => 'application/json' ),
+                        'body'    => wp_json_encode( array( 'values' => array( $insert_data ) ) ),
+                    )
+                )
+            );
 
-                $row_number = $existing_row;
-            } else {
+            $result = self::gsc_parse_response( $response, 'update row' );
 
-                $append_range = $sheet_title . '!A' . $row_number;
-
-                $result = wp_remote_request(
-                    "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
-                    urlencode($append_range) .
-                    "?valueInputOption=RAW",
-                    [
-                        'method' => 'PUT',
-                        'headers' => [
-                            'Authorization' => 'Bearer ' . $token,
-                            'Content-Type'  => 'application/json',
-                        ],
-                        'body' => wp_json_encode([
-                            'values' => [ $insert_data ],
-                        ]),
-                    ]
-                );
+            if ( is_wp_error( $result ) ) {
+                return $result;
             }
 
-                /*
-            |--------------------------------------------------------------------------
-            | 6. CLEAR FORMATTING
-            |--------------------------------------------------------------------------
-            */
+            $row_number = $existing_row;
 
-            $clearRequests = [];
+        } else {
 
-            $clearRequests[] = [
-                "repeatCell" => [
-                    "range" => [
-                        "sheetId" => $sheet_id,
-                        "startRowIndex" => $row_number - 1,
-                        "endRowIndex"   => $row_number,
-                    ],
-                    "cell" => [
-                        "userEnteredFormat" => [
-                            "backgroundColor" => [
-                                "red"   => 1,
-                                "green" => 1,
-                                "blue"  => 1
-                            ],
-                            "textFormat" => [
-                                "foregroundColor" => [
-                                    "red"   => 0,
-                                    "green" => 0,
-                                    "blue"  => 0
-                                ],
-                                "bold" => false,
-                                "italic" => false,
-                                "underline" => false,
-                                "strikethrough" => false
-                            ]
-                        ]
-                    ],
-                    "fields" => "userEnteredFormat.textFormat"
-                ]
-            ];
+            $response = wp_remote_post(
+                "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
+                rawurlencode( $sheet_title ) .
+                ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+                self::gsc_request_args(
+                    $token,
+                    array(
+                        'headers' => array( 'Content-Type' => 'application/json' ),
+                        'body'    => wp_json_encode( array( 'values' => array( $insert_data ) ) ),
+                    )
+                )
+            );
 
-                /*
-            |--------------------------------------------------------------------------
-            | Entry ID as TEXT
-            |--------------------------------------------------------------------------
-            */
+            $result = self::gsc_parse_response( $response, 'append row' );
 
-            if ($entry_id_col !== false) {
+            if ( is_wp_error( $result ) ) {
+                return $result;
+            }
 
-                $clearRequests[] = [
-                    "repeatCell" => [
-                        "range" => [
-                            "sheetId" => $sheet_id,
-                            "startRowIndex" => $row_number - 1,
-                            "endRowIndex" => $row_number,
-                            "startColumnIndex" => $entry_id_col,
-                            "endColumnIndex" => $entry_id_col + 1
-                        ],
-                        "cell" => [
-                            "userEnteredFormat" => [
-                                "numberFormat" => [
-                                    "type" => "TEXT",
-                                    "pattern" => "@"
-                                ]
-                            ]
-                        ],
-                        "fields" => "userEnteredFormat.numberFormat"
-                    ]
-                ];
+            $row_number = self::gsc_row_from_range(
+                isset( $result['updates']['updatedRange'] ) ? $result['updates']['updatedRange'] : ''
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. CLEAR FORMATTING ON THE WRITTEN ROW
+        |--------------------------------------------------------------------------
+        */
+
+        if ( $row_number > 0 ) {
+
+            $clearRequests = array();
+
+            $clearRequests[] = array(
+                'repeatCell' => array(
+                    'range' => array(
+                        'sheetId'       => $sheet_id,
+                        'startRowIndex' => $row_number - 1,
+                        'endRowIndex'   => $row_number,
+                    ),
+                    'cell' => array(
+                        'userEnteredFormat' => array(
+                            'backgroundColor' => array(
+                                'red'   => 1,
+                                'green' => 1,
+                                'blue'  => 1,
+                            ),
+                            'textFormat' => array(
+                                'foregroundColor' => array(
+                                    'red'   => 0,
+                                    'green' => 0,
+                                    'blue'  => 0,
+                                ),
+                                'bold'          => false,
+                                'italic'        => false,
+                                'underline'     => false,
+                                'strikethrough' => false,
+                            ),
+                        ),
+                    ),
+                    'fields' => 'userEnteredFormat.textFormat',
+                ),
+            );
+
+            if ( false !== $entry_id_col ) {
+
+                $clearRequests[] = array(
+                    'repeatCell' => array(
+                        'range' => array(
+                            'sheetId'          => $sheet_id,
+                            'startRowIndex'    => $row_number - 1,
+                            'endRowIndex'      => $row_number,
+                            'startColumnIndex' => $entry_id_col,
+                            'endColumnIndex'   => $entry_id_col + 1,
+                        ),
+                        'cell' => array(
+                            'userEnteredFormat' => array(
+                                'numberFormat' => array(
+                                    'type'    => 'TEXT',
+                                    'pattern' => '@',
+                                ),
+                            ),
+                        ),
+                        'fields' => 'userEnteredFormat.numberFormat',
+                    ),
+                );
             }
 
             wp_remote_post(
                 "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}:batchUpdate",
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $token,
-                        'Content-Type'  => 'application/json',
-                    ],
-                    'body' => wp_json_encode([
-                        'requests' => $clearRequests,
-                    ]),
-                ]
+                self::gsc_request_args(
+                    $token,
+                    array(
+                        'headers' => array( 'Content-Type' => 'application/json' ),
+                        'body'    => wp_json_encode( array( 'requests' => $clearRequests ) ),
+                    )
+                )
             );
-
-            return $result;
         }
+
+        return $result;
+
     } catch (Exception $e) {
 
         Gs_Connector_Free_Utility::gs_debug_log([
@@ -749,6 +922,29 @@ public function add_row($data)
             'line'    => $e->getLine(),
         ]);
     }
+}
+
+/**
+ * Extract the 1-based row number from an A1 notation range.
+ *
+ * @since 5.2.1
+ *
+ * @param string $range Range such as "Sheet1!A5:D5".
+ * @return int Row number, or 0 when it cannot be determined.
+ */
+private static function gsc_row_from_range($range)
+{
+    if ( empty( $range ) ) {
+        return 0;
+    }
+
+    $matches = array();
+
+    if ( preg_match( '/![A-Z]+(\d+)/', $range, $matches ) ) {
+        return (int) $matches[1];
+    }
+
+    return 0;
 }
 
 public function add_multiple_row($data)
@@ -1014,11 +1210,7 @@ private function get_google_user_email($token)
 
         $response = wp_remote_get(
             'https://www.googleapis.com/oauth2/v2/userinfo',
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $token
-                ]
-            ]
+            self::gsc_request_args($token)
         );
 
         if (is_wp_error($response)) {
@@ -1055,11 +1247,24 @@ public function gsheet_print_google_account_email()
 {
     try {
 
+        /*
+         * This method previously issued an uncached HTTPS request to Google on
+         * every plugin admin page and on every Contact Form 7 editor page load.
+         * The connected account changes only when the user re-authenticates, so
+         * the result is cached and explicitly invalidated by the auth flows.
+         */
+        $cached = get_transient('cf7gsc_connected_email');
+
+        if (false !== $cached) {
+            return '' === $cached ? false : $cached;
+        }
+
         $token = $this->token();
 
         if (!$token) {
 
-            update_option('cf7gf_email_account', '');
+            update_option('cf7gf_email_account', '', false);
+            set_transient('cf7gsc_connected_email', '', 5 * MINUTE_IN_SECONDS);
 
             return false;
         }
@@ -1068,12 +1273,18 @@ public function gsheet_print_google_account_email()
 
         if (empty($email)) {
 
+            // Cache the negative result briefly so a broken connection does not
+            // retry the request on every single admin page load.
+            set_transient('cf7gsc_connected_email', '', 5 * MINUTE_IN_SECONDS);
+
+
             $auth_method = get_option('gs_cf7_auth_method', 'cf7_existing');
             if ($auth_method === 'cf7_existing') {
 
                 update_option(
                     'cf7gf_email_account',
-                    ''
+                    '',
+                    false
                 );
 
                 if (class_exists('gscf7_error_logs')) {
@@ -1096,8 +1307,11 @@ public function gsheet_print_google_account_email()
 
         update_option(
             'cf7gf_email_account',
-            $email
+            $email,
+            false
         );
+
+        set_transient('cf7gsc_connected_email', $email, HOUR_IN_SECONDS);
 
         return $email;
 
@@ -1105,7 +1319,8 @@ public function gsheet_print_google_account_email()
 
         update_option(
             'cf7gf_email_account',
-            ''
+            '',
+            false
         );
 
         Gs_Connector_Free_Utility::gs_debug_log(

@@ -10,9 +10,17 @@
 if (! defined('ABSPATH')) {
    exit();
 }
+
+/*
+ * This template lists every Google Spreadsheet the site is connected to.
+ * Guard it here as well so it cannot be rendered through another include path.
+ */
+if (! current_user_can('manage_options')) {
+   return;
+}
 ?>
 <?php
-$gscf7_connector_service = new Gs_Connector_Service();
+$gscf7_connector_service = Gs_Connector_Service::instance();
 $gscf7_forms_list           = $gscf7_connector_service->get_forms_connected_to_sheet();
 
 // GROUP BY FORM ID

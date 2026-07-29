@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.2.0
+ * Version: 5.2.1
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -19,10 +19,6 @@
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
-}
-
-if (Gs_Connector_Free_Init::gscf7_is_plugin_active('Gs_Connector_Init')) {
-    return;
 }
 
 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Freemius SDK boilerplate.
@@ -64,8 +60,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.2.0');
-define('GS_CONNECTOR_DB_VERSION', '5.2.0');
+define('GS_CONNECTOR_VERSION', '5.2.1');
+define('GS_CONNECTOR_DB_VERSION', '5.2.1');
 define('GS_CONNECTOR_ROOT', dirname(__FILE__));
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(dirname(__FILE__)) . '/google-sheet-connector.php');
@@ -162,19 +158,28 @@ class Gs_Connector_Free_Init
      */
     function cf7gs_block_beforeunload_script()
     {
+        if (! function_exists('get_current_screen')) {
+            return;
+        }
+
         $screen = get_current_screen();
         if (empty($screen) || ($screen->id !== 'contact_page_cf7-new' && strpos($screen->id, 'wpcf7') === false)) {
             return;
         }
 ?>
         <script>
+            /*
+             * Remove only this plugin's own unsaved-changes prompt.
+             *
+             * This previously replaced window.addEventListener globally and
+             * discarded every beforeunload listener on the page, which also
+             * disabled the unsaved-changes warnings belonging to WordPress core,
+             * Contact Form 7 and any other plugin active on the screen.
+             */
             (function() {
-                var original = window.addEventListener;
-                window.addEventListener = function(type, fn, options) {
-                    if (type === 'beforeunload') return;
-                    return original.apply(this, arguments);
-                };
-                window.onbeforeunload = null;
+                if (window.onbeforeunload) {
+                    window.onbeforeunload = null;
+                }
             })();
         </script>
 <?php
@@ -195,27 +200,6 @@ class Gs_Connector_Free_Init
             $links
         );
     }
-
-    /**
-     * Check whether a plugin class exists and is active.
-     *
-     * Used to verify if a specific plugin
-     * is installed and activated.
-     *
-     * @since 2.0.2
-     *
-     * @param string $class Plugin main class name.
-     * @return bool True if plugin class exists, otherwise false.
-     */
-    public static function gscf7_is_plugin_active($class)
-    {
-        if (class_exists($class)) {
-            return true;
-        }
-        return false;
-    }
-
-
 
     /**
      * Migrates postmeta data
@@ -622,14 +606,26 @@ class Gs_Connector_Free_Init
 
         /*
      * Common Admin JS
+     *
+     * Scoped to the plugin's own screens. This was previously enqueued on every
+     * single wp-admin page, adding a request and a jQuery dependency to screens
+     * that have nothing to do with this plugin.
      */
-        wp_enqueue_script(
-            'gs-connector-adds-js',
-            GS_CONNECTOR_URL . 'assets/js/gs-connector-adds.js',
-            array('jquery'),
-            GS_CONNECTOR_VERSION,
-            true
-        );
+        if (
+            preg_match(
+                '/page=wpcf7-new|page=wpcf7-google-sheet-config|page=wpcf7/',
+                $request_uri
+            )
+        ) {
+
+            wp_enqueue_script(
+                'gs-connector-adds-js',
+                GS_CONNECTOR_URL . 'assets/js/gs-connector-adds.js',
+                array('jquery'),
+                GS_CONNECTOR_VERSION,
+                true
+            );
+        }
     }
     /**
      * Function to load all required classes
@@ -676,7 +672,155 @@ class Gs_Connector_Free_Init
             wp_delete_file($log_file_path);
         }
 
+        $this->gscf7_disable_credential_autoload();
+        $this->gscf7_upgrade_entry_table_indexes();
+        $this->gscf7_migrate_error_log_timestamps();
+
         update_site_option('google_sheet_info_free', $google_sheet_info_free);
+    }
+
+    /**
+     * Convert existing error-log timestamps from site-local time to UTC.
+     *
+     * Before 5.2.1 `created_at` was written with current_time('mysql'), which
+     * stores the site's local time. That made stored rows depend on whatever the
+     * timezone happened to be when they were written, so changing
+     * Settings > General > Timezone silently reinterpreted every historical row.
+     *
+     * Timestamps are now stored in UTC and converted for display. This converts
+     * the rows written under the old behaviour so they render correctly.
+     *
+     * Runs once per site.
+     *
+     * @since 5.2.1
+     *
+     * @return void
+     */
+    private function gscf7_migrate_error_log_timestamps()
+    {
+        if (get_option('gscf7_error_log_utc_migrated')) {
+            return;
+        }
+
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'gscf7_error_logs';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+
+        if ($exists !== $table) {
+            update_option('gscf7_error_log_utc_migrated', 1, false);
+            return;
+        }
+
+        // Nothing to convert when the site already runs on UTC.
+        if (0 === (int) wp_timezone()->getOffset(new DateTime('now', new DateTimeZone('UTC')))) {
+            update_option('gscf7_error_log_utc_migrated', 1, false);
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin log table.
+        $rows = $wpdb->get_results(
+            'SELECT id, created_at FROM `' . esc_sql($table) . '`',
+            ARRAY_A
+        );
+
+        if (! empty($rows)) {
+            foreach ($rows as $row) {
+
+                $gmt = get_gmt_from_date($row['created_at']);
+
+                if (empty($gmt) || $gmt === $row['created_at']) {
+                    continue;
+                }
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin log table.
+                $wpdb->update(
+                    $table,
+                    array('created_at' => $gmt),
+                    array('id' => (int) $row['id']),
+                    array('%s'),
+                    array('%d')
+                );
+            }
+        }
+
+        update_option('gscf7_error_log_utc_migrated', 1, false);
+    }
+
+    /**
+     * Add the entry-table indexes to sites created before 5.2.1.
+     *
+     * Runs once per site. Adding an index is a non-destructive operation and
+     * does not change any stored data.
+     *
+     * @since 5.2.1
+     *
+     * @return void
+     */
+    private function gscf7_upgrade_entry_table_indexes()
+    {
+        if (get_option('gscf7_entry_indexes_added')) {
+            return;
+        }
+
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'cf7db_gsheet_forms';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+
+        if ($exists === $table && class_exists('GS_CF7DB')) {
+            $gs_cf7db = new GS_CF7DB();
+            $gs_cf7db->gscf7_add_entry_indexes($table);
+        }
+
+        update_option('gscf7_entry_indexes_added', 1, false);
+    }
+
+    /**
+     * Stop autoloading options that hold Google credentials.
+     *
+     * These options were previously stored with autoload enabled, which meant the
+     * OAuth access token, refresh token, client secret and service account key
+     * were read into memory on every request, including front-end page views.
+     * They are only needed in admin and submission contexts.
+     *
+     * Runs once per site; the values themselves are left untouched.
+     *
+     * @since 5.2.1
+     *
+     * @return void
+     */
+    private function gscf7_disable_credential_autoload()
+    {
+        if (get_option('gscf7_autoload_migrated')) {
+            return;
+        }
+
+        $options = array(
+            'gs_token',
+            'gs_access_code',
+            'gs_cf7_service_account_json',
+            'cf7gsc_free_api_creds',
+            'cf7gf_email_account',
+        );
+
+        foreach ($options as $option_name) {
+            $value = get_option($option_name, null);
+
+            if (null === $value) {
+                continue;
+            }
+
+            // Re-adding the option is the supported way to change its autoload flag.
+            delete_option($option_name);
+            add_option($option_name, $value, '', false);
+        }
+
+        update_option('gscf7_autoload_migrated', 1, false);
     }
     /**
      * Upgrade database for version 4.0.
@@ -757,9 +901,13 @@ class Gs_Connector_Free_Init
             return;
         }
         $plugin_options = get_site_option('google_sheet_info_free');
-        if ($plugin_options['version'] == "4.0") {
+
+        // Guard the array access: the option may be absent or not an array,
+        // which raised a PHP 8 warning on every matching admin request.
+        if (! empty($plugin_options['version']) && '4.0' === $plugin_options['version']) {
             delete_transient('cf7gs_upgrade_redirect');
-            wp_safe_redirect('admin.php?page=wpcf7-google-sheet-config');
+            wp_safe_redirect(admin_url('admin.php?page=wpcf7-google-sheet-config'));
+            exit;
         }
     }
     /**
@@ -798,6 +946,13 @@ class Gs_Connector_Free_Init
      */
     public function add_gs_connector_summary_widget()
     {
+        /*
+         * The widget exposes the Google Spreadsheet IDs every form is connected to.
+         * Restrict it to users who may manage the plugin's settings.
+         */
+        if (! current_user_can('manage_options')) {
+            return;
+        }
 
         $title = sprintf(
             '<img style="width:30px;margin-right:10px;" src="%sassets/img/cf7-gsc.svg" alt="" /> <span>%s</span>',
@@ -820,6 +975,10 @@ class Gs_Connector_Free_Init
      */
     public function gs_connector_summary_dashboard()
     {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
         include_once(GS_CONNECTOR_ROOT . '/includes/pages/cf7gs-dashboard-widget.php');
     }
     /**
@@ -928,8 +1087,12 @@ class Gs_Connector_Free_Init
             created_at DATETIME NOT NULL,
             PRIMARY KEY (id),
             INDEX error_id (error_id),
-            INDEX code (code)
+            INDEX code (code),
+            INDEX created_at (created_at)
         ) {$charset_collate};");
+
+        // Existing installs predate the created_at index used by the log screen.
+        $this->gscf7_add_index_if_not_exists($table, 'created_at');
         // TABLE NAMES
         $feeds_table    = $wpdb->prefix . 'cf7gs_feeds';
         $settings_table = $wpdb->prefix . 'cf7gs_settings';
@@ -1115,6 +1278,9 @@ class Gs_Connector_Free_Init
             delete_option('gscf7_uninstall_settings_free');
             delete_option('cf7gsc_free_api_creds');
             delete_option('gs_debug_log_file');
+            delete_option('gscf7_autoload_migrated');
+            delete_option('gscf7_entry_indexes_added');
+            delete_option('gscf7_error_log_utc_migrated');
 
             // Delete post meta
             delete_post_meta_by_key('gs_settings');

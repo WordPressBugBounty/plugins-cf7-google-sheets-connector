@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 5.2.0
+Stable tag: 5.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,6 +441,25 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 
 == Changelog ==
 
+
+= 5.2.1 (29-07-2026) =
+* Added: Database indexes to improve performance on sites with a large number of stored entries.
+* Added: Enhanced plugin security by restricting plugin installation to trusted sources.
+* Fixed: Date, time, and timezone handling for entries, error logs, and debug logs.
+* Fixed: Form submission sync issue on WordPress multisite installations.
+* Fixed: Simultaneous form submissions overwriting spreadsheet data.
+* Fixed: Google Sheets sync errors are now properly recorded in the error log.
+* Fixed: Negative numbers, phone numbers, and social handle values syncing incorrectly.
+* Fixed: Spreadsheet settings being reset when duplicating or programmatically saving forms.
+* Fixed: Entry list pagination issue.
+* Fixed: Google Sheets sync for forms containing more than 26 spreadsheet columns.
+* Fixed: Compatibility issues with newer PHP versions.
+* Fixed: Unsaved changes warning conflict with WordPress and other plugins.
+* Fixed: Minor security and stability improvements.
+* Improved: Google Sheets sync performance and overall admin performance.
+* Improved: Connected Google account loading in the admin area.
+* Improved: Overall code quality and WordPress Coding Standards compliance.
+
 = 5.2.0 (25-07-2026) =
 * Added: Updated the README and added the connected feeds table to the dashboard.
 
@@ -689,6 +708,9 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 * First public release. Integrated Contact Form 7 with Google Sheets.
 
 == Upgrade Notice ==
+
+= 5.2.1 =
+Recommended update. Includes security hardening, significant performance improvements for sites with large numbers of entries, and fixes for data loss on multisite and during simultaneous submissions. This update adds database indexes on upgrade, which may take a moment on very large entry tables. Back up your site before updating, as recommended for any plugin update.
 
 = 5.1.7 =
 This update introduces new database tables for plugin data, a Dashboard tab, and several stability and security fixes. Back up your site before updating, as recommended for any plugin update.

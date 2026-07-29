@@ -1,9 +1,10 @@
 <?php
-// Start output buffering
-ob_start();
-
 /**
  * CFDB7 CSV Export
+ *
+ * Note: this file previously called ob_start() at include time, which left an
+ * output buffer open on every request site-wide. download_send_headers() clears
+ * any active buffer itself, so the global call was unnecessary.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -4,6 +4,17 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 {
     private $form_post_id;
     private $column_titles;
+
+    /**
+     * Memoised result of get_columns().
+     *
+     * WP_List_Table calls get_columns() several times per render (prepare_items(),
+     * get_column_info(), display() and print_column_headers()). Without this the
+     * same database query ran 3-5 times for a single page load.
+     *
+     * @var array|null
+     */
+    private $columns_cache = null;
     public function __construct()
     {
         parent::__construct(
@@ -59,21 +70,33 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
         if (!empty($search)) {
 
+            $like = '%' . $cfdb->esc_like($search) . '%';
+
             $totalItems = $cfdb->get_var(
 
-                "SELECT COUNT(*) FROM $table_name WHERE value LIKE '%$search%' AND form_id = '$form_post_id'"
+                $cfdb->prepare(
+
+                    "SELECT COUNT(*) FROM $table_name WHERE value LIKE %s AND form_id = %d",
+
+                    $like,
+
+                    $this->form_post_id
+
+                )
 
             );
         } else {
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading form ID from admin page URL.
-            $form_post_id = isset($_GET['form_post_id'])
-                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading form ID from admin page URL.
-                ? absint(wp_unslash($_GET['form_post_id']))
-                : 0;
+            /*
+             * Use the form ID resolved in this method.
+             *
+             * This previously read $_GET['form_post_id'], a parameter that is
+             * never set anywhere in the plugin, so the count was always taken
+             * for form_id 0 and pagination reported zero items.
+             */
             $totalItems = $cfdb->get_var(
                 $cfdb->prepare(
                     "SELECT COUNT(*) FROM $table_name WHERE form_id = %d",
-                    $form_post_id
+                    $this->form_post_id
                 )
             );
         }
@@ -113,7 +136,12 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
     {
 
-        $form_post_id = $this->form_post_id;
+        if (null !== $this->columns_cache) {
+
+            return $this->columns_cache;
+        }
+
+        $form_post_id = absint($this->form_post_id);
 
 
 
@@ -127,9 +155,15 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
         $results = $cfdb->get_results(
 
-            "SELECT * FROM $table_name
+            $cfdb->prepare(
 
-        WHERE form_id = $form_post_id ORDER BY id DESC LIMIT 1",
+                "SELECT value FROM $table_name
+
+        WHERE form_id = %d ORDER BY id DESC LIMIT 1",
+
+                $form_post_id
+
+            ),
 
             OBJECT
 
@@ -203,7 +237,15 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
 
 
-                $this->column_titles[] = $key_val;
+                /*
+                 * Store the raw key, not the display label.
+                 *
+                 * table_data() uses these entries to backfill fields that are
+                 * missing from an individual row. Storing the transformed label
+                 * meant the backfill wrote to a key that no column ever read, so
+                 * rows lacking a field triggered undefined-key warnings.
+                 */
+                $this->column_titles[] = $key;
 
 
 
@@ -221,6 +263,8 @@ class GSCF7_FormEntry_Table extends WP_List_Table
         }
 
 
+
+        $this->columns_cache = $columns;
 
         return $columns;
     }
@@ -325,7 +369,8 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
             'delete'            => esc_html__('Delete', 'cf7-google-sheets-connector'),
 
-            'spread sheet'            => esc_html__('Spread Sheet', 'cf7-google-sheets-connector')
+            // Key must match the value compared in process_bulk_action().
+            'sendtospreadsheet' => esc_html__('Spread Sheet', 'cf7-google-sheets-connector')
 
 
 
@@ -388,7 +433,7 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
             $query = $cfdb->prepare(
 
-                "SELECT * FROM $table_name
+                "SELECT id, form_id, value, date FROM $table_name
 
              WHERE value LIKE %s
 
@@ -411,7 +456,7 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
             $query = $cfdb->prepare(
 
-                "SELECT * FROM $table_name
+                "SELECT id, form_id, value, date FROM $table_name
 
              WHERE form_id = %d
 
@@ -499,17 +544,27 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
 
 
-                // Format date using WP settings
-
-                $timestamp = strtotime($result->date);
-
+                /*
+                 * Format the date using Settings > General.
+                 *
+                 * The entry date is stored as site-local time by
+                 * current_time('Y-m-d H:i:s'). The previous code ran it through
+                 * strtotime(), which parses in the default timezone (UTC under
+                 * WordPress), and then through wp_date(), which applied the site
+                 * offset a second time - so entries displayed with the timezone
+                 * offset added twice on any site not running on UTC.
+                 *
+                 * mysql2date() interprets the stored string as site-local and
+                 * formats it in the site timezone, applying the offset once, and
+                 * localises month and day names.
+                 */
                 $date_format = get_option('date_format');
 
                 $time_format = get_option('time_format');
 
 
 
-                $formatted_date = wp_date($date_format . ' ' . $time_format, $timestamp);
+                $formatted_date = mysql2date($date_format . ' ' . $time_format, $result->date);
 
 
 
@@ -554,7 +609,14 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
 
 
-            $nonce = filter_input(INPUT_POST, '_wpnonce', FILTER_SANITIZE_STRING);
+            /*
+             * FILTER_SANITIZE_STRING is deprecated as of PHP 8.1 and removed in
+             * PHP 9. It also mangled the value by encoding quotes before the
+             * nonce was ever compared.
+             */
+            $nonce = isset($_POST['_wpnonce'])
+                ? sanitize_text_field(wp_unslash($_POST['_wpnonce']))
+                : '';
 
             $nonce_action = 'bulk-' . $this->_args['plural'];
 
@@ -588,11 +650,22 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
                 $entry_id = (int) $entry_id;
 
-                $results = $cfdb->get_results("SELECT * FROM $table_name WHERE id = '$entry_id' LIMIT 1", OBJECT);
+                $results = $cfdb->get_results(
+                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
+                    OBJECT
+                );
+
+                if (empty($results[0])) {
+                    continue;
+                }
 
                 $result_value = $results[0]->value;
 
                 $result_values = unserialize($result_value);
+
+                if (! is_array($result_values)) {
+                    $result_values = array();
+                }
 
                 $upload_dir = wp_upload_dir();
 
@@ -634,11 +707,22 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
                 $entry_id = (int) $entry_id;
 
-                $results = $cfdb->get_results("SELECT * FROM $table_name WHERE id = '$entry_id' LIMIT 1", OBJECT);
+                $results = $cfdb->get_results(
+                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
+                    OBJECT
+                );
+
+                if (empty($results[0])) {
+                    continue;
+                }
 
                 $result_value = $results[0]->value;
 
                 $result_values = unserialize($result_value);
+
+                if (! is_array($result_values)) {
+                    $result_values = array();
+                }
 
                 $result_values['cfdb7_status'] = 'read';
 
@@ -646,7 +730,11 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
                 $cfdb->query(
 
-                    "UPDATE $table_name SET value = '$form_data' WHERE id = '$entry_id'"
+                    $cfdb->prepare(
+                        "UPDATE $table_name SET value = %s WHERE id = %d",
+                        $form_data,
+                        $entry_id
+                    )
 
                 );
 
@@ -663,11 +751,22 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
                 $entry_id = (int) $entry_id;
 
-                $results = $cfdb->get_results("SELECT * FROM $table_name WHERE id = '$entry_id' LIMIT 1", OBJECT);
+                $results = $cfdb->get_results(
+                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
+                    OBJECT
+                );
+
+                if (empty($results[0])) {
+                    continue;
+                }
 
                 $result_value = $results[0]->value;
 
                 $result_values = unserialize($result_value);
+
+                if (! is_array($result_values)) {
+                    $result_values = array();
+                }
 
                 $result_values['cfdb7_status'] = 'unread';
 
@@ -675,18 +774,45 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
                 $cfdb->query(
 
-                    "UPDATE $table_name SET value = '$form_data' WHERE id = '$entry_id' LIMIT 1"
+                    $cfdb->prepare(
+                        "UPDATE $table_name SET value = %s WHERE id = %d LIMIT 1",
+                        $form_data,
+                        $entry_id
+                    )
 
                 );
 
             endforeach;
         } else if ('sendtospreadsheet' === $action) {
 
-            $gs_connector_service = new Gs_Connector_Service();
+            $gs_connector_service = Gs_Connector_Service::instance();
 
-            $singlesheet_response = $gs_connector_service->send_to_spreadsheet_bulk($entry_ids, $form_id);
+            /*
+             * These bulk helpers only exist in the Pro build. Calling them
+             * unguarded raised a fatal "call to undefined method" error.
+             */
+            $singlesheet_response = method_exists($gs_connector_service, 'send_to_spreadsheet_bulk')
+                ? $gs_connector_service->send_to_spreadsheet_bulk($entry_ids, $form_id)
+                : null;
 
-            $multisheet_response = $gs_connector_service->send_to_spreadsheet_bulk_multisheet($entry_ids, $form_id);
+            $multisheet_response = method_exists($gs_connector_service, 'send_to_spreadsheet_bulk_multisheet')
+                ? $gs_connector_service->send_to_spreadsheet_bulk_multisheet($entry_ids, $form_id)
+                : null;
+
+            if (null === $singlesheet_response && null === $multisheet_response) {
+
+                set_transient('gs_sync_notice', [
+                    'type'    => 'warning',
+                    'message' => esc_html__('Sending entries to Google Sheets in bulk is available in the Pro version.', 'cf7-google-sheets-connector'),
+                ], 30);
+
+                $redirect_url = isset($_SERVER['REQUEST_URI'])
+                    ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI']))
+                    : '';
+                wp_safe_redirect($redirect_url);
+
+                exit;
+            }
 
 
 
@@ -799,7 +925,7 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
     {
 
-        return $item[$column_name];
+        return isset($item[$column_name]) ? $item[$column_name] : '';
     }
 
 
@@ -908,18 +1034,6 @@ class GSCF7_FormEntry_Table extends WP_List_Table
 
 
         if ($formId > 0) {
-
-            $request_uri = isset($_SERVER['REQUEST_URI'])
-                ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI']))
-                : '';
-
-            $url = add_query_arg(
-                array(
-                    'csv'    => 'true',
-                    'formId' => $formId,
-                ),
-                $request_uri
-            );
 
             echo '<a href="#" id="cf7gs-free-csv" class="button" style="float:right; margin:0;">' .
                 esc_html__('Export CSV', 'cf7-google-sheets-connector') .

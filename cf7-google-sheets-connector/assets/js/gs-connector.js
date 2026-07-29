@@ -850,36 +850,121 @@ jQuery(document).ready(function ($) {
     });
   });
 
+  /**
+   * Show a message in the service account validation area.
+   *
+   * @param {string}  message Text to display.
+   * @param {boolean} success Render as success instead of error.
+   */
+  function cf7gsServiceNotify(message, success) {
+    var cls = success ? "gsc-success" : "gsc-error";
+
+    jQuery("#gs-validation-message-auth")
+      .empty()
+      .append(
+        jQuery("<div/>", {
+          class:
+            "gsc-msg " +
+            cls +
+            " fw-400 text-dark text-center pt-10 pb-10 manual-margin",
+          text: message,
+        }),
+      );
+  }
+
+  /**
+   * Validate a parsed Google service account key.
+   *
+   * Mirrored server-side in Gs_Connector_Service::gscf7_validate_service_account_json().
+   *
+   * @param {Object} json Parsed JSON object.
+   * @return {string} Empty string when valid, otherwise the error message.
+   */
+  function cf7gsServiceValidate(json) {
+    var required = [
+      "client_email",
+      "private_key",
+      "type",
+      "project_id",
+      "token_uri",
+    ];
+
+    var missing = required.some(function (key) {
+      return !json[key] || String(json[key]).trim() === "";
+    });
+
+    if (missing) {
+      return "Your uploaded JSON key is invalid.";
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.iam\.gserviceaccount\.com$/.test(
+        String(json.client_email).trim(),
+      ) ||
+      String(json.private_key).indexOf("BEGIN PRIVATE KEY") === -1
+    ) {
+      return "Your uploaded JSON key is invalid.";
+    }
+
+    if (String(json.type).trim() !== "service_account") {
+      return "Invalid JSON: file is not a service_account type.";
+    }
+
+    return "";
+  }
+
   jQuery(document).ready(function ($) {
     $("#gs_cf7_save_service_json").on("click", function () {
-      var json = $("#gs_cf7_service_json").val();
+      var jsonRaw = $("#gs_cf7_service_json").val();
 
-      if (!json || $.trim(json) === "") {
+      $("#gs-validation-message-auth").empty();
+
+      if (!jsonRaw || $.trim(jsonRaw) === "") {
+        cf7gsServiceNotify(
+          "Please upload or paste a service account JSON file.",
+        );
+        return;
+      }
+
+      var json;
+
+      try {
+        json = JSON.parse(jsonRaw);
+      } catch (e) {
+        cf7gsServiceNotify("Your uploaded JSON key is invalid.");
+        return;
+      }
+
+      var error = cf7gsServiceValidate(json);
+
+      if (error) {
+        cf7gsServiceNotify(error);
         return;
       }
 
       var data = {
         action: "save_service_account_json_cf7",
 
-        json: json,
+        json: jsonRaw,
 
         security: $("#gs-ajax-nonce").val(),
       };
 
       $(".loading-sign-service-auth").addClass("loading");
-      $("#gs-validation-message-auth").append(
-        "<div class='gsc-msg gsc-success fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your Google Access Code is Authorized and Saved</div>",
-        );
 
       $.post(ajaxurl, data, function (res) {
         $(".loading-sign-service-auth").removeClass("loading");
 
         if (res.success) {
+          cf7gsServiceNotify(
+            "Your Service Account has been saved.",
+            true,
+          );
           location.reload();
         } else {
-          $(".loading-sign-service-auth").text(
-            res.data.error || "Error saving JSON",
-            );
+          cf7gsServiceNotify(
+            (res.data && res.data.error) || "Error saving JSON",
+          );
         }
       });
     });
@@ -897,7 +982,22 @@ jQuery(document).ready(function ($) {
         const content = JSON.parse(event.target.result);
 
         $("#gs_cf7_service_json").val(JSON.stringify(content, null, 2));
-      } catch (err) {}
+
+        // Validate immediately so the file is rejected at upload time rather
+        // than only when Save is pressed.
+        const uploadError = cf7gsServiceValidate(content);
+
+        if (uploadError) {
+          cf7gsServiceNotify(uploadError);
+        } else {
+          $("#gs-validation-message-auth").empty();
+        }
+
+        $("#gs_cf7_service_json").trigger("input");
+      } catch (err) {
+        // Previously failed silently, leaving the user with no feedback.
+        cf7gsServiceNotify("Your uploaded JSON key is invalid.");
+      }
     };
 
     reader.readAsText(file);

@@ -70,7 +70,10 @@ if (!class_exists('gscf7_error_logs')) {
                     'code'       => (int) $code,
                     'message'    => (string) $message,
                     'details'    => wp_json_encode($details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                    'created_at' => current_time('mysql'),
+                    // Store in UTC/GMT; converted to the site timezone on display.
+                    // Storing local time meant that changing Settings > General >
+                    // Timezone silently reinterpreted every historical row.
+                    'created_at' => current_time('mysql', true),
                 ],
                 ['%s', '%d', '%s', '%s', '%s']
             );
@@ -164,9 +167,30 @@ if (!class_exists('gscf7_error_logs')) {
 
             $table = esc_sql($table);
 
+            /*
+             * Paginate. This query previously had no LIMIT, so the entire log
+             * table - including every LONGTEXT details blob - was loaded into
+             * memory on each page view.
+             */
+            $per_page = 25;
+
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only pagination argument on an admin screen.
+            $current_page = isset($_GET['log_page']) ? max(1, absint(wp_unslash($_GET['log_page']))) : 1;
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom plugin log table.
+            $total_logs = (int) $wpdb->get_var('SELECT COUNT(*) FROM `' . esc_sql($table) . '`');
+
+            $total_pages  = $total_logs > 0 ? (int) ceil($total_logs / $per_page) : 1;
+            $current_page = min($current_page, max(1, $total_pages));
+            $offset       = ($current_page - 1) * $per_page;
+
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom plugin log table, no caching needed for admin log view.
             $logs = $wpdb->get_results(
-                "SELECT * FROM `" . esc_sql($table) . "` ORDER BY created_at DESC",
+                $wpdb->prepare(
+                    'SELECT * FROM `' . esc_sql($table) . '` ORDER BY created_at DESC LIMIT %d OFFSET %d',
+                    $per_page,
+                    $offset
+                ),
                 ARRAY_A
             );
 ?>
@@ -210,6 +234,7 @@ if (!class_exists('gscf7_error_logs')) {
                 </div>
                 <!-- Table -->
                 <div class="debug-log-div">
+
                     <table class="widefat striped error-log-table mt-30">
                         <thead>
                             <tr>
@@ -227,7 +252,11 @@ if (!class_exists('gscf7_error_logs')) {
                                         <td>
                                             <?php
                                             $format = get_option('date_format') . ' ' . get_option('time_format');
-                                            echo esc_html(mysql2date($format, $log['created_at'], false));
+                                            // created_at is stored in UTC; wp_date() converts it to the site's configured timezone (Settings > General).
+                                            $gscf7_ts = strtotime($log['created_at'] . ' UTC');
+                                            echo $gscf7_ts
+                                                ? esc_html(wp_date($format . ' (T)', $gscf7_ts))
+                                                : esc_html($log['created_at']);
                                             ?>
                                         </td>
                                         <td><?php echo esc_html($log['error_id']); ?></td>
@@ -272,6 +301,40 @@ if (!class_exists('gscf7_error_logs')) {
                             <?php endif; ?>
                         </tbody>
                     </table>
+
+                    <?php if ($total_pages > 1) : ?>
+                        <div class="tablenav gscf7-log-pagination">
+                            <div class="tablenav-pages">
+                                <span class="displaying-num">
+                                    <?php
+                                    printf(
+                                        /* translators: %s: number of log entries. */
+                                        esc_html(_n('%s item', '%s items', $total_logs, 'cf7-google-sheets-connector')),
+                                        esc_html(number_format_i18n($total_logs))
+                                    );
+                                    ?>
+                                </span>
+                                <span class="pagination-links">
+                                    <?php
+                                    echo wp_kses_post(
+                                        paginate_links(
+                                            array(
+                                                'base'      => esc_url_raw(
+                                                    add_query_arg('log_page', '%#%')
+                                                ),
+                                                'format'    => '',
+                                                'prev_text' => '&laquo;',
+                                                'next_text' => '&raquo;',
+                                                'total'     => $total_pages,
+                                                'current'   => $current_page,
+                                            )
+                                        )
+                                    );
+                                    ?>
+                                </span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 <?php
@@ -292,24 +355,68 @@ if (!class_exists('gscf7_error_logs')) {
             wp_safe_redirect(wp_get_referer());
             exit;
         }
+        /**
+         * Recursively sanitize a decoded JSON payload before it is stored.
+         *
+         * Keys are reduced to safe identifiers and every scalar leaf is passed
+         * through sanitize_text_field(). Nesting is capped so a hostile payload
+         * cannot exhaust memory during traversal.
+         *
+         * @param mixed $value Value to sanitize.
+         * @param int   $depth Current recursion depth.
+         * @return mixed Sanitized value.
+         */
+        private static function sanitize_log_payload($value, $depth = 0)
+        {
+            if ($depth > 5) {
+                return '';
+            }
+
+            if (is_array($value)) {
+                $clean = array();
+                foreach ($value as $key => $item) {
+                    $clean[sanitize_key($key)] = self::sanitize_log_payload($item, $depth + 1);
+                }
+                return $clean;
+            }
+
+            if (is_bool($value) || is_int($value) || is_float($value)) {
+                return $value;
+            }
+
+            if (is_scalar($value)) {
+                return sanitize_text_field((string) $value);
+            }
+
+            return '';
+        }
+
         public static function log_js_error()
         {
+            // Verify the request originated from this site before doing any work.
+            check_ajax_referer('gs-ajax-nonce', 'security');
+
             if (!current_user_can('manage_options')) {
                 wp_send_json_error();
             }
-            // phpcs:disable WordPress.Security.NonceVerification.Missing
-            // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
             $log = isset($_POST['log'])
-                ? json_decode(wp_unslash($_POST['log']), true)
+                ? json_decode(sanitize_textarea_field(wp_unslash($_POST['log'])), true)
                 : array();
-            // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            // phpcs:enable WordPress.Security.NonceVerification.Missing
+
             if (is_string($log)) {
                 $decoded = json_decode($log, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $log = $decoded;
                 }
             }
+
+            if (!is_array($log)) {
+                $log = array();
+            }
+
+            $log = self::sanitize_log_payload($log);
+
             self::log_to_db(
                 'js_error',
                 intval($log['status'] ?? 400),
@@ -322,6 +429,28 @@ if (!class_exists('gscf7_error_logs')) {
             );
             wp_send_json_success();
         }
+        /**
+         * Neutralize a value before it is written to a CSV cell.
+         *
+         * Spreadsheet applications evaluate any cell beginning with =, +, -, @,
+         * tab or carriage return as a formula. Prefixing such a value with a
+         * single quote forces it to be treated as literal text without altering
+         * the value that is displayed.
+         *
+         * @param mixed $value Raw cell value.
+         * @return string Value safe to write to a CSV cell.
+         */
+        private static function csv_escape($value)
+        {
+            $value = (string) $value;
+
+            if ('' !== $value && false !== strpos("=+-@\t\r", $value[0])) {
+                return "'" . $value;
+            }
+
+            return $value;
+        }
+
         public function download_logs()
         {
             if (! current_user_can('manage_options')) {
@@ -330,12 +459,15 @@ if (!class_exists('gscf7_error_logs')) {
             check_admin_referer('gsc_download_logs_nonce');
             global $wpdb;
             $table = $wpdb->prefix . 'gscf7_error_logs';
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
-            $logs = $wpdb->get_results('SELECT * FROM `' . esc_sql($table) . '`', ARRAY_A);
-            if (empty($logs)) {
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin log table.
+            $total = (int) $wpdb->get_var('SELECT COUNT(*) FROM `' . esc_sql($table) . '`');
+
+            if (0 === $total) {
                 wp_safe_redirect(wp_get_referer());
                 exit;
             }
+
             nocache_headers();
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename=error-log.csv');
@@ -343,20 +475,58 @@ if (!class_exists('gscf7_error_logs')) {
             $output = fopen('php://output', 'w');
             // CSV Header
             fputcsv($output, array('Date', 'Error ID', 'Code', 'Message', 'Details'));
-            foreach ($logs as $log) {
-                $message = str_replace(array("\\n", "\\r", "\n", "\r"), ' ', $log['message']);
-                $details = str_replace(array("\\n", "\\r", "\n", "\r"), ' ', $log['details']);
-                fputcsv(
-                    $output,
-                    array(
-                        $log['created_at'],
-                        $log['error_id'],
-                        $log['code'],
-                        $message,
-                        $details,
-                    )
+
+            /*
+             * Stream in batches. Loading the whole table at once could exhaust
+             * PHP's memory limit once the log grew to tens of thousands of rows.
+             */
+            $batch_size = 1000;
+            $csv_format = get_option('date_format') . ' ' . get_option('time_format');
+
+            for ($offset = 0; $offset < $total; $offset += $batch_size) {
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin log table.
+                $logs = $wpdb->get_results(
+                    $wpdb->prepare(
+                        'SELECT * FROM `' . esc_sql($table) . '` ORDER BY id ASC LIMIT %d OFFSET %d',
+                        $batch_size,
+                        $offset
+                    ),
+                    ARRAY_A
                 );
+
+                if (empty($logs)) {
+                    break;
+                }
+
+                foreach ($logs as $log) {
+                    $message = str_replace(array("\\n", "\\r", "\n", "\r"), ' ', $log['message']);
+                    $details = str_replace(array("\\n", "\\r", "\n", "\r"), ' ', $log['details']);
+
+                    // created_at is stored in UTC; convert to the site timezone for the export.
+                    $csv_ts   = strtotime($log['created_at'] . ' UTC');
+                    $csv_date = $csv_ts
+                        ? wp_date($csv_format . ' (T)', $csv_ts)
+                        : $log['created_at'];
+
+                    fputcsv(
+                        $output,
+                        array_map(
+                            array(__CLASS__, 'csv_escape'),
+                            array(
+                                $csv_date,
+                                $log['error_id'],
+                                $log['code'],
+                                $message,
+                                $details,
+                            )
+                        )
+                    );
+                }
+
+                unset($logs);
             }
+
             if (is_resource($output)) {
                 fclose($output); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
             }

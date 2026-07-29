@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Extension class for GS Fluent Forms Google Sheet Connector extensions operations
+ * Extension class for GS cf7 Forms Google Sheet Connector extensions operations
  * @since 1.0.0
  */
 
@@ -81,6 +81,37 @@ class GSCF7_Extensions_free
     }
 
     /**
+     * Determine whether a package URL points at a trusted distribution host.
+     *
+     * Every add-on offered on the Extensions screen is hosted on the official
+     * WordPress.org plugin CDN, so the allow-list is deliberately narrow.
+     *
+     * @since 5.2.1
+     *
+     * @param string $url Package URL supplied by the request.
+     * @return bool True when the URL may be installed from.
+     */
+    private static function gscf7_is_trusted_package_url($url)
+    {
+        $allowed_hosts = array(
+            'downloads.wordpress.org',
+        );
+
+        if (empty($url)) {
+            return false;
+        }
+
+        $scheme = wp_parse_url($url, PHP_URL_SCHEME);
+        $host   = wp_parse_url($url, PHP_URL_HOST);
+
+        if ('https' !== $scheme || empty($host)) {
+            return false;
+        }
+
+        return in_array(strtolower($host), $allowed_hosts, true);
+    }
+
+    /**
      * Installs or upgrades a plugin via AJAX using provided slug and download URL.
      *
      * @access public
@@ -107,6 +138,20 @@ class GSCF7_Extensions_free
 
         $plugin_slug  = sanitize_text_field(wp_unslash($_POST['plugin_slug']));
         $download_url = esc_url_raw(wp_unslash($_POST['download_url']));
+
+        /*
+         * Only allow packages served by the official WordPress.org plugin CDN.
+         *
+         * Without this check any URL supplied in the request would be downloaded
+         * and unpacked into wp-content/plugins, which turns this endpoint into a
+         * remote code execution primitive for any actor able to issue a request
+         * in an administrator's context.
+         */
+        if (! self::gscf7_is_trusted_package_url($download_url)) {
+            wp_send_json_error(array(
+                'message' => __('The requested package is not from a trusted source.', 'cf7-google-sheets-connector')
+            ));
+        }
 
         require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
         require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
