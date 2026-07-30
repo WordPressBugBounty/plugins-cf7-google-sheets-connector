@@ -86,12 +86,6 @@ class Gs_Connector_Service
       // AJAX action to save plugin uninstall settings.
       add_action('wp_ajax_gscf7_save_uninstall_settings', array($this, 'gscf7_save_uninstall_settings'));
 
-      /*
-       * The wp_ajax_cf7_reset_sheet_fields handler was registered here for a
-       * cf7_reset_sheet_fields() method that does not exist in this build and
-       * has no client-side caller. Any authenticated request to that action
-       * raised an uncaught TypeError, so the registration has been removed.
-       */
 
       // AJAX actions for admin notice management.
       add_action('wp_ajax_gscf7_dismiss_notice', array($this, 'gscf7_dismiss_notice_callback'));
@@ -103,6 +97,7 @@ class Gs_Connector_Service
       // AJAX actions for Service Account authentication management.
       add_action('wp_ajax_save_service_account_json_cf7', array($this, 'save_service_account_json_cf7'));
       add_action('wp_ajax_deactivate_service_account_cf7', array($this, 'deactivate_service_account_cf7'));
+
 
       //pagination
       add_action(
@@ -1679,45 +1674,75 @@ class Gs_Connector_Service
 
     */
 
-   public function save_uploaded_files_local()
+   /**
+
+    * Create array of file name for the uploaded files
+
+    * @since 4.5
+
+    */
+
+   public function save_uploaded_files_local($form_data)
    {
+      $upload = wp_upload_dir();
+
+      if (get_option('uploads_use_yearmonth_folders')) {
+         $time = current_time('mysql');
+         $y = substr($time, 0, 4);
+         $m = substr($time, 5, 2);
+         $upload['subdir'] = "/$y/$m";
+      }
+
+      $upload['subdir'] = '/cf7gs' . $upload['subdir'];
+      $upload['path'] = $upload['basedir'] . $upload['subdir'];
+      $upload['url'] = $upload['baseurl'] . $upload['subdir'];
+
+      if (!is_dir($upload['path'])) {
+         wp_mkdir_p($upload['path']);
+      }
+
+      $htaccess_file = sprintf('%s/.htaccess', $upload['path']);
+
+      if (!file_exists($htaccess_file)):
+         file_put_contents($htaccess_file, 'Options -Indexes');
+      endif;
+
+      $time_now = time();
 
       $form = WPCF7_Submission::get_instance();
 
       if ($form) {
-         $files          = $form->uploaded_files();
+         $files = $form->uploaded_files();
+
          $uploads_stored = array();
 
-         foreach ($files as $field_name => $file_path) {
+         if (!empty($files)) {
+            foreach ($files as $name => $paths) {
+               if (!isset($_FILES[$name]) || empty($paths)) {
+                  continue;
+               }
 
-            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by CF7 before this hook fires.
-            if (! isset($_FILES[$field_name])) {
-               continue;
+               $paths = is_array($paths) ? $paths : array($paths);
+
+               foreach ($paths as $path) {
+                  if (!file_exists($path)) {
+                     continue;
+                  }
+
+                  $file_name       = sanitize_file_name(basename($path));
+                  $destination     = $upload['path'] . '/' . $time_now . '-' . $file_name;
+                  $destination_url = sprintf('%s/%s', $upload['url'], $time_now . '-' . $file_name);
+
+                  $uploads_stored[$name][] = $destination_url;
+
+                  copy($path, $destination);
+               }
             }
-            // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified by CF7 before this hook fires; each key sanitized individually below.
-            $file = $_FILES[$field_name];
-            $file_details = [
-               'name'     => isset($file['name'])     ? sanitize_file_name(wp_unslash($file['name']))         : '',
-               'type'     => isset($file['type'])     ? sanitize_mime_type(wp_unslash($file['type']))         : '',
-               'tmp_name' => isset($file['tmp_name']) ? sanitize_text_field(wp_unslash($file['tmp_name']))    : '',
-               'error'    => isset($file['error'])    ? absint($file['error'])                                  : UPLOAD_ERR_NO_FILE,
-               'size'     => isset($file['size'])     ? absint($file['size'])                                   : 0,
-            ];
 
-            $uploads_stored[$field_name] = $file_details['name'];
+            $this->gs_uploads = $uploads_stored;
          }
-
-         $this->gs_uploads = $uploads_stored;
       }
    }
-   /**
-
-    *
-
-    *
-
-    */
-
    public function get_special_mail_tags()
 
    {
@@ -2004,19 +2029,23 @@ class Gs_Connector_Service
                }
 
 
-
                // handle file uploads
 
                $uploaded_file = $this->gs_uploads;
 
                if (array_key_exists($key, $uploaded_file)) {
 
-                  $data[$key] = sanitize_file_name($uploaded_file[$key]);
+                  $file_value = $uploaded_file[$key];
+
+                  if (is_array($file_value)) {
+                     // Multiple files on this field: sheet shows filenames only, comma-separated.
+                     $data[$key] = implode(', ', array_map('basename', $file_value));
+                  } else {
+                     $data[$key] = basename($file_value);
+                  }
 
                   continue;
                }
-
-
 
                // handle arrays (checkbox, multi-select)
 

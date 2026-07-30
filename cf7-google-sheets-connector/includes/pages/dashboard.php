@@ -1,4 +1,3 @@
-
 <?php if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
@@ -21,112 +20,112 @@
                                 </p>
                             </div>
                             <?php
-    $gscf7_is_authenticated = false;
-    $gscf7_selected_method = '';
-    $gscf7_authenticated = get_option('gs_token');
-    $gscf7_manual = get_option('cf7_manual');
-    $gscf7_authenticatedService  = get_option('gs_cf7_service_account_json');
-    $gscf7_auth_method           = get_option('gs_cf7_auth_method');
-    $gscf7_per = get_option('gs_verify');
-    $gscf7_email_account = "";
+                            $gscf7_is_authenticated = false;
+                            $gscf7_selected_method = '';
+                            $gscf7_authenticated = get_option('gs_token');
+                            $gscf7_manual = get_option('cf7_manual');
+                            $gscf7_authenticatedService  = get_option('gs_cf7_service_account_json');
+                            $gscf7_auth_method           = get_option('gs_cf7_auth_method');
+                            $gscf7_per = get_option('gs_verify');
+                            $gscf7_email_account = "";
 
-    // Check if the user is authenticated when saving existing API method
-    if ((!empty($gscf7_authenticated) && $gscf7_per == 'valid' && $gscf7_auth_method === "cf7_existing")) {
-        $gscf7_google_sheet = new CF7GSC_googlesheet();
-        $gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
-        if ($gscf7_email_account) {
-            $gscf7_is_authenticated = true;
-            $gscf7_selected_method = esc_html(__('Existing Client / Secret Key (Auto Setup)', 'cf7-google-sheets-connector'));
-        }
-    } else if ((!empty($gscf7_authenticatedService) && $gscf7_auth_method === "cf7_service")) {
-        $gscf7_is_authenticated = true;
-        $gscf7_selected_method = esc_html(__('Service Account (Recommended)', 'cf7-google-sheets-connector'));
-    } else {
-        $gscf7_selected_method = esc_html(__('Auth Required', 'cf7-google-sheets-connector'));
-    }
-?>
+                            // Check if the user is authenticated when saving existing API method
+                            if ((!empty($gscf7_authenticated) && $gscf7_per == 'valid' && $gscf7_auth_method === "cf7_existing")) {
+                                $gscf7_google_sheet = new CF7GSC_googlesheet();
+                                $gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
+                                if ($gscf7_email_account) {
+                                    $gscf7_is_authenticated = true;
+                                    $gscf7_selected_method = esc_html(__('Existing Client / Secret Key (Auto Setup)', 'cf7-google-sheets-connector'));
+                                }
+                            } else if ((!empty($gscf7_authenticatedService) && $gscf7_auth_method === "cf7_service")) {
+                                $gscf7_is_authenticated = true;
+                                $gscf7_selected_method = esc_html(__('Service Account (Recommended)', 'cf7-google-sheets-connector'));
+                            } else {
+                                $gscf7_selected_method = esc_html(__('Auth Required', 'cf7-google-sheets-connector'));
+                            }
+                            ?>
                             <div class="unlock-pro-button-sections mt-20">
-                                <?php if($gscf7_email_account) { ?>
+                                <?php if ($gscf7_email_account) { ?>
                                     <div class="gscf7-integration-box">
                                         <div class="gsc-google-auth-card mt-30 mb-30">
-                                        <div>
-                                            <div class="heading mt-0 mb-30"> <?php echo esc_html(__('Google Account Connection', 'cf7-google-sheets-connector')); ?>
-                                            <span class="badge"><?php echo esc_attr($gscf7_selected_method); ?></span>
-                                        </div>
-                                        </div>
-                                        <div class="d-flex flex-wrap gap-20 justify-between align-center">
-                                        
-                                        <div class="gsc-google-auth-left d-flex flex-wrap align-center gap-15">
-                                        
-                                            <div class="gsc-google-icon">G</div>
-                                        
-                                            <div class="connected-account">
-                                        
-                                                <div class="gsc-connected-left d-flex">
-                                        
-                                                    <span class="gsc-connected-label">
-                                                    <?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?>
-                                        
-                                                    </span>
-                                        
-                                                    <span class="connected-account-manual gsc-connected-email">
-                                        
-                                                    <?php echo esc_html($gscf7_email_account); ?>
-                                                    </span>
-                                        
+                                            <div>
+                                                <div class="heading mt-0 mb-30"> <?php echo esc_html(__('Google Account Connection', 'cf7-google-sheets-connector')); ?>
+                                                    <span class="badge"><?php echo esc_attr($gscf7_selected_method); ?></span>
                                                 </div>
-                                        
                                             </div>
-                                        
-                                        </div>
-                                        
-                                        <div class="gsc-google-auth-right">
-                                        
-                                            <div class="gsc-connected-pill">
-                                        
-                                                <span class="dot"></span>
-                                        
-                                                <?php echo esc_html(__(' Connected', 'cf7-google-sheets-connector')); ?>
+                                            <div class="d-flex flex-wrap gap-20 justify-between align-center">
+
+                                                <div class="gsc-google-auth-left d-flex flex-wrap align-center gap-15">
+
+                                                    <div class="gsc-google-icon">G</div>
+
+                                                    <div class="connected-account">
+
+                                                        <div class="gsc-connected-left d-flex">
+
+                                                            <span class="gsc-connected-label">
+                                                                <?php echo esc_html(__('Connected Email Account', 'cf7-google-sheets-connector')); ?>
+
+                                                            </span>
+
+                                                            <span class="connected-account-manual gsc-connected-email">
+
+                                                                <?php echo esc_html($gscf7_email_account); ?>
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="gsc-google-auth-right">
+
+                                                    <div class="gsc-connected-pill">
+
+                                                        <span class="dot"></span>
+
+                                                        <?php echo esc_html(__(' Connected', 'cf7-google-sheets-connector')); ?>
+                                                    </div>
+
+                                                </div>
                                             </div>
-                                        
-                                        </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="gscf7-feed-table-wrap">
-    <table class="widefat" id="gscf7-feed-table" data-page="1">
-        <thead>
-            <tr>
-                <th><?php esc_html_e( 'Form Name', 'cf7-google-sheets-connector' ); ?></th>
-                <th><?php esc_html_e( 'Feed Name', 'cf7-google-sheets-connector' ); ?></th>
-                <th><?php esc_html_e( 'Sheet Name', 'cf7-google-sheets-connector' ); ?></th>
-            </tr>
-        </thead>
+                                    <div class="gscf7-feed-table-wrap">
+                                        <table class="widefat" id="gscf7-feed-table" data-page="1">
+                                            <thead>
+                                                <tr>
+                                                    <th><?php esc_html_e('Form Name', 'cf7-google-sheets-connector'); ?></th>
+                                                    <th><?php esc_html_e('Feed Name', 'cf7-google-sheets-connector'); ?></th>
+                                                    <th><?php esc_html_e('Sheet Name', 'cf7-google-sheets-connector'); ?></th>
+                                                </tr>
+                                            </thead>
 
-        <tbody id="gscf7-feed-table-body">
-            <tr class="gscf7-feed-loading-row">
-                
-                <td colspan="3">
-                    <span class="gscf7-loader"></span>
-                <span class="gscf7-loader-text"><?php esc_html_e( 'Loading...', 'cf7-google-sheets-connector' ); ?>
-</span>
-            </td>
-            </tr>
-        </tbody>
-    </table>
-   
-    <div id="gscf7-pagination-wrap" class="d-flex justify-center gap-10 mt-15"></div>
+                                            <tbody id="gscf7-feed-table-body">
+                                                <tr class="gscf7-feed-loading-row">
 
-    <input type="hidden"
-        id="gscf7-pagination-nonce"
-        value="<?php echo esc_attr( wp_create_nonce( 'gscf7-pagination' ) ); ?>">
-</div>
-                                    <?php
+                                                    <td colspan="3">
+                                                        <span class="gscf7-loader"></span>
+                                                        <span class="gscf7-loader-text"><?php esc_html_e('Loading...', 'cf7-google-sheets-connector'); ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <div id="gscf7-pagination-wrap" class="d-flex justify-center gap-10 mt-15"></div>
+
+                                        <input type="hidden"
+                                            id="gscf7-pagination-nonce"
+                                            value="<?php echo esc_attr(wp_create_nonce('gscf7-pagination')); ?>">
+                                    </div>
+                                <?php
                                 } else { ?>
-                                <a class="btn btn-primary link-hover-white" href="<?php echo esc_html(admin_url('admin.php?page=wpcf7-google-sheet-config&tab=integration')); ?>">
-                                    <?php echo esc_html__("Let's Connect", 'cf7-google-sheets-connector'); ?>
-                                </a>
-                            <?php } ?>
+                                    <a class="btn btn-primary link-hover-white" href="<?php echo esc_html(admin_url('admin.php?page=wpcf7-google-sheet-config&tab=integration')); ?>">
+                                        <?php echo esc_html__("Let's Connect", 'cf7-google-sheets-connector'); ?>
+                                    </a>
+                                <?php } ?>
                             </div>
                         </div>
                         <!---End Welcome-Header Section--->
@@ -423,7 +422,7 @@
                                 <li><?php echo esc_html__('Latest WP & PHP Support', 'cf7-google-sheets-connector'); ?></li>
                             </ul>
                         </div>
-                        
+
 
                         <div class="pro-actions mt-30 gap-20">
                             <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="pro-btn text-decoration-none link-hover-white"><?php echo esc_html(__('Upgrade to Pro', 'cf7-google-sheets-connector')); ?></a>

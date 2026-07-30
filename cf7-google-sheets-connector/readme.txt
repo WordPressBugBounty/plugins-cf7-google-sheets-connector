@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 5.2.1
+Stable tag: 5.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,6 +441,9 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 
 == Changelog ==
 
+= 5.2.2 (30-07-2026) =
+* Added: Contact Form 7 uploaded files are now securely stored in a protected local directory to improve file security and prevent directory listing.
+* Fixed: Resolved an issue that could cause unexpected output during plugin activation in certain hosting environments.
 
 = 5.2.1 (29-07-2026) =
 * Added: Database indexes to improve performance on sites with a large number of stored entries.

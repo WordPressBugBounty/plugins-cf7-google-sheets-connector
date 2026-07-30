@@ -40,6 +40,10 @@
   /**End Form Feed Tab Panel Section**/
 }
 @media (max-width: 1125px) {
+  .gscf7-free #normal-sortables {
+    flex-direction: column;
+    gap: 20px;
+  }
   /***START NOTICE SLIDER***/
   .gscf7-free .notification-gsc-slider-arrows {
     right: 15px;
