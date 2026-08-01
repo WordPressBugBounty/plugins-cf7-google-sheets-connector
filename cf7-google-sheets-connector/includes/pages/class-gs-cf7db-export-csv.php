@@ -8,94 +8,94 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 class CF7GSCPRO_Export_CSV {
 
-    // Set headers for CSV download
-    public function download_send_headers( $filename ) {
+	// Set headers for CSV download
+	public function download_send_headers( $filename ) {
 
-        if ( ob_get_length() ) {
-            ob_end_clean();
-        }
+		if ( ob_get_length() ) {
+			ob_end_clean();
+		}
 
-        header( 'Expires: 0' );
-        header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
-        header( 'Content-Type: text/csv; charset=utf-8' );
-        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
-        header( 'Content-Transfer-Encoding: binary' );
-    }
+		header( 'Expires: 0' );
+		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Content-Transfer-Encoding: binary' );
+	}
 
-    // Handle CSV download
-    public function download_csv_file( $formId ) {
+	// Handle CSV download
+	public function download_csv_file( $formId ) {
 
-        global $wpdb;
+		global $wpdb;
 
-        $cfdb       = apply_filters( 'cfdb7_database', $wpdb );
-        $table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
+		$cfdb       = apply_filters( 'cfdb7_database', $wpdb );
+		$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
 
-        if ( $formId > 0 ) {
+		if ( $formId > 0 ) {
 
-            // Get first entry for headers
-            $first_entry = $cfdb->get_row(
-                $cfdb->prepare(
-                    "SELECT value FROM {$table_name} WHERE form_id = %d LIMIT 1",
-                    $formId
-                ),
-                ARRAY_A
-            );
+			// Get first entry for headers
+			$first_entry = $cfdb->get_row(
+				$cfdb->prepare(
+					"SELECT value FROM {$table_name} WHERE form_id = %d LIMIT 1",
+					$formId
+				),
+				ARRAY_A
+			);
 
-            if ( ! $first_entry ) {
-                return;
-            }
+			if ( ! $first_entry ) {
+				return;
+			}
 
-            $data    = maybe_unserialize( $first_entry['value'] );
-            $headers = array_keys( $data );
+			$data    = maybe_unserialize( $first_entry['value'] );
+			$headers = array_keys( $data );
 
-            // Get all entries
-            $entries = $cfdb->get_results(
-                $cfdb->prepare(
-                    "SELECT value FROM {$table_name} WHERE form_id = %d",
-                    $formId
-                ),
-                ARRAY_A
-            );
+			// Get all entries
+			$entries = $cfdb->get_results(
+				$cfdb->prepare(
+					"SELECT value FROM {$table_name} WHERE form_id = %d",
+					$formId
+				),
+				ARRAY_A
+			);
 
-            if ( ! $entries ) {
-                return;
-            }
+			if ( ! $entries ) {
+				return;
+			}
 
-            // Send CSV headers
-            $this->download_send_headers( 'cfdb7-' . gmdate( 'Y-m-d' ) . '.csv' );
+			// Send CSV headers
+			$this->download_send_headers( 'cfdb7-' . gmdate( 'Y-m-d' ) . '.csv' );
 
-            $df = fopen( 'php://output', 'w' );
+			$df = fopen( 'php://output', 'w' );
 
-            // Write CSV header
-            fputcsv( $df, $headers );
+			// Write CSV header
+			fputcsv( $df, $headers );
 
-            foreach ( $entries as $entry ) {
+			foreach ( $entries as $entry ) {
 
-                $data = maybe_unserialize( $entry['value'] );
-                $row  = array();
+				$data = maybe_unserialize( $entry['value'] );
+				$row  = array();
 
-                foreach ( $headers as $header ) {
+				foreach ( $headers as $header ) {
 
-                    if ( isset( $data[ $header ] ) && is_array( $data[ $header ] ) ) {
-                        $row[] = implode( ', ', $data[ $header ] );
-                    } else {
-                        $row[] = isset( $data[ $header ] ) ? $data[ $header ] : '';
-                    }
-                }
+					if ( isset( $data[ $header ] ) && is_array( $data[ $header ] ) ) {
+						$row[] = implode( ', ', $data[ $header ] );
+					} else {
+						$row[] = isset( $data[ $header ] ) ? $data[ $header ] : '';
+					}
+				}
 
-                fputcsv( $df, $row );
-            }
+				fputcsv( $df, $row );
+			}
 
-            if ( is_resource( $df ) ) {
-                fclose( $df ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-            }
+			if ( is_resource( $df ) ) {
+				fclose( $df ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			}
 
-            exit;
-        }
-    }
+			exit;
+		}
+	}
 }

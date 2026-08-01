@@ -1,34 +1,21 @@
+/*
+ * extension page
+ */
 jQuery(document).ready(function (jQuery) {
-  /**
-   * Hide empty addon sections and mark them with a CSS class on page load.
-   */
-
   jQuery(".gsheetconnector-addons-list").each(function () {
     if (jQuery(this).html().trim().length === 0) {
       jQuery(this).addClass("blank_div");
       jQuery(this).prev("div").hide();
     }
   });
-
-  /**
-   * Handle plugin install button click via AJAX.
-   *
-   * - Shows loading spinner
-   * - Sends plugin slug and download URL to server
-   * - On success, hides install button and shows activate button
-   * - On error or failure, resets button state
-   */
-
   jQuery(".gscf7-free-install-plugin-btn").on("click", function () {
     var button = jQuery(this);
     var pluginSlug = button.data("plugin");
     var downloadUrl = button.data("download");
     var nonce = jQuery("#gs-ajax-nonce").val();
-
     var loaderSpan = button
       .closest(".button-bar")
       .find(".loading-sign-install");
-
     loaderSpan.addClass("loading");
     button.prop("disabled", true);
 

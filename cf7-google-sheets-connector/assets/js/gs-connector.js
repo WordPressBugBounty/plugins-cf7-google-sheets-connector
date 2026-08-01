@@ -1431,3 +1431,27 @@ $(document).on("click", ".gscf7-page-link", function (e) {
     }
 });
 });
+jQuery(function ($) {
+    $('#gsc-clear-logs').on('click', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: ajaxurl, 
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'gscf7_clear_logs',
+                nonce: $('#gs-ajax-nonce').val()
+            },
+            success: function (response) {
+              
+                if (response.success) {
+                   
+                    location.reload();
+                } 
+            }
+        });
+
+    });
+
+});

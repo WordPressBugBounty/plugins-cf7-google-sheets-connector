@@ -1,10 +1,10 @@
-=== GSheetConnector – CF7 Google Sheets Connector ===
+=== GSheetConnector – Contact Form 7 Google Sheets Connector & Save CF7 Entries to Database ===
 Contributors: westerndeal, abdullah17
 Tags: cf7, contact form 7, google sheets, google sheets integration, form submissions
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 5.2.2
+Stable tag: 5.2.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,9 +441,12 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 
 == Changelog ==
 
+= 5.2.3 (01-08-2026) =
+* Fixed: Minor stability improvements and enhanced error logging.
+
 = 5.2.2 (30-07-2026) =
-* Added: Contact Form 7 uploaded files are now securely stored in a protected local directory to improve file security and prevent directory listing.
-* Fixed: Resolved an issue that could cause unexpected output during plugin activation in certain hosting environments.
+* Added: File uploads submitted via Contact Form 7 are now copied to a local `uploads/cf7gs` folder, protected from directory listing.
+* Fixed: Resolved an issue that could cause unexpected output during plugin activation on some environments.
 
 = 5.2.1 (29-07-2026) =
 * Added: Database indexes to improve performance on sites with a large number of stored entries.
@@ -713,7 +716,7 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 == Upgrade Notice ==
 
 = 5.2.1 =
-Recommended update. Includes security hardening, significant performance improvements for sites with large numbers of entries, and fixes for data loss on multisite and during simultaneous submissions. This update adds database indexes on upgrade, which may take a moment on very large entry tables. Back up your site before updating, as recommended for any plugin update.
+Recommended update. Includes important security, performance, and stability improvements, plus fixes for multisite synchronization and simultaneous submissions. Please back up your site before updating.
 
 = 5.1.7 =
 This update introduces new database tables for plugin data, a Dashboard tab, and several stability and security fixes. Back up your site before updating, as recommended for any plugin update.

@@ -1,125 +1,125 @@
 /**Start Gsheet-Header Section**/
 .gscf7-free .gsheet-header-wrapper {
-  border-bottom: 1px solid rgb(181, 191, 201);
+	border-bottom: 1px solid rgb(181, 191, 201);
 }
 .gscf7-free .gsheet-header-wrapper .left-gsheet-header .gsheet-header-logo i {
-  font-size: 28px;
-  line-height: 40px;
-  width: 50px;
-  height: 50px;
-  border-radius: 5px;
-  background: url(../img/gsheet-logo.svg) left center / 36px no-repeat !important;
+	font-size: 28px;
+	line-height: 40px;
+	width: 50px;
+	height: 50px;
+	border-radius: 5px;
+	background: url(../img/gsheet-logo.svg) left center / 36px no-repeat !important;
 }
 .gscf7-free
-  .gsheet-header-wrapper
-  .left-gsheet-header
-  .gsheet-header-logo-text
-  .title {
-  font-size: 22px;
-  line-height: 1.4em;
-  background: #e95118;
-  background: linear-gradient(to right, #e95118 0%, #eeb609 50%, #6ec833 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+	.gsheet-header-wrapper
+	.left-gsheet-header
+	.gsheet-header-logo-text
+	.title {
+	font-size: 22px;
+	line-height: 1.4em;
+	background: #e95118;
+	background: linear-gradient(to right, #e95118 0%, #eeb609 50%, #6ec833 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
 }
 .gscf7-free
-  .gsheet-header-wrapper
-  .left-gsheet-header
-  .gsheet-header-logo-text
-  .pro {
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  background: linear-gradient(
-    90deg,
-    rgb(17, 154, 23) 0%,
-    rgb(41, 106, 16) 100%
-  );
+	.gsheet-header-wrapper
+	.left-gsheet-header
+	.gsheet-header-logo-text
+	.pro {
+	color: #fff;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 10px;
+	background: linear-gradient(
+	90deg,
+	rgb(17, 154, 23) 0%,
+	rgb(41, 106, 16) 100%
+	);
 }
 .gscf7-free
-  .gsheet-header-wrapper
-  .left-gsheet-header
-  .gsheet-header-logo-text
-  small {
-  font-size: 12px;
-  color: #6b7280;
-  display: block;
+	.gsheet-header-wrapper
+	.left-gsheet-header
+	.gsheet-header-logo-text
+	small {
+	font-size: 12px;
+	color: #6b7280;
+	display: block;
 }
 .gscf7-free .gsheet-header-wrapper .right-gsheet-header ul li a {
-  color: rgb(102, 102, 102);
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--border-light);
-  border-image: initial;
-  border-radius: 40px;
+	color: rgb(102, 102, 102);
+	width: 30px;
+	height: 30px;
+	border: 1px solid var(--border-light);
+	border-image: initial;
+	border-radius: 40px;
 }
 .gscf7-free .gsheet-header-wrapper .right-gsheet-header ul li a i {
-  font-size: 15px;
+	font-size: 15px;
 }
 .gscf7-free .gsheet-header-wrapper .right-gsheet-header ul li a:hover {
-  border: 1px solid #666;
+	border: 1px solid #666;
 }
 .gscf7-free .gsheet-header-wrapper .right-gsheet-header ul li a:hover i {
-  color: #000;
+	color: #000;
 }
 /***End Gsheet-Header Section***/
 
 /**Start Breadcrumb Section**/
 .gscf7-free .breadcrumb-wrapper {
-  font-size: 13px;
+	font-size: 13px;
 }
 /**End Breadcrumb Section**/
 
 /**Start Tab Panel Section**/
 .gscf7-free .nav-tab-wrapper {
-  padding: 0 15px;
-  box-sizing: border-box;
-  border-bottom: 1px solid #b5bfc9;
-  margin-bottom: 10px;
+	padding: 0 15px;
+	box-sizing: border-box;
+	border-bottom: 1px solid #b5bfc9;
+	margin-bottom: 10px;
 }
 .gscf7-free .nav-tab:first-child {
-  border-radius: 4px 0 0 0;
+	border-radius: 4px 0 0 0;
 }
 .gscf7-free .nav-tab:last-child {
-  border-right: 1px solid #b5bfc9;
-  border-radius: 0 4px 0 0;
+	border-right: 1px solid #b5bfc9;
+	border-radius: 0 4px 0 0;
 }
 .gscf7-free .nav-tab {
-  padding: 10px 20px;
-  width: auto;
-  border: 1px solid #b5bfc9;
-  border-right: 0;
-  color: #5b646c;
-  background: #f0f2f4;
-  font-size: 15px;
-  margin-left: 0;
-  margin-bottom: -1px;
+	padding: 10px 20px;
+	width: auto;
+	border: 1px solid #b5bfc9;
+	border-right: 0;
+	color: #5b646c;
+	background: #f0f2f4;
+	font-size: 15px;
+	margin-left: 0;
+	margin-bottom: -1px;
 }
 .gscf7-free a:hover.nav-tab {
-  color: #1a1e22;
-  background: #f8f9fa;
+	color: #1a1e22;
+	background: #f8f9fa;
 }
 .gscf7-free .nav-tab:hover,
 .gscf7-free .nav-tab:focus,
 .gscf7-free a.nav-tab.nav-tab-active {
-  color: #1a1e22;
-  background: #f8f9fa;
+	color: #1a1e22;
+	background: #f8f9fa;
 }
 .gscf7-free a.nav-tab.nav-tab-active {
-  border-bottom-color: rgba(0, 0, 0, 0) !important;
+	border-bottom-color: rgba(0, 0, 0, 0) !important;
 }
 .gscf7-free .wrap {
-  background: #f8f9fa;
-  box-sizing: border-box;
-  padding: 25px 15px 0px 15px;
-  margin: 0;
+	background: #f8f9fa;
+	box-sizing: border-box;
+	padding: 25px 15px 0px 15px;
+	margin: 0;
 }
 
 .gscf7-free .inner-wrap {
-  box-shadow: 0 1px 10px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  box-sizing: border-box;
+	box-shadow: 0 1px 10px 3px rgba(0, 0, 0, 0.1);
+	border-radius: 4px;
+	box-sizing: border-box;
 }
 
 /**End Tab Panel Section**/

@@ -1,38 +1,38 @@
 /***Start Extra CSS***/
 #wpbody-content {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu,
-    Cantarell, "Helvetica Neue", sans-serif;
-  color: #4a4a4a;
-  overflow: hidden;
-  padding-bottom: 50px;
+	font-family:
+	-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu,
+	Cantarell, "Helvetica Neue", sans-serif;
+	color: #4a4a4a;
+	overflow: hidden;
+	padding-bottom: 50px;
 }
 .contact_page_wpcf7-google-sheet-config #wpbody-content {
-  padding-bottom: 0px;
+	padding-bottom: 0px;
 }
 body.contact_page_wpcf7-google-sheet-config #wpcontent {
-  padding-left: 0;
+	padding-left: 0;
 }
 
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
-  /* margin: 0; */
-  padding: 0;
+	box-sizing: border-box;
+	/* margin: 0; */
+	padding: 0;
 }
 body,
 html {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  background-color: #f8f9fa;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	background-color: #f8f9fa;
 }
 html {
-  scroll-behavior: smooth;
+	scroll-behavior: smooth;
 }
 section#google_sheets {
-  background: #fff !important;
+	background: #fff !important;
 }
 .gscf7-free div,
 .gscf7-free a,
@@ -44,32 +44,32 @@ section#google_sheets {
 .gscf7-free h4,
 .gscf7-free h5,
 .gscf7-free h6 {
-  padding: 0;
-  margin: 0;
-  list-style: none;
+	padding: 0;
+	margin: 0;
+	list-style: none;
 }
 .spacer {
-  clear: both;
+	clear: both;
 }
 .gscf7-free a {
-  text-decoration: underline;
-  color: #000;
+	text-decoration: underline;
+	color: #000;
 }
 .gscf7-free a:active,
 .gscf7-free a:hover {
-  color: #000;
+	color: #000;
 }
 .gscf7-free a:focus {
-  box-shadow: unset;
-  color: #000;
+	box-shadow: unset;
+	color: #000;
 }
 .gscf7-free ul {
-  list-style-type: none;
+	list-style-type: none;
 }
 .gscf7-free ul,
 .gscf7-free li {
-  margin: 0px;
-  padding: 0px;
+	margin: 0px;
+	padding: 0px;
 }
 .gscf7-free h1,
 .gscf7-free h2,
@@ -77,67 +77,67 @@ section#google_sheets {
 .gscf7-free h4,
 .gscf7-free h5,
 .gscf7-free h6 {
-  font-weight: 600;
-  color: var(--text-dark);
-  line-height: 28px;
-  margin-bottom: 15px;
-  margin-top: 25px;
+	font-weight: 600;
+	color: var(--text-dark);
+	line-height: 28px;
+	margin-bottom: 15px;
+	margin-top: 25px;
 }
 .gscf7-free h2 {
-  font-size: 22px;
+	font-size: 22px;
 }
 .gscf7-free .heading {
-  margin: 15px 0;
-  font-size: 22px;
-  line-height: 31px;
-  color: #000;
-  text-transform: capitalize;
-  font-weight: 600;
+	margin: 15px 0;
+	font-size: 22px;
+	line-height: 31px;
+	color: #000;
+	text-transform: capitalize;
+	font-weight: 600;
 }
 .gscf7-free p {
-  font-size: 15px;
-  color: var(--text-light);
-  line-height: 26px;
-  font-weight: 400;
-  margin-bottom: 16px;
+	font-size: 15px;
+	color: var(--text-light);
+	line-height: 26px;
+	font-weight: 400;
+	margin-bottom: 16px;
 }
 .gscf7-free label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-label);
-  line-height: 1.3;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--text-label);
+	line-height: 1.3;
 }
 
 .gscf7-free img {
-  max-width: 100%;
-  display: block;
+	max-width: 100%;
+	display: block;
 }
 .gscf7-free .form-control {
-  width: 100%;
-  padding: 4px 10px 4px 10px !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: 0px !important;
-  font-size: 14px !important;
-  line-height: 2.30769231 !important;
+	width: 100%;
+	padding: 4px 10px 4px 10px !important;
+	border: 1px solid var(--border-light) !important;
+	border-radius: 0px !important;
+	font-size: 14px !important;
+	line-height: 2.30769231 !important;
 }
 .gscf7-free select {
-  border: 1px solid #ccc;
-  padding: 7px 30px 7px 10px;
-  cursor: pointer;
-  background: #fff url(../img/arrow-down.svg) no-repeat right center;
-  background-size: 22px auto;
-  font-size: 14px;
-  line-height: 25px;
-  color: #444;
-  font-weight: 400;
-  text-transform: capitalize;
+	border: 1px solid #ccc;
+	padding: 7px 30px 7px 10px;
+	cursor: pointer;
+	background: #fff url(../img/arrow-down.svg) no-repeat right center;
+	background-size: 22px auto;
+	font-size: 14px;
+	line-height: 25px;
+	color: #444;
+	font-weight: 400;
+	text-transform: capitalize;
 }
 .gscf7-free input,
 .gscf7-free select,
 .gscf7-free textarea {
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease;
+	transition:
+	background-color 0.25s ease,
+	color 0.25s ease;
 }
 .gscf7-free input[type="checkbox"]:focus,
 .gscf7-free input[type="color"]:focus,
@@ -157,712 +157,712 @@ section#google_sheets {
 .gscf7-free input[type="week"]:focus,
 .gscf7-free select:focus,
 .gscf7-free textarea:focus {
-  outline: none !important;
-  border-color: #16a34a !important;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+	outline: none !important;
+	border-color: #16a34a !important;
+	box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
 }
 .gscf7-free .auto-select {
-  position: relative;
-  width: 100%;
-  font-size: 14px;
-  color: #444;
-  padding: 0;
-  font-weight: 400;
-  text-transform: capitalize;
+	position: relative;
+	width: 100%;
+	font-size: 14px;
+	color: #444;
+	padding: 0;
+	font-weight: 400;
+	text-transform: capitalize;
 }
 
 .gscf7-free .auto-select-display {
-  border: 1px solid #ccc !important;
-  line-height: 2.30769231 !important;
-  border-radius: unset !important;
-  padding: 4px 30px 4px 10px !important;
-  cursor: pointer !important;
-  max-width: 100% !important;
-  background: #fff url(../img/arrow-down.svg) no-repeat right center !important;
-  background-size: 22px auto !important;
+	border: 1px solid #ccc !important;
+	line-height: 2.30769231 !important;
+	border-radius: unset !important;
+	padding: 4px 30px 4px 10px !important;
+	cursor: pointer !important;
+	max-width: 100% !important;
+	background: #fff url(../img/arrow-down.svg) no-repeat right center !important;
+	background-size: 22px auto !important;
 }
 .gscf7-free .auto-select-display:hover {
-  color: inherit !important;
+	color: inherit !important;
 }
 .gscf7-free .auto-select-options {
-  display: none;
-  position: absolute;
-  width: 100%;
-  background: #fff;
-  border: 1px solid #ccc;
-  z-index: 999;
-  max-height: 200px;
-  overflow-y: auto;
+	display: none;
+	position: absolute;
+	width: 100%;
+	background: #fff;
+	border: 1px solid #ccc;
+	z-index: 999;
+	max-height: 200px;
+	overflow-y: auto;
 }
 
 .gscf7-free .auto-select-options div {
-  padding: 8px 10px;
-  cursor: pointer;
+	padding: 8px 10px;
+	cursor: pointer;
 }
 
 .gscf7-free .auto-select-options div:hover {
-  background: #f2f2f2;
+	background: #f2f2f2;
 }
 .gscf7-free .input-msg {
-  color: #dc3232;
-  font-size: 13px;
-  font-weight: 400;
-  text-transform: lowercase;
+	color: #dc3232;
+	font-size: 13px;
+	font-weight: 400;
+	text-transform: lowercase;
 }
 .gscf7-free .btn {
-  box-shadow: none;
-  color: #fff;
-  text-decoration: none;
-  text-shadow: none;
-  display: inline-block;
-  margin: 0;
-  cursor: pointer;
-  border-width: 1px;
-  border-style: solid;
-  text-align: center;
-  padding: 8px 16px;
-  line-height: 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
+	box-shadow: none;
+	color: #fff;
+	text-decoration: none;
+	text-shadow: none;
+	display: inline-block;
+	margin: 0;
+	cursor: pointer;
+	border-width: 1px;
+	border-style: solid;
+	text-align: center;
+	padding: 8px 16px;
+	line-height: 20px;
+	font-size: 16px;
+	font-weight: 500;
+	border-radius: 5px;
 }
 .gscf7-free .btn:focus-visible {
-  outline: unset !important;
+	outline: unset !important;
 }
 .gscf7-free .btn-primary {
-  background-color: var(--primary);
-  color: var(--text-white);
-  border: 1px solid var(--primary);
+	background-color: var(--primary);
+	color: var(--text-white);
+	border: 1px solid var(--primary);
 }
 .gscf7-free .deactivate-btn {
-  background: var(--bg-deactivate);
-  color: var(--btn-deactive-text-normal);
-  border: 1px solid var(--bg-deactivate);
+	background: var(--bg-deactivate);
+	color: var(--btn-deactive-text-normal);
+	border: 1px solid var(--bg-deactivate);
 }
 .gscf7-free .btn-reset {
-  background-color: #000 !important;
-  color: var(--text-white);
+	background-color: #000 !important;
+	color: var(--text-white);
 }
 .gscf7-free .btn-reset:hover {
-  color: var(--text-white) !important;
+	color: var(--text-white) !important;
 }
 .gscf7-free .loading {
-  background-image: url(../img/ajax-loader.gif);
-  background-position: 50% 80%;
-  background-repeat: no-repeat;
-  width: 14px;
-  display: inline-block;
-  height: 14px;
+	background-image: url(../img/ajax-loader.gif);
+	background-position: 50% 80%;
+	background-repeat: no-repeat;
+	width: 14px;
+	display: inline-block;
+	height: 14px;
 }
 .gscf7-free .common-disable:disabled {
-  opacity: 0.5;
-  cursor: not-allowed !important;
+	opacity: 0.5;
+	cursor: not-allowed !important;
 }
 .gscf7-free .common-disable:disabled {
-  box-shadow: none;
-  color: #fff;
-  text-decoration: none;
-  text-shadow: none;
-  display: inline-block;
-  margin: 0;
-  cursor: pointer;
-  border-width: 1px;
-  border-style: solid;
-  text-align: center;
-  padding: 8px 16px;
-  line-height: 20px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 5px;
+	box-shadow: none;
+	color: #fff;
+	text-decoration: none;
+	text-shadow: none;
+	display: inline-block;
+	margin: 0;
+	cursor: pointer;
+	border-width: 1px;
+	border-style: solid;
+	text-align: center;
+	padding: 8px 16px;
+	line-height: 20px;
+	font-size: 16px;
+	font-weight: 500;
+	border-radius: 5px;
 }
 /*Start pop up to Display Message*/
 .gscf7-free .gs-popup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 99999;
-  overflow-y: auto;
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	z-index: 99999;
+	overflow-y: auto;
 }
 .gscf7-free .gsc-modal-icon {
-  width: 60px;
-  height: 60px;
-  background: #fff3cd;
-  color: #d97706;
-  border-radius: 50%;
-  margin: 0 auto 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
+	width: 60px;
+	height: 60px;
+	background: #fff3cd;
+	color: #d97706;
+	border-radius: 50%;
+	margin: 0 auto 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 28px;
 }
 .gscf7-free .gs-popup {
-  background: #fff;
-  padding: 32px 28px;
-  border-radius: 14px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-  animation: modalFade 0.3s ease forwards;
+	background: #fff;
+	padding: 32px 28px;
+	border-radius: 14px;
+	width: 100%;
+	max-width: 420px;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+	animation: modalFade 0.3s ease forwards;
 }
 .gscf7-free .gsc-modal-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 10px;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1f2937;
+	margin-bottom: 10px;
 }
 .gscf7-free .gsc-modal-text {
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.6;
-  margin-bottom: 26px;
+	font-size: 14px;
+	color: #6b7280;
+	line-height: 1.6;
+	margin-bottom: 26px;
 }
 .gscf7-free .popup-actions {
-  margin-top: 20px;
-  text-align: right;
+	margin-top: 20px;
+	text-align: right;
 }
 .gscf7-free .popup-actions .button {
-  margin-left: 10px;
+	margin-left: 10px;
 }
 .gscf7-free .free-to-pro-data .gsc-modal-title {
-  margin-bottom: 17px;
-  line-height: 25px;
+	margin-bottom: 17px;
+	line-height: 25px;
 }
 .gscf7-free .free-to-pro-data .gsc-modal-text {
-  margin-bottom: 12px;
+	margin-bottom: 12px;
 }
 /*End pop up to Display Message*/
 #gscf7-code,
 #gscf7-client-token {
-  cursor: not-allowed !important;
-  pointer-events: none;
-  caret-color: transparent;
+	cursor: not-allowed !important;
+	pointer-events: none;
+	caret-color: transparent;
 }
 .gscf7-free .disable-cursor {
-  cursor: not-allowed !important;
-  pointer-events: none;
-  caret-color: transparent;
+	cursor: not-allowed !important;
+	pointer-events: none;
+	caret-color: transparent;
 }
 
 /***Start NOTICE SLIDER****/
 .gscf7-free .notification-gsc-notice-slider {
-  position: relative;
-  width: 100%;
-  margin: 15px 0;
+	position: relative;
+	width: 100%;
+	margin: 15px 0;
 }
 /* Track */
 .gscf7-free .notification-gsc-slider-track {
-  position: relative;
+	position: relative;
 }
 /* Slides */
 .gscf7-free .notification-gsc-slide {
-  display: none;
-  width: 100%;
+	display: none;
+	width: 100%;
 }
 /* Active slide */
 .gscf7-free .notification-gsc-slide.active {
-  display: block;
-  animation: fadeSlide 0.4s ease;
+	display: block;
+	animation: fadeSlide 0.4s ease;
 }
 /* Fade animation */
 @keyframes fadeSlide {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+	from {
+	opacity: 0;
+	transform: translateY(5px);
+	}
+	to {
+	opacity: 1;
+	transform: translateY(0);
+	}
 }
 /*RIGHT ARROWS*/
 .gscf7-free .notification-gsc-slider-arrows {
-  position: absolute;
-  right: 90px;
-  top: 62%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 6px;
+	position: absolute;
+	right: 90px;
+	top: 62%;
+	transform: translateY(-50%);
+	display: flex;
+	gap: 6px;
 }
 /* Arrow buttons */
 .gscf7-free .notification-gsc-slider-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: #111827;
-  color: #fff;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	border: 1px solid #d1d5db;
+	background: #111827;
+	color: #fff;
+	font-size: 14px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.2s ease;
 }
 .gscf7-free .notification-gsc-slider-btn:hover {
-  background: #16233f;
-  border-color: #9ca3af;
+	background: #16233f;
+	border-color: #9ca3af;
 }
 /***Start NOTICE SLIDER****/
 
 /*Start Activate pro Plugin Message*/
 /* Activation Banner */
 .gscf7-free .gsc-activate-banner {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: linear-gradient(90deg, #eff6ff, #ffffff);
-  border: 1px solid #bfdbfe;
-  border-left: 4px solid #3b82f6;
-  border-radius: 10px;
-  padding: 14px 18px;
-  margin: 15px 15px;
-  position: relative;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	background: linear-gradient(90deg, #eff6ff, #ffffff);
+	border: 1px solid #bfdbfe;
+	border-left: 4px solid #3b82f6;
+	border-radius: 10px;
+	padding: 14px 18px;
+	margin: 15px 15px;
+	position: relative;
 }
 /* Icon */
 .gscf7-free .gsc-activate-icon {
-  color: #2563eb;
+	color: #2563eb;
 }
 /* Content */
 .gscf7-free .gsc-activate-content {
-  flex: 1;
+	flex: 1;
 }
 .gscf7-free .gsc-activate-content .gsc-activate-content-header {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1e3a8a;
-  line-height: normal;
+	margin: 0 0 4px;
+	font-size: 15px;
+	font-weight: 600;
+	color: #1e3a8a;
+	line-height: normal;
 }
 .gscf7-free .gsc-activate-content p {
-  margin: 0;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #374151;
+	margin: 0;
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: #374151;
 }
 /* Actions */
 .gscf7-free .gsc-activate-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+	display: flex;
+	gap: 10px;
+	align-items: center;
 }
 /* Activate Button */
 .gscf7-free .gsc-btn-activate {
-  background: #2563eb;
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background 0.2s ease;
+	background: #2563eb;
+	color: #fff;
+	padding: 6px 14px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 500;
+	transition: background 0.2s ease;
 }
 .gscf7-free .gsc-btn-activate:hover {
-  background: #1d4ed8;
+	background: #1d4ed8;
 }
 /* Skip Button */
 .gscf7-free .gsc-btn-skip {
-  background: transparent;
-  border: none;
-  color: #374151;
-  font-size: 13px;
-  cursor: pointer;
+	background: transparent;
+	border: none;
+	color: #374151;
+	font-size: 13px;
+	cursor: pointer;
 }
 .gscf7-free .gsc-btn-skip:hover {
-  text-decoration: underline;
+	text-decoration: underline;
 }
 /* Close */
 .gscf7-free .gsc-activate-close {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  color: #6b7280;
-  font-size: 14px;
-  cursor: pointer;
+	position: absolute;
+	top: 8px;
+	right: 10px;
+	background: transparent;
+	border: none;
+	color: #6b7280;
+	font-size: 14px;
+	cursor: pointer;
 }
 .gscf7-free .gsc-activate-close:hover {
-  color: #111827;
+	color: #111827;
 }
 /*End Activate pro Plugin Message*/
 /*Start Upgrade to pro message*/
 .gscf7-free .gsc-upgrade-banner {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: linear-gradient(90deg, #ecfdf5, #ffffff);
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
-  padding: 14px 18px;
-  position: relative;
-  margin: 15px 15px;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	background: linear-gradient(90deg, #ecfdf5, #ffffff);
+	border: 1px solid #bbf7d0;
+	border-radius: 10px;
+	padding: 14px 18px;
+	position: relative;
+	margin: 15px 15px;
 }
 /* Icon */
 .gscf7-free .gsc-upgrade-icon {
-  font-size: 28px;
+	font-size: 28px;
 }
 /* Content */
 .gscf7-free .gsc-upgrade-content {
-  flex: 1;
+	flex: 1;
 }
 .gscf7-free .gsc-upgrade-content .gsc-upgrade-heading {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #065f46;
-  line-height: normal;
+	margin: 0 0 4px;
+	font-size: 15px;
+	font-weight: 600;
+	color: #065f46;
+	line-height: normal;
 }
 .gscf7-free .gsc-upgrade-content p {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: #374151;
+	margin: 0 0 8px;
+	font-size: 13px;
+	color: #374151;
 }
 
 /* Buttons */
 .gscf7-free .gsc-upgrade-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	flex-wrap: wrap;
 }
 .gscf7-free .gsc-btn-upgrade {
-  background: #199436;
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background 0.2s ease;
+	background: #199436;
+	color: #fff;
+	padding: 6px 14px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 500;
+	transition: background 0.2s ease;
 }
 .gscf7-free .gsc-btn-upgrade:hover {
-  background: #15803d;
+	background: #15803d;
 }
 .gscf7-free .gsc-btn-later {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  color: #374151;
-  cursor: pointer;
+	background: transparent;
+	border: none;
+	font-size: 13px;
+	color: #374151;
+	cursor: pointer;
 }
 .gscf7-free .gsc-btn-later:hover {
-  text-decoration: underline;
+	text-decoration: underline;
 }
 /* Dismiss Button */
 .gscf7-free .gsc-no-thanks-btn {
-  background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  transition: all 0.2s ease;
+	background: transparent;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	padding: 5px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #374151;
+	cursor: pointer;
+	transition: all 0.2s ease;
 }
 /* Hover */
 .gscf7-free .gsc-no-thanks-btn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+	background: #f3f4f6;
+	border-color: #9ca3af;
 }
 /* Focus */
 .gscf7-free .gsc-no-thanks-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
 }
 /* Active */
 .gscf7-free .gsc-no-thanks-btn:active {
-  background: #e5e7eb;
+	background: #e5e7eb;
 }
 /* Close Button */
 .gscf7-free .gsc-upgrade-close {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  color: #6b7280;
-  cursor: pointer;
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	background: transparent;
+	border: none;
+	font-size: 14px;
+	color: #6b7280;
+	cursor: pointer;
 }
 .gscf7-free .gsc-upgrade-close:hover {
-  color: #111827;
+	color: #111827;
 }
 /*End Upgrade to pro message*/
 /*Start Advertisement Slide Message*/
 .gscf7-free .gsc-ad-banner {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: linear-gradient(90deg, #f8fafc, #ffffff);
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #199436;
-  border-radius: 10px;
-  padding: 14px 18px;
-  margin: 15px;
-  position: relative;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	background: linear-gradient(90deg, #f8fafc, #ffffff);
+	border: 1px solid #e5e7eb;
+	border-left: 4px solid #199436;
+	border-radius: 10px;
+	padding: 14px 18px;
+	margin: 15px;
+	position: relative;
 }
 /* Left Logo */
 .gscf7-free .gsc-ad-left {
-  flex-shrink: 0;
+	flex-shrink: 0;
 }
 .gscf7-free .gsc-ad-logo {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
+	width: 48px;
+	height: 48px;
+	object-fit: contain;
 }
 /* Content */
 .gscf7-free .gsc-ad-content {
-  flex: 1;
+	flex: 1;
 }
 .gscf7-free .gsc-ad-content .gsc-ad-content-header {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #065f46;
-  line-height: normal;
+	margin: 0 0 4px;
+	font-size: 15px;
+	font-weight: 600;
+	color: #065f46;
+	line-height: normal;
 }
 .gscf7-free .gsc-ad-content p {
-  margin: 0;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #374151;
+	margin: 0;
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: #374151;
 }
 /* Button */
 .gscf7-free .gsc-ad-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
 .gscf7-free .gsc-btn-ad {
-  background: #199436;
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+	background: #199436;
+	color: #fff;
+	padding: 6px 14px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-size: 13px;
+	font-weight: 500;
+	transition: all 0.2s ease;
 }
 .gscf7-free .gsc-btn-ad:hover {
-  background: #15803d;
+	background: #15803d;
 }
 /*End Advertisement Slide Message*/
 
 /*Start Copy Message Display*/
 .gscf7-free .position-relative-copy {
-  position: relative;
+	position: relative;
 }
 .gscf7-free .gsc-copy-msg {
-  position: fixed;
-  bottom: 48px;
-  left: 175px;
-  background: #fff;
-  z-index: 9999;
-  color: #0c63e4;
-  padding: 15px;
-  font-size: 16px;
-  font-weight: 600 !important;
-  border-left: 4px solid #0c63e4;
-  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-  transition: all 0.3s ease;
-  pointer-events: none;
+	position: fixed;
+	bottom: 48px;
+	left: 175px;
+	background: #fff;
+	z-index: 9999;
+	color: #0c63e4;
+	padding: 15px;
+	font-size: 16px;
+	font-weight: 600 !important;
+	border-left: 4px solid #0c63e4;
+	box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+	transition: all 0.3s ease;
+	pointer-events: none;
 }
 /*End Copy Message Display*/
 
 /*Start Integration Debug LOG */
 .gscf7-free .gsc-error-details {
-  position: relative;
+	position: relative;
 }
 .gscf7-free .more-error-display {
-  max-height: 75px;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
+	max-height: 75px;
+	overflow: hidden;
+	transition: max-height 0.3s ease;
 }
 .gscf7-free .more-error-toggle {
-  display: inline-block;
-  margin-top: 5px;
-  font-size: 13px;
-  color: #0073aa;
-  cursor: pointer;
+	display: inline-block;
+	margin-top: 5px;
+	font-size: 13px;
+	color: #0073aa;
+	cursor: pointer;
 }
 .gscf7-free .more-error-display {
-  line-height: 15px; /* 5 lines = 75px */
-  max-height: 75px; /* 5 lines */
-  overflow-y: auto;
-  overflow-x: hidden;
+	line-height: 15px; /* 5 lines = 75px */
+	max-height: 75px; /* 5 lines */
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 .gscf7-free .error-log-main {
-  max-width: 100%;
+	max-width: 100%;
 }
 .gscf7-free .debug-log-div {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 .gscf7-free .error-log-table tbody {
-  display: block;
-  max-height: 300px;
-  overflow-y: auto;
+	display: block;
+	max-height: 300px;
+	overflow-y: auto;
 }
 .gscf7-free .error-log-table thead,
 .gscf7-free .error-log-table tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
+	display: table;
+	width: 100%;
+	table-layout: fixed;
 }
 .gscf7-free .error-log-table th,
 .gscf7-free .error-log-table td {
-  word-break: break-word;
+	word-break: break-word;
 }
 .gscf7-free .error-log-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 .gscf7-free .system-Error .gscf7-free-error-log-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
 }
 .gscf7-free .debug-logon,
 .gscf7-free .debug-logoff {
-  width: 18px;
-  height: 18px;
-  background: url(../img/arrow.svg) no-repeat left top;
-  background-size: 18px;
-  display: inline-block;
-  font-size: 0px;
-  text-decoration: none;
-  position: relative;
-  top: -5px;
-  left: 10px;
+	width: 18px;
+	height: 18px;
+	background: url(../img/arrow.svg) no-repeat left top;
+	background-size: 18px;
+	display: inline-block;
+	font-size: 0px;
+	text-decoration: none;
+	position: relative;
+	top: -5px;
+	left: 10px;
 }
 .gscf7-free .debug-logon {
-  rotate: 180deg;
+	rotate: 180deg;
 }
 .gscf7-free .gsc-log-badge {
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: capitalize;
+	padding: 3px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: capitalize;
 }
 .gscf7-free .button-primary {
-  background-color: #199436 !important;
-  border-color: #199436 !important;
+	background-color: #199436 !important;
+	border-color: #199436 !important;
 }
 .gscf7-free .btn-logs {
-  border-color: #d1d5db !important;
-  background-color: #f6f7f7 !important;
-  color: #000 !important;
+	border-color: #d1d5db !important;
+	background-color: #f6f7f7 !important;
+	color: #000 !important;
 }
 .gscf7-free .gsc-success {
-  background: #e6f4ea;
-  color: #1e7e34;
+	background: #e6f4ea;
+	color: #1e7e34;
 }
 .gscf7-free .gsc-warning {
-  background: #fff4e5;
-  color: #856404;
+	background: #fff4e5;
+	color: #856404;
 }
 .gscf7-free .gsc-error {
-  background: #fdecea;
-  color: #b02a37;
+	background: #fdecea;
+	color: #b02a37;
 }
 /* Base style for error code badge */
 .gscf7-free .sb-error-code {
-  display: inline-block;
-  padding: 0px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 17px;
-  border: 1px solid transparent;
-  background: #f3f4f6;
-  color: #111827;
+	display: inline-block;
+	padding: 0px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 17px;
+	border: 1px solid transparent;
+	background: #f3f4f6;
+	color: #111827;
 }
 /* 2xx – Success (Green) */
 .gscf7-free .sb-error-code[data-code^="2"] {
-  border-color: #16a34a;
-  background-color: rgba(22, 163, 74, 0.15);
-  color: #166534;
+	border-color: #16a34a;
+	background-color: rgba(22, 163, 74, 0.15);
+	color: #166534;
 }
 /* 3xx – Redirect / Info (Blue) */
 .gscf7-free .sb-error-code[data-code^="3"] {
-  border-color: #2563eb;
-  background-color: rgba(37, 99, 235, 0.15);
-  color: #1e40af;
+	border-color: #2563eb;
+	background-color: rgba(37, 99, 235, 0.15);
+	color: #1e40af;
 }
 /* 4xx – Client Error (Amber / Orange) */
 .gscf7-free .sb-error-code[data-code^="4"] {
-  border-color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.18);
-  color: #92400e;
+	border-color: #f59e0b;
+	background-color: rgba(245, 158, 11, 0.18);
+	color: #92400e;
 }
 /* 5xx – Server Error (Red) */
 .gscf7-free .sb-error-code[data-code^="5"] {
-  border-color: #dc2626;
-  background-color: rgba(220, 38, 38, 0.16);
-  color: #7f1d1d;
+	border-color: #dc2626;
+	background-color: rgba(220, 38, 38, 0.16);
+	color: #7f1d1d;
 }
 /* 401 / 403 – Auth related */
 .gscf7-free .sb-error-code[data-code="401"],
 .gscf7-free .sb-error-code[data-code="403"] {
-  border-color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.18);
-  color: #92400e;
+	border-color: #f59e0b;
+	background-color: rgba(245, 158, 11, 0.18);
+	color: #92400e;
 }
 /* 404 – Not Found (still client error) */
 .gscf7-free .sb-error-code[data-code="404"] {
-  border-color: #f97316;
-  background-color: rgba(249, 115, 22, 0.18);
-  color: #9a3412;
+	border-color: #f97316;
+	background-color: rgba(249, 115, 22, 0.18);
+	color: #9a3412;
 }
 /* 500+ – Hard server crash */
 .gscf7-free .sb-error-code[data-code="500"],
 .gscf7-free .sb-error-code[data-code="502"],
 .gscf7-free .sb-error-code[data-code="503"] {
-  border-color: #dc2626;
-  background-color: rgba(220, 38, 38, 0.16);
-  color: #7f1d1d;
+	border-color: #dc2626;
+	background-color: rgba(220, 38, 38, 0.16);
+	color: #7f1d1d;
 }
 
 .gscf7-free .gscf7-free-selected-authrequired-badge {
-  /* position: absolute;
-  top: 6%;
-  left: 70%; */
-  text-transform: capitalize;
-  display: inline-block;
-  padding: 2px 8px;
-  margin-left: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #ff0000;
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid #dcdfe3;
-  border-radius: 12px;
-  line-height: 1.4;
+	/* position: absolute;
+	top: 6%;
+	left: 70%; */
+	text-transform: capitalize;
+	display: inline-block;
+	padding: 2px 8px;
+	margin-left: 6px;
+	font-size: 11px;
+	font-weight: 500;
+	color: #ff0000;
+	background: rgba(255, 0, 0, 0.1);
+	border: 1px solid #dcdfe3;
+	border-radius: 12px;
+	line-height: 1.4;
 }
 /*End Integration Debug LOG */
 /***End Extra CSS***/
 .gscf7-free .sheet-url-cf7 {
-  border: 1px solid #ddd !important;
-  width: 50px;
-  height: 15px;
-  min-width: 50px;
-  min-height: 38px;
-  vertical-align: top;
-  border-radius: 8px !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-  cursor: pointer;
-  background-color: #fff;
+	border: 1px solid #ddd !important;
+	width: 50px;
+	height: 15px;
+	min-width: 50px;
+	min-height: 38px;
+	vertical-align: top;
+	border-radius: 8px !important;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+	line-height: 1;
+	cursor: pointer;
+	background-color: #fff;
 }

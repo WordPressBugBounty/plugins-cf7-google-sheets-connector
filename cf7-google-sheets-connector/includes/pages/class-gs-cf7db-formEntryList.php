@@ -1,439 +1,326 @@
 <?php
 
-class GSCF7_FormEntry_Table extends WP_List_Table
-{
-    private $form_post_id;
-    private $column_titles;
+class GSCF7_FormEntry_Table extends WP_List_Table {
 
-    /**
-     * Memoised result of get_columns().
-     *
-     * WP_List_Table calls get_columns() several times per render (prepare_items(),
-     * get_column_info(), display() and print_column_headers()). Without this the
-     * same database query ran 3-5 times for a single page load.
-     *
-     * @var array|null
-     */
-    private $columns_cache = null;
-    public function __construct()
-    {
-        parent::__construct(
-            array(
-                'singular' => 'contact_form',
-                'plural' => 'contact_forms',
-                'ajax' => false
-            )
-        ); ?>
-        <input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"
-            value="<?php echo esc_attr(wp_create_nonce('gs-ajax-nonce')); ?>" />
-    <?php
-    }
-    /**
-     * Prepare the items for the table to process
-     *
-     * @return Void
-     */
-    public function prepare_items()
-    {
+	private $form_post_id;
+	private $column_titles;
 
-        $this->form_post_id = isset($_GET['formId']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            ? absint(wp_unslash($_GET['formId'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            : 0;
+	/**
+	 * Memoised result of get_columns().
+	 *
+	 * WP_List_Table calls get_columns() several times per render (prepare_items(),
+	 * get_column_info(), display() and print_column_headers()). Without this the
+	 * same database query ran 3-5 times for a single page load.
+	 *
+	 * @var array|null
+	 */
+	private $columns_cache = null;
+	public function __construct() {
+		parent::__construct(
+			array(
+				'singular' => 'contact_form',
+				'plural'   => 'contact_forms',
+				'ajax'     => false,
+			)
+		); ?>
+		<input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"
+			value="<?php echo esc_attr( wp_create_nonce( 'gs-ajax-nonce' ) ); ?>" />
+		<?php
+	}
+	/**
+	 * Prepare the items for the table to process
+	 *
+	 * @return Void
+	 */
+	public function prepare_items() {
 
-        $search = false;
+		$this->form_post_id = isset( $_GET['formId'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			? absint( wp_unslash( $_GET['formId'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			: 0;
 
-        if (isset($_REQUEST['s'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $search = sanitize_text_field(
-                wp_unslash($_REQUEST['s']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            );
-        }
-        global $wpdb;
-        $this->process_bulk_action();
-        $cfdb = apply_filters('cfdb7_database', $wpdb);
-        $table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
-        $columns  = $this->get_columns();
+		$search = false;
 
-        $hidden   = $this->get_hidden_columns();
+		if ( isset( $_REQUEST['s'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$search = sanitize_text_field(
+				wp_unslash( $_REQUEST['s'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			);
+		}
+		global $wpdb;
+		$this->process_bulk_action();
+		$cfdb       = apply_filters( 'cfdb7_database', $wpdb );
+		$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
+		$columns    = $this->get_columns();
 
-        $sortable = $this->get_sortable_columns();
+		$hidden = $this->get_hidden_columns();
 
+		$sortable = $this->get_sortable_columns();
 
-        $perPage     = 10;
+		$perPage = 10;
 
-        $currentPage = max(1, $this->get_pagenum());
+		$currentPage = max( 1, $this->get_pagenum() );
 
+		$data = $this->table_data( $perPage, $currentPage );
 
+		if ( ! empty( $search ) ) {
 
-        $data = $this->table_data($perPage, $currentPage);
+			$like = '%' . $cfdb->esc_like( $search ) . '%';
 
+			$totalItems = $cfdb->get_var(
+				$cfdb->prepare(
+					"SELECT COUNT(*) FROM $table_name WHERE value LIKE %s AND form_id = %d",
+					$like,
+					$this->form_post_id
+				)
+			);
+		} else {
+			/*
+			 * Use the form ID resolved in this method.
+			 *
+			 * This previously read $_GET['form_post_id'], a parameter that is
+			 * never set anywhere in the plugin, so the count was always taken
+			 * for form_id 0 and pagination reported zero items.
+			 */
+			$totalItems = $cfdb->get_var(
+				$cfdb->prepare(
+					"SELECT COUNT(*) FROM $table_name WHERE form_id = %d",
+					$this->form_post_id
+				)
+			);
+		}
 
+		$this->set_pagination_args(
+			array(
 
-        if (!empty($search)) {
+				'total_items' => $totalItems,
 
-            $like = '%' . $cfdb->esc_like($search) . '%';
+				'per_page'    => $perPage,
 
-            $totalItems = $cfdb->get_var(
+				'total_pages' => ceil( $totalItems / $perPage ),
 
-                $cfdb->prepare(
+			)
+		);
 
-                    "SELECT COUNT(*) FROM $table_name WHERE value LIKE %s AND form_id = %d",
+		$this->_column_headers = array( $columns, $hidden, $sortable );
 
-                    $like,
+		$this->items = $data;
+	}
 
-                    $this->form_post_id
+	/**
 
-                )
+	 * Override the parent columns method. Defines the columns to use in your listing table
+	 *
+	 * @return Array
+	 */
+	public function get_columns() {
 
-            );
-        } else {
-            /*
-             * Use the form ID resolved in this method.
-             *
-             * This previously read $_GET['form_post_id'], a parameter that is
-             * never set anywhere in the plugin, so the count was always taken
-             * for form_id 0 and pagination reported zero items.
-             */
-            $totalItems = $cfdb->get_var(
-                $cfdb->prepare(
-                    "SELECT COUNT(*) FROM $table_name WHERE form_id = %d",
-                    $this->form_post_id
-                )
-            );
-        }
+		if ( null !== $this->columns_cache ) {
 
+			return $this->columns_cache;
+		}
 
+		$form_post_id = absint( $this->form_post_id );
 
-        $this->set_pagination_args(array(
+		global $wpdb;
 
-            'total_items' => $totalItems,
+		$cfdb = apply_filters( 'cfdb7_database', $wpdb );
 
-            'per_page'    => $perPage,
+		$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
 
-            'total_pages' => ceil($totalItems / $perPage)
-
-        ));
-
-
-
-        $this->_column_headers = array($columns, $hidden, $sortable);
-
-
-
-        $this->items = $data;
-    }
-
-    /**
-
-     * Override the parent columns method. Defines the columns to use in your listing table
-
-     *
-
-     * @return Array
-
-     */
-
-    public function get_columns()
-
-    {
-
-        if (null !== $this->columns_cache) {
-
-            return $this->columns_cache;
-        }
-
-        $form_post_id = absint($this->form_post_id);
-
-
-
-        global $wpdb;
-
-        $cfdb = apply_filters('cfdb7_database', $wpdb);
-
-        $table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
-
-
-
-        $results = $cfdb->get_results(
-
-            $cfdb->prepare(
-
-                "SELECT value FROM $table_name
+		$results = $cfdb->get_results(
+			$cfdb->prepare(
+				"SELECT value FROM $table_name
 
         WHERE form_id = %d ORDER BY id DESC LIMIT 1",
+				$form_post_id
+			),
+			OBJECT
+		);
 
-                $form_post_id
+		$first_row = isset( $results[0] ) ? unserialize( $results[0]->value ) : 0;
 
-            ),
-
-            OBJECT
-
-        );
-
-
-
-        $first_row = isset($results[0]) ? unserialize($results[0]->value) : 0;
-
-
-
-        $columns = array();
+		$columns = array();
 
         // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Existing hook name maintained for backward compatibility.
-        $rm_underscore = apply_filters('remove_underscore_data', true);
-        // $rm_underscore = apply_filters( 'cf7gs_remove_underscore_data', true );
+		$rm_underscore = apply_filters( 'remove_underscore_data', true );
+		// $rm_underscore = apply_filters( 'cf7gs_remove_underscore_data', true );
 
+		if ( ! empty( $first_row ) ) {
 
-        if (!empty($first_row)) {
+			$columns['cb'] = '<input type="checkbox" />';
 
+			// Entry ID column
 
+			$columns['entry_id'] = 'Entry ID';
 
-            $columns['cb'] = '<input type="checkbox" />';
+			foreach ( $first_row as $key => $value ) {
 
+				$matches = array();
 
+				$key = esc_html( $key );
 
-            // Entry ID column
+				if ( $key == 'cfdb7_status' ) {
 
-            $columns['entry_id'] = 'Entry ID';
+					continue;
+				}
 
+				if ( $rm_underscore ) {
 
+					preg_match( '/^_.*$/m', $key, $matches );
+				}
 
-            foreach ($first_row as $key => $value) {
+				if ( ! empty( $matches[0] ) ) {
 
+					continue;
+				}
 
+				$key_val = str_replace( array( 'your-', 'cfdb7_file' ), '', $key );
 
-                $matches = array();
+				$key_val = str_replace( array( '_', '-' ), ' ', $key_val );
 
-                $key = esc_html($key);
+				$columns[ $key ] = ucwords( $key_val );
 
+				/*
+				 * Store the raw key, not the display label.
+				 *
+				 * table_data() uses these entries to backfill fields that are
+				 * missing from an individual row. Storing the transformed label
+				 * meant the backfill wrote to a key that no column ever read, so
+				 * rows lacking a field triggered undefined-key warnings.
+				 */
+				$this->column_titles[] = $key;
 
+				if ( sizeof( $columns ) > 5 ) {
 
-                if ($key == 'cfdb7_status') {
+					break;
+				}
+			}
 
-                    continue;
-                }
+			$columns['date'] = 'Date';
 
+			$columns['sent_sheet'] = '<label>Send to SpreadSheet</label>';
+		}
 
+		$this->columns_cache = $columns;
 
-                if ($rm_underscore) {
+		return $columns;
+	}
 
-                    preg_match('/^_.*$/m', $key, $matches);
-                }
+	/**
 
+	 * Define check box for bulk action (each row)
 
+	 * @param $item
 
-                if (!empty($matches[0])) {
+	 * @return checkbox
+	 */
+	public function column_cb( $item ) {
 
-                    continue;
-                }
+		if ( ! isset( $item['id'] ) ) {
 
+			return '';
+		}
 
+		return sprintf(
+			'<input type="checkbox" name="%1$s[]" value="%2$s" />',
+			esc_attr( $this->_args['singular'] ),
+			esc_attr( $item['id'] )
+		);
+	}
 
-                $key_val = str_replace(array('your-', 'cfdb7_file'), '', $key);
+	public function column_sent_sheet( $item ) {
 
-                $key_val = str_replace(array('_', '-'), ' ', $key_val);
+		$entry_id = isset( $item['id'] ) ? absint( $item['id'] ) : 0;
 
-
-
-                $columns[$key] = ucwords($key_val);
-
-
-
-                /*
-                 * Store the raw key, not the display label.
-                 *
-                 * table_data() uses these entries to backfill fields that are
-                 * missing from an individual row. Storing the transformed label
-                 * meant the backfill wrote to a key that no column ever read, so
-                 * rows lacking a field triggered undefined-key warnings.
-                 */
-                $this->column_titles[] = $key;
-
-
-
-                if (sizeof($columns) > 5) {
-
-                    break;
-                }
-            }
-
-
-
-            $columns['date'] = 'Date';
-
-            $columns['sent_sheet'] = '<label>Send to SpreadSheet</label>';
-        }
-
-
-
-        $this->columns_cache = $columns;
-
-        return $columns;
-    }
-
-    /**
-
-     * Define check box for bulk action (each row)
-
-     * @param $item
-
-     * @return checkbox
-
-     */
-
-    public function column_cb($item)
-
-    {
-
-        if (!isset($item['id'])) {
-
-            return '';
-        }
-
-
-
-        return sprintf(
-
-            '<input type="checkbox" name="%1$s[]" value="%2$s" />',
-
-            esc_attr($this->_args['singular']),
-
-            esc_attr($item['id'])
-
-        );
-    }
-
-    public function column_sent_sheet($item)
-    {
-
-        $entry_id = isset($item['id']) ? absint($item['id']) : 0;
-
-        return sprintf(
-            '<button type="button" class="button action sendToGoogleSheetCF7DB" data-id="%2$s" form-id="%1$s">%3$s</button>
+		return sprintf(
+			'<button type="button" class="button action sendToGoogleSheetCF7DB" data-id="%2$s" form-id="%1$s">%3$s</button>
         <span class="loading-sign-all loading-sign-%2$s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
         <span class="msg-%2$s"></span>',
-            esc_attr($this->form_post_id),
-            esc_attr($entry_id),
-            esc_html__('Send To SpreadSheet', 'cf7-google-sheets-connector')
-        );
-    }
-    /**
+			esc_attr( $this->form_post_id ),
+			esc_attr( $entry_id ),
+			esc_html__( 'Send To SpreadSheet', 'cf7-google-sheets-connector' )
+		);
+	}
+	/**
 
-     * Define which columns are hidden
+	 * Define which columns are hidden
+	 *
+	 * @return Array
+	 */
+	public function get_hidden_columns() {
 
-     *
+		return array( 'id' );
+	}
 
-     * @return Array
+	/**
 
-     */
+	 * Define the sortable columns
+	 *
+	 * @return Array
+	 */
+	public function get_sortable_columns() {
 
-    public function get_hidden_columns()
+		return array( 'date' => array( 'date', true ) );
+	}
 
-    {
+	/**
 
-        return array('id');
-    }
+	 * Define bulk action
 
-    /**
+	 * @return Array
+	 */
+	public function get_bulk_actions() {
 
-     * Define the sortable columns
+		return array(
 
-     *
+			'read'              => esc_html__( 'Read', 'cf7-google-sheets-connector' ),
 
-     * @return Array
+			'unread'            => esc_html__( 'Unread', 'cf7-google-sheets-connector' ),
 
-     */
+			'delete'            => esc_html__( 'Delete', 'cf7-google-sheets-connector' ),
 
-    public function get_sortable_columns()
+			// Key must match the value compared in process_bulk_action().
+			'sendtospreadsheet' => esc_html__( 'Spread Sheet', 'cf7-google-sheets-connector' ),
 
-    {
+		);
+	}
 
-        return array('date' => array('date', true));
-    }
+	/**
 
-    /**
+	 * Get the table data
+	 *
+	 * @return Array
+	 */
+	private function table_data( $perPage = 10, $currentPage = 1 ) {
 
-     * Define bulk action
+		$data = array();
 
-     * @return Array
+		global $wpdb;
 
-     */
-
-    public function get_bulk_actions()
-
-    {
-
-        return array(
-
-            'read'              => esc_html__('Read', 'cf7-google-sheets-connector'),
-
-            'unread'            => esc_html__('Unread', 'cf7-google-sheets-connector'),
-
-            'delete'            => esc_html__('Delete', 'cf7-google-sheets-connector'),
-
-            // Key must match the value compared in process_bulk_action().
-            'sendtospreadsheet' => esc_html__('Spread Sheet', 'cf7-google-sheets-connector')
-
-
-
-
-
-        );
-    }
-
-    /**
-
-     * Get the table data
-
-     *
-
-     * @return Array
-
-     */
-
-    private function table_data($perPage = 10, $currentPage = 1)
-
-    {
-
-        $data = array();
-
-        global $wpdb;
-
-
-
-        $cfdb = apply_filters('cfdb7_database', $wpdb);
+		$cfdb = apply_filters( 'cfdb7_database', $wpdb );
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        $search = empty($_REQUEST['s']) ? false : sanitize_text_field(wp_unslash($_REQUEST['s']));
+		$search = empty( $_REQUEST['s'] ) ? false : sanitize_text_field( wp_unslash( $_REQUEST['s'] ) );
 
-        $table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
+		$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
 
+		$form_post_id = (int) $this->form_post_id;
 
+		// pagination offset
 
-        $form_post_id = (int) $this->form_post_id;
-
-
-
-        // pagination offset
-
-        $offset = ($currentPage - 1) * $perPage;
-
+		$offset = ( $currentPage - 1 ) * $perPage;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        $orderby = isset($_GET['orderby']) ? 'date' : 'id';
+		$orderby = isset( $_GET['orderby'] ) ? 'date' : 'id';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        $order   = (isset($_GET['order']) && $_GET['order'] == 'asc') ? 'ASC' : 'DESC';
+		$order = ( isset( $_GET['order'] ) && $_GET['order'] == 'asc' ) ? 'ASC' : 'DESC';
 
+		// Build query safely
 
+		if ( ! empty( $search ) ) {
 
-        // Build query safely
+			$like = '%' . $cfdb->esc_like( $search ) . '%';
 
-        if (!empty($search)) {
-
-            $like = '%' . $cfdb->esc_like($search) . '%';
-
-
-
-            $query = $cfdb->prepare(
-
-                "SELECT id, form_id, value, date FROM $table_name
+			$query = $cfdb->prepare(
+				"SELECT id, form_id, value, date FROM $table_name
 
              WHERE value LIKE %s
 
@@ -442,687 +329,587 @@ class GSCF7_FormEntry_Table extends WP_List_Table
              ORDER BY $orderby $order
 
              LIMIT %d, %d",
+				$like,
+				$form_post_id,
+				$offset,
+				$perPage
+			);
+		} else {
 
-                $like,
-
-                $form_post_id,
-
-                $offset,
-
-                $perPage
-
-            );
-        } else {
-
-            $query = $cfdb->prepare(
-
-                "SELECT id, form_id, value, date FROM $table_name
+			$query = $cfdb->prepare(
+				"SELECT id, form_id, value, date FROM $table_name
 
              WHERE form_id = %d
 
              ORDER BY $orderby $order
 
              LIMIT %d, %d",
+				$form_post_id,
+				$offset,
+				$perPage
+			);
+		}
 
-                $form_post_id,
+		$results = $cfdb->get_results( $query, OBJECT );
 
-                $offset,
+		foreach ( $results as $result ) {
 
-                $perPage
+			$form_value = unserialize( $result->value );
 
-            );
-        }
+			$form_values = array();
 
+			$link = "<b><a href='admin.php?page=wpcf7-google-sheet-config&tab=cf7_db&formId=%s&entryId=%s'>%s</a></b>";
 
+			if ( isset( $form_value['cfdb7_status'] ) && ( $form_value['cfdb7_status'] === 'read' ) ) {
 
-        $results = $cfdb->get_results($query, OBJECT);
+				$link = "<a href='admin.php?page=wpcf7-google-sheet-config&tab=cf7_db&formId=%s&entryId=%s'>%s</a>";
+			}
 
+			$fid = $result->form_id;
 
+			$form_values['entry_id'] = $result->id;
 
-        foreach ($results as $result) {
+			if ( ! empty( $this->column_titles ) ) {
 
+				foreach ( $this->column_titles as $col_title ) {
 
+					$form_value[ $col_title ] = isset( $form_value[ $col_title ] ) ? $form_value[ $col_title ] : '';
+				}
+			}
 
-            $form_value = unserialize($result->value);
+			if ( ! empty( $form_value ) ) {
 
-            $form_values = array();
+				foreach ( $form_value as $k => $value ) {
 
+					if ( is_array( $value ) || is_object( $value ) ) {
 
+						foreach ( $value as $val ) {
 
-            $link = "<b><a href='admin.php?page=wpcf7-google-sheet-config&tab=cf7_db&formId=%s&entryId=%s'>%s</a></b>";
+							$val = esc_html( $val );
 
+							$val = ( strlen( $val ) > 150 ) ? substr( $val, 0, 150 ) . '...' : $val;
 
+							$form_values[ $k ] = sprintf( $link, $fid, $result->id, $val );
+						}
+					} else {
 
-            if (isset($form_value['cfdb7_status']) && ($form_value['cfdb7_status'] === 'read')) {
+						$value = esc_html( $value );
 
-                $link = "<a href='admin.php?page=wpcf7-google-sheet-config&tab=cf7_db&formId=%s&entryId=%s'>%s</a>";
-            }
+						$value = ( strlen( $value ) > 150 ) ? substr( $value, 0, 150 ) . '...' : $value;
 
+						$form_values[ $k ] = sprintf( $link, $fid, $result->id, $value );
+					}
+				}
 
+				/*
+				 * Format the date using Settings > General.
+				 *
+				 * The entry date is stored as site-local time by
+				 * current_time('Y-m-d H:i:s'). The previous code ran it through
+				 * strtotime(), which parses in the default timezone (UTC under
+				 * WordPress), and then through wp_date(), which applied the site
+				 * offset a second time - so entries displayed with the timezone
+				 * offset added twice on any site not running on UTC.
+				 *
+				 * mysql2date() interprets the stored string as site-local and
+				 * formats it in the site timezone, applying the offset once, and
+				 * localises month and day names.
+				 */
+				$date_format = get_option( 'date_format' );
 
-            $fid = $result->form_id;
+				$time_format = get_option( 'time_format' );
 
-            $form_values['entry_id'] = $result->id;
+				$formatted_date = mysql2date( $date_format . ' ' . $time_format, $result->date );
 
+				$form_values['date'] = sprintf( $link, $fid, $result->id, $formatted_date );
 
+				$data[] = $form_values;
+			}
+		}
 
-            if (!empty($this->column_titles)) {
+		return $data;
+	}
 
-                foreach ($this->column_titles as $col_title) {
+	/**
 
-                    $form_value[$col_title] = isset($form_value[$col_title]) ? $form_value[$col_title] : '';
-                }
-            }
+	 * Define bulk action
+	 */
+	public function process_bulk_action() {
 
+		global $wpdb;
 
+		$cfdb = apply_filters( 'cfdb7_database', $wpdb );
 
-            if (!empty($form_value)) {
+		$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
 
-                foreach ($form_value as $k => $value) {
+		$action = $this->current_action();
 
+		if ( ! empty( $action ) ) {
 
+			/*
+			 * FILTER_SANITIZE_STRING is deprecated as of PHP 8.1 and removed in
+			 * PHP 9. It also mangled the value by encoding quotes before the
+			 * nonce was ever compared.
+			 */
+			$nonce = isset( $_POST['_wpnonce'] )
+				? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) )
+				: '';
 
-                    if (is_array($value) || is_object($value)) {
+			$nonce_action = 'bulk-' . $this->_args['plural'];
 
-                        foreach ($value as $val) {
+			if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
 
-                            $val = esc_html($val);
+				wp_die( 'Not valid..!!' );
+			}
+		}
 
-                            $val = (strlen($val) > 150) ? substr($val, 0, 150) . '...' : $val;
+		$entry_ids = isset( $_POST['contact_form'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['contact_form'] ) ) : array();
 
-                            $form_values[$k] = sprintf($link, $fid, $result->id, $val);
-                        }
-                    } else {
+		$form_id = isset( $_GET['formId'] ) ? intval( $_GET['formId'] ) : '';
 
-                        $value = esc_html($value);
+		if ( 'delete' === $action ) {
 
-                        $value = (strlen($value) > 150) ? substr($value, 0, 150) . '...' : $value;
+			foreach ( $entry_ids as $entry_id ) :
 
-                        $form_values[$k] = sprintf($link, $fid, $result->id, $value);
-                    }
-                }
+				$entry_id = (int) $entry_id;
 
+				$results = $cfdb->get_results(
+					$cfdb->prepare( "SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id ),
+					OBJECT
+				);
 
+				if ( empty( $results[0] ) ) {
+					continue;
+				}
 
-                /*
-                 * Format the date using Settings > General.
-                 *
-                 * The entry date is stored as site-local time by
-                 * current_time('Y-m-d H:i:s'). The previous code ran it through
-                 * strtotime(), which parses in the default timezone (UTC under
-                 * WordPress), and then through wp_date(), which applied the site
-                 * offset a second time - so entries displayed with the timezone
-                 * offset added twice on any site not running on UTC.
-                 *
-                 * mysql2date() interprets the stored string as site-local and
-                 * formats it in the site timezone, applying the offset once, and
-                 * localises month and day names.
-                 */
-                $date_format = get_option('date_format');
+				$result_value = $results[0]->value;
 
-                $time_format = get_option('time_format');
+				$result_values = unserialize( $result_value );
 
+				if ( ! is_array( $result_values ) ) {
+					$result_values = array();
+				}
 
+				$upload_dir = wp_upload_dir();
 
-                $formatted_date = mysql2date($date_format . ' ' . $time_format, $result->date);
+				$cfdb7_dirname = $upload_dir['basedir'] . '/cf7gs';
 
+				foreach ( $result_values as $key => $result ) {
 
+					if ( ( strpos( $key, 'cfdb7_file' ) !== false ) &&
+					! empty( $result ) &&
+					file_exists( $cfdb7_dirname . '/' . $result )
+					) {
 
-                $form_values['date'] = sprintf($link, $fid, $result->id, $formatted_date);
+										// Use WordPress native file deletion function instead of PHP's unlink()
+										wp_delete_file( $cfdb7_dirname . '/' . $result );
+					}
+				}
 
+				$cfdb->delete(
+					$table_name,
+					array( 'id' => $entry_id ),
+					array( '%d' )
+				);
 
+			endforeach;
+		} elseif ( 'read' === $action ) {
 
-                $data[] = $form_values;
-            }
-        }
+			foreach ( $entry_ids as $entry_id ) :
 
+				$entry_id = (int) $entry_id;
 
+				$results = $cfdb->get_results(
+					$cfdb->prepare( "SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id ),
+					OBJECT
+				);
 
-        return $data;
-    }
+				if ( empty( $results[0] ) ) {
+					continue;
+				}
 
-    /**
+				$result_value = $results[0]->value;
 
-     * Define bulk action
+				$result_values = unserialize( $result_value );
 
-     *
+				if ( ! is_array( $result_values ) ) {
+					$result_values = array();
+				}
 
-     */
+				$result_values['cfdb7_status'] = 'read';
 
-    public function process_bulk_action()
+				$form_data = serialize( $result_values );
 
-    {
+				$cfdb->query(
+					$cfdb->prepare(
+						"UPDATE $table_name SET value = %s WHERE id = %d",
+						$form_data,
+						$entry_id
+					)
+				);
 
+			endforeach;
+		} elseif ( 'unread' === $action ) {
 
+			foreach ( $entry_ids as $entry_id ) :
 
-        global $wpdb;
+				$entry_id = (int) $entry_id;
 
-        $cfdb = apply_filters('cfdb7_database', $wpdb);
+				$results = $cfdb->get_results(
+					$cfdb->prepare( "SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id ),
+					OBJECT
+				);
 
-        $table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
+				if ( empty( $results[0] ) ) {
+					continue;
+				}
 
-        $action = $this->current_action();
+				$result_value = $results[0]->value;
 
+				$result_values = unserialize( $result_value );
 
+				if ( ! is_array( $result_values ) ) {
+					$result_values = array();
+				}
 
-        if (!empty($action)) {
+				$result_values['cfdb7_status'] = 'unread';
 
+				$form_data = serialize( $result_values );
 
+				$cfdb->query(
+					$cfdb->prepare(
+						"UPDATE $table_name SET value = %s WHERE id = %d LIMIT 1",
+						$form_data,
+						$entry_id
+					)
+				);
 
-            /*
-             * FILTER_SANITIZE_STRING is deprecated as of PHP 8.1 and removed in
-             * PHP 9. It also mangled the value by encoding quotes before the
-             * nonce was ever compared.
-             */
-            $nonce = isset($_POST['_wpnonce'])
-                ? sanitize_text_field(wp_unslash($_POST['_wpnonce']))
-                : '';
+			endforeach;
+		} elseif ( 'sendtospreadsheet' === $action ) {
 
-            $nonce_action = 'bulk-' . $this->_args['plural'];
+			$gs_connector_service = Gs_Connector_Service::instance();
 
+			/*
+			 * These bulk helpers only exist in the Pro build. Calling them
+			 * unguarded raised a fatal "call to undefined method" error.
+			 */
+			$singlesheet_response = method_exists( $gs_connector_service, 'send_to_spreadsheet_bulk' )
+				? $gs_connector_service->send_to_spreadsheet_bulk( $entry_ids, $form_id )
+				: null;
 
+			$multisheet_response = method_exists( $gs_connector_service, 'send_to_spreadsheet_bulk_multisheet' )
+				? $gs_connector_service->send_to_spreadsheet_bulk_multisheet( $entry_ids, $form_id )
+				: null;
 
-            if (!wp_verify_nonce($nonce, $nonce_action)) {
+			if ( null === $singlesheet_response && null === $multisheet_response ) {
 
+				set_transient(
+					'gs_sync_notice',
+					array(
+						'type'    => 'warning',
+						'message' => esc_html__( 'Sending entries to Google Sheets in bulk is available in the Pro version.', 'cf7-google-sheets-connector' ),
+					),
+					30
+				);
 
+				$redirect_url = isset( $_SERVER['REQUEST_URI'] )
+					? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+					: '';
+				wp_safe_redirect( $redirect_url );
 
-                wp_die('Not valid..!!');
-            }
-        }
+				exit;
+			}
 
+			if ( is_wp_error( $singlesheet_response ) ) {
 
+				set_transient(
+					'gs_sync_notice',
+					array(
 
-        $entry_ids = isset($_POST['contact_form']) ? array_map('sanitize_text_field', wp_unslash($_POST['contact_form'])) : array();
+						'type'    => 'error',
 
-        $form_id = isset($_GET['formId']) ? intval($_GET['formId']) : '';
+						'message' => sprintf(
+							'%s %s',
+							esc_html__( 'Single Sheet connection Sync Error:', 'cf7-google-sheets-connector' ),
+							esc_html( $singlesheet_response->get_error_message() )
+						),
 
+					),
+					30
+				);
+			} elseif ( isset( $singlesheet_response->updates ) && $singlesheet_response->updates->updatedRows > 0 ) {
 
+				set_transient(
+					'gs_sync_notice',
+					array(
 
+						'type'    => 'success',
 
+						'message' => esc_html__( 'Data synced successfully for Single Sheet Connection.', 'cf7-google-sheets-connector' ),
 
-        if ('delete' === $action) {
+					),
+					30
+				);
+			} else {
 
+				set_transient(
+					'gs_sync_notice',
+					array(
 
+						'type'    => 'warning',
 
-            foreach ($entry_ids as $entry_id) :
+						'message' => esc_html__( 'Unknown response from Google Sheets API for Single Sheet Connection.', 'cf7-google-sheets-connector' ),
 
+					),
+					30
+				);
+			}
 
+			if ( is_wp_error( $multisheet_response ) ) {
 
-                $entry_id = (int) $entry_id;
+				set_transient(
+					'gs_sync_notice_multi',
+					array(
 
-                $results = $cfdb->get_results(
-                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
-                    OBJECT
-                );
+						'type'    => 'error',
 
-                if (empty($results[0])) {
-                    continue;
-                }
+						'message' => sprintf(
+							'%s %s',
+							esc_html__( 'Multi Sheet connection Sync Error:', 'cf7-google-sheets-connector' ),
+							esc_html( $multisheet_response->get_error_message() )
+						),
 
-                $result_value = $results[0]->value;
+					),
+					30
+				);
+			} elseif ( isset( $multisheet_response->updates ) && $multisheet_response->updates->updatedRows > 0 ) {
 
-                $result_values = unserialize($result_value);
+				set_transient(
+					'gs_sync_notice_multi',
+					array(
 
-                if (! is_array($result_values)) {
-                    $result_values = array();
-                }
+						'type'    => 'success',
 
-                $upload_dir = wp_upload_dir();
+						'message' => esc_html__( 'Data synced successfully for Multi Sheet Connection.', 'cf7-google-sheets-connector' ),
 
-                $cfdb7_dirname = $upload_dir['basedir'] . '/cf7gs';
+					),
+					30
+				);
+			} else {
 
+				set_transient(
+					'gs_sync_notice_multi',
+					array(
 
+						'type'    => 'warning',
 
-               foreach ( $result_values as $key => $result ) {
+						'message' => esc_html__( 'Unknown response from Google Sheets API for Multi Sheet Connection.', 'cf7-google-sheets-connector' ),
 
-    if ( ( strpos( $key, 'cfdb7_file' ) !== false ) &&
-        ! empty( $result ) &&
-        file_exists( $cfdb7_dirname . '/' . $result )
-    ) {
+					),
+					30
+				);
+			}
 
-        // Use WordPress native file deletion function instead of PHP's unlink()
-        wp_delete_file( $cfdb7_dirname . '/' . $result );
-    }
-}
+			$redirect_url = isset( $_SERVER['REQUEST_URI'] )
+				? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+				: '';
+			wp_safe_redirect( $redirect_url );
 
+			exit;
+		}
+	}
 
-                $cfdb->delete(
+	/**
 
-                    $table_name,
+	 * Define what data to show on each column of the table
+	 *
+	 * @param Array  $item Data
 
-                    array('id' => $entry_id),
+	 * @param String $column_name - Current column name
+	 *
+	 * @return Mixed
+	 */
+	public function column_default( $item, $column_name ) {
 
-                    array('%d')
+		return isset( $item[ $column_name ] ) ? $item[ $column_name ] : '';
+	}
 
-                );
 
-            endforeach;
-        } else if ('read' === $action) {
 
+	/**
 
+	 * Display the bulk actions dropdown.
+	 *
+	 * @since 3.1.0
 
-            foreach ($entry_ids as $entry_id) :
+	 * @access protected
+	 *
+	 * @param string $which The location of the bulk actions: 'top' or 'bottom'.
 
+	 * This is designated as optional for backward compatibility.
+	 */
+	protected function bulk_actions( $which = '' ) {
 
+		if ( is_null( $this->_actions ) ) {
 
-                $entry_id = (int) $entry_id;
-
-                $results = $cfdb->get_results(
-                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
-                    OBJECT
-                );
-
-                if (empty($results[0])) {
-                    continue;
-                }
-
-                $result_value = $results[0]->value;
-
-                $result_values = unserialize($result_value);
-
-                if (! is_array($result_values)) {
-                    $result_values = array();
-                }
-
-                $result_values['cfdb7_status'] = 'read';
-
-                $form_data = serialize($result_values);
-
-                $cfdb->query(
-
-                    $cfdb->prepare(
-                        "UPDATE $table_name SET value = %s WHERE id = %d",
-                        $form_data,
-                        $entry_id
-                    )
-
-                );
-
-
-
-            endforeach;
-        } else if ('unread' === $action) {
-
-
-
-            foreach ($entry_ids as $entry_id) :
-
-
-
-                $entry_id = (int) $entry_id;
-
-                $results = $cfdb->get_results(
-                    $cfdb->prepare("SELECT id, value FROM $table_name WHERE id = %d LIMIT 1", $entry_id),
-                    OBJECT
-                );
-
-                if (empty($results[0])) {
-                    continue;
-                }
-
-                $result_value = $results[0]->value;
-
-                $result_values = unserialize($result_value);
-
-                if (! is_array($result_values)) {
-                    $result_values = array();
-                }
-
-                $result_values['cfdb7_status'] = 'unread';
-
-                $form_data = serialize($result_values);
-
-                $cfdb->query(
-
-                    $cfdb->prepare(
-                        "UPDATE $table_name SET value = %s WHERE id = %d LIMIT 1",
-                        $form_data,
-                        $entry_id
-                    )
-
-                );
-
-            endforeach;
-        } else if ('sendtospreadsheet' === $action) {
-
-            $gs_connector_service = Gs_Connector_Service::instance();
-
-            /*
-             * These bulk helpers only exist in the Pro build. Calling them
-             * unguarded raised a fatal "call to undefined method" error.
-             */
-            $singlesheet_response = method_exists($gs_connector_service, 'send_to_spreadsheet_bulk')
-                ? $gs_connector_service->send_to_spreadsheet_bulk($entry_ids, $form_id)
-                : null;
-
-            $multisheet_response = method_exists($gs_connector_service, 'send_to_spreadsheet_bulk_multisheet')
-                ? $gs_connector_service->send_to_spreadsheet_bulk_multisheet($entry_ids, $form_id)
-                : null;
-
-            if (null === $singlesheet_response && null === $multisheet_response) {
-
-                set_transient('gs_sync_notice', [
-                    'type'    => 'warning',
-                    'message' => esc_html__('Sending entries to Google Sheets in bulk is available in the Pro version.', 'cf7-google-sheets-connector'),
-                ], 30);
-
-                $redirect_url = isset($_SERVER['REQUEST_URI'])
-                    ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI']))
-                    : '';
-                wp_safe_redirect($redirect_url);
-
-                exit;
-            }
-
-
-
-            if (is_wp_error($singlesheet_response)) {
-
-                set_transient('gs_sync_notice', [
-
-                    'type'    => 'error',
-
-                    'message' => sprintf(
-
-                        '%s %s',
-
-                        esc_html__('Single Sheet connection Sync Error:', 'cf7-google-sheets-connector'),
-
-                        esc_html($singlesheet_response->get_error_message())
-
-                    ),
-
-                ], 30);
-            } elseif (isset($singlesheet_response->updates) && $singlesheet_response->updates->updatedRows > 0) {
-
-                set_transient('gs_sync_notice', [
-
-                    'type'    => 'success',
-
-                    'message' => esc_html__('Data synced successfully for Single Sheet Connection.', 'cf7-google-sheets-connector'),
-
-                ], 30);
-            } else {
-
-                set_transient('gs_sync_notice', [
-
-                    'type'    => 'warning',
-
-                    'message' => esc_html__('Unknown response from Google Sheets API for Single Sheet Connection.', 'cf7-google-sheets-connector'),
-
-                ], 30);
-            }
-
-
-
-
-
-            if (is_wp_error($multisheet_response)) {
-
-                set_transient('gs_sync_notice_multi', [
-
-                    'type'    => 'error',
-
-                    'message' => sprintf(
-
-                        '%s %s',
-
-                        esc_html__('Multi Sheet connection Sync Error:', 'cf7-google-sheets-connector'),
-
-                        esc_html($multisheet_response->get_error_message())
-
-                    ),
-
-                ], 30);
-            } elseif (isset($multisheet_response->updates) && $multisheet_response->updates->updatedRows > 0) {
-
-                set_transient('gs_sync_notice_multi', [
-
-                    'type'    => 'success',
-
-                    'message' => esc_html__('Data synced successfully for Multi Sheet Connection.', 'cf7-google-sheets-connector'),
-
-                ], 30);
-            } else {
-
-                set_transient('gs_sync_notice_multi', [
-
-                    'type'    => 'warning',
-
-                    'message' => esc_html__('Unknown response from Google Sheets API for Multi Sheet Connection.', 'cf7-google-sheets-connector'),
-
-                ], 30);
-            }
-
-
-
-            $redirect_url = isset($_SERVER['REQUEST_URI'])
-                ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI']))
-                : '';
-            wp_safe_redirect($redirect_url);
-
-            exit;
-        }
-    }
-
-    /**
-
-     * Define what data to show on each column of the table
-
-     *
-
-     * @param Array $item Data
-
-     * @param String $column_name - Current column name
-
-     *
-
-     * @return Mixed
-
-     */
-
-    public function column_default($item, $column_name)
-
-    {
-
-        return isset($item[$column_name]) ? $item[$column_name] : '';
-    }
-
-
-
-    /**
-
-     * Display the bulk actions dropdown.
-
-     *
-
-     * @since 3.1.0
-
-     * @access protected
-
-     *
-
-     * @param string $which The location of the bulk actions: 'top' or 'bottom'.
-
-     * This is designated as optional for backward compatibility.
-
-     */
-
-    protected function bulk_actions($which = '')
-
-    {
-
-        if (is_null($this->_actions)) {
-
-            $this->_actions = $this->get_bulk_actions();
+			$this->_actions = $this->get_bulk_actions();
 
             // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core hook, not defined by this plugin.
-            $this->_actions = apply_filters("bulk_actions-{$this->screen->id}", $this->_actions);
+			$this->_actions = apply_filters( "bulk_actions-{$this->screen->id}", $this->_actions );
 
-            $two = '';
-        } else {
+			$two = '';
+		} else {
 
-            $two = '2';
-        }
+			$two = '2';
+		}
 
+		if ( empty( $this->_actions ) ) {
 
+			return;
+		}
 
-        if (empty($this->_actions)) {
+		// Screen reader label
 
-            return;
-        }
+		?>
 
+		<label for="bulk-action-selector-<?php echo esc_attr( $which ); ?>" class="screen-reader-text">
 
+			<?php echo esc_html__( 'Select bulk action', 'cf7-google-sheets-connector' ); ?>
 
-        // Screen reader label 
-
-    ?>
-
-        <label for="bulk-action-selector-<?php echo esc_attr($which); ?>" class="screen-reader-text">
-
-            <?php echo esc_html__('Select bulk action', 'cf7-google-sheets-connector'); ?>
-
-        </label>
+		</label>
 
 
 
-        <select name="action<?php echo esc_attr($two); ?>" id="bulk-action-selector-<?php echo esc_attr($which); ?>">
+		<select name="action<?php echo esc_attr( $two ); ?>" id="bulk-action-selector-<?php echo esc_attr( $which ); ?>">
 
-            <option value="-1"><?php echo esc_html__('Bulk Actions', 'cf7-google-sheets-connector'); ?></option>
+			<option value="-1"><?php echo esc_html__( 'Bulk Actions', 'cf7-google-sheets-connector' ); ?></option>
 
-            <?php foreach ($this->_actions as $name => $title) :
+			<?php
+			foreach ( $this->_actions as $name => $title ) :
 
-                $class = 'edit' === $name ? ' class="hide-if-no-js"' : '';
+				$class = 'edit' === $name ? ' class="hide-if-no-js"' : '';
 
-            ?>
+				?>
 
-                <option value="<?php echo esc_attr($name); ?>" <?php echo wp_kses($class, array('class' => array())); ?> disabled>
+				<option value="<?php echo esc_attr( $name ); ?>" <?php echo wp_kses( $class, array( 'class' => array() ) ); ?> disabled>
 
-                    <?php echo esc_html($title); ?>
+					<?php echo esc_html( $title ); ?>
 
-                </option>
+				</option>
 
-            <?php endforeach; ?>
+			<?php endforeach; ?>
 
-        </select>
-
-
-
-        <?php
-
-        // Submit button
-
-        submit_button(
-
-            esc_html__('Apply', 'cf7-google-sheets-connector'),
-
-            'action',
-
-            '',
-
-            false,
-
-            array('id' => "doaction$two", 'disabled' => 'disabled')
-
-        );
+		</select>
 
 
 
-        // Export CSV button
+		<?php
+
+		// Submit button
+
+		submit_button(
+			esc_html__( 'Apply', 'cf7-google-sheets-connector' ),
+			'action',
+			'',
+			false,
+			array(
+				'id'       => "doaction$two",
+				'disabled' => 'disabled',
+			)
+		);
+
+		// Export CSV button
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-        $formId = isset($_GET['formId']) ? intval($_GET['formId']) : 0;
+		$formId = isset( $_GET['formId'] ) ? intval( $_GET['formId'] ) : 0;
 
+		if ( $formId > 0 ) {
 
-        if ($formId > 0) {
+			echo '<a href="#" id="cf7gs-free-csv" class="button" style="float:right; margin:0;">' .
+				esc_html__( 'Export CSV', 'cf7-google-sheets-connector' ) .
+				'</a>';
+		}
 
-            echo '<a href="#" id="cf7gs-free-csv" class="button" style="float:right; margin:0;">' .
-                esc_html__('Export CSV', 'cf7-google-sheets-connector') .
-                '</a>';
-        }
+		do_action( 'cfdb7_after_export_button' );
 
-
-        do_action('cfdb7_after_export_button');
-
-        ?>
-
-
-
-        <div id="cf7gs-free-pro" class="gs-popup-overlay d-none">
-
-            <div class="gs-popups position-relative-popup text-center">
-
-                <button type="button" class="gscf7-free-pro gsc-pro-close">×</button>
-
-                <div class="gsc-pro-section">
-
-                    <div class="gsc-pro-card">
-
-                        <div class="gsc-pro-headers">
-
-                            <div class="gsc-pro-headers">
-
-                                <div class="gsc-modal-title">
-
-                                    <?php esc_html_e('Want to send entries to Google Sheets?', 'cf7-google-sheets-connector'); ?>
-
-                                </div>
-
-                                <p class="gsc-modal-text"><?php echo esc_html__('Export and sync your form submissions directly to Google Sheets to easily organize, filter, and manage your data in one place. Unlock this feature to simplify your workflow and access your entries anytime.', 'cf7-google-sheets-connector'); ?>
-
-                                </p>
-
-                            </div>
-
-                            <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="btn btn-primary text-decoration-none link-hover-white"><?php esc_html_e('Upgrade to Unlock', 'cf7-google-sheets-connector'); ?></a>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-            </div>
-
-        </div>
-
-        <div id="cf7gs-free-pro-csv" class="gs-popup-overlay d-none">
-
-            <div class="gs-popups position-relative-popup text-center">
-
-                <button type="button" class="gscf7-free-pro-csv gsc-pro-close">×</button>
-
-                <div class="gsc-pro-section">
-
-                    <div class="gsc-pro-card">
-
-                        <div class="gsc-pro-headers">
-
-                            <div class="gsc-modal-title">
-
-                                <?php esc_html_e('Want to download your form entries?', 'cf7-google-sheets-connector'); ?>
-
-                            </div>
-
-                            <p class="gsc-modal-text"><?php echo esc_html__('Export your form entries as a CSV file and use them in Sheets. You can sort, filter, and manage everything more easily.', 'cf7-google-sheets-connector'); ?>
-
-                            </p>
-
-                        </div>
-
-                        <a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="btn btn-primary text-decoration-none link-hover-white"><?php esc_html_e('Upgrade to Unlock', 'cf7-google-sheets-connector'); ?></a>
-
-                    </div>
-
-                </div>
+		?>
 
 
 
-            </div>
+		<div id="cf7gs-free-pro" class="gs-popup-overlay d-none">
 
-        </div>
+			<div class="gs-popups position-relative-popup text-center">
 
-<?php
+				<button type="button" class="gscf7-free-pro gsc-pro-close">×</button>
 
-    }
+				<div class="gsc-pro-section">
+
+					<div class="gsc-pro-card">
+
+						<div class="gsc-pro-headers">
+
+							<div class="gsc-pro-headers">
+
+								<div class="gsc-modal-title">
+
+									<?php esc_html_e( 'Want to send entries to Google Sheets?', 'cf7-google-sheets-connector' ); ?>
+
+								</div>
+
+								<p class="gsc-modal-text"><?php echo esc_html__( 'Export and sync your form submissions directly to Google Sheets to easily organize, filter, and manage your data in one place. Unlock this feature to simplify your workflow and access your entries anytime.', 'cf7-google-sheets-connector' ); ?>
+
+								</p>
+
+							</div>
+
+							<a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="btn btn-primary text-decoration-none link-hover-white"><?php esc_html_e( 'Upgrade to Unlock', 'cf7-google-sheets-connector' ); ?></a>
+
+						</div>
+
+					</div>
+
+				</div>
+
+
+			</div>
+
+		</div>
+
+		<div id="cf7gs-free-pro-csv" class="gs-popup-overlay d-none">
+
+			<div class="gs-popups position-relative-popup text-center">
+
+				<button type="button" class="gscf7-free-pro-csv gsc-pro-close">×</button>
+
+				<div class="gsc-pro-section">
+
+					<div class="gsc-pro-card">
+
+						<div class="gsc-pro-headers">
+
+							<div class="gsc-modal-title">
+
+								<?php esc_html_e( 'Want to download your form entries?', 'cf7-google-sheets-connector' ); ?>
+
+							</div>
+
+							<p class="gsc-modal-text"><?php echo esc_html__( 'Export your form entries as a CSV file and use them in Sheets. You can sort, filter, and manage everything more easily.', 'cf7-google-sheets-connector' ); ?>
+
+							</p>
+
+						</div>
+
+						<a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" target="_blank" class="btn btn-primary text-decoration-none link-hover-white"><?php esc_html_e( 'Upgrade to Unlock', 'cf7-google-sheets-connector' ); ?></a>
+
+					</div>
+
+				</div>
+
+
+
+			</div>
+
+		</div>
+
+		<?php
+	}
 } ?>
