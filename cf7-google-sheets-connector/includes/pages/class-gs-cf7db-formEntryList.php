@@ -21,6 +21,15 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 				'singular' => 'contact_form',
 				'plural'   => 'contact_forms',
 				'ajax'     => false,
+				/*
+				 * Without an explicit screen, WP_List_Table falls back to
+				 * get_current_screen() -- which is null inside admin-ajax.php
+				 * (no WP_Screen is ever set up there). get_primary_column_name()
+				 * then dereferences $this->screen->id on that null, and the
+				 * resulting PHP warning gets echoed straight into what's
+				 * supposed to be a pure JSON AJAX response, corrupting it.
+				 */
+				'screen'   => 'gscf7-contact-form-entries',
 			)
 		); ?>
 		<input type="hidden" name="gs-ajax-nonce" id="gs-ajax-nonce"
@@ -57,9 +66,22 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
 		$perPage = 10;
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display option, not a form submission.
+		if ( isset( $_GET['per_page'] ) ) {
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display option, not a form submission.
+			$requested_per_page = absint( wp_unslash( $_GET['per_page'] ) );
+
+			if ( in_array( $requested_per_page, array( 10, 20, 50, 100 ), true ) ) {
+				$perPage = $requested_per_page;
+			}
+		}
+
 		$currentPage = max( 1, $this->get_pagenum() );
 
 		$data = $this->table_data( $perPage, $currentPage );
+
+		list( $status_where, $status_params ) = $this->get_entry_status_filter();
 
 		if ( ! empty( $search ) ) {
 
@@ -67,9 +89,8 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
 			$totalItems = $cfdb->get_var(
 				$cfdb->prepare(
-					"SELECT COUNT(*) FROM $table_name WHERE value LIKE %s AND form_id = %d",
-					$like,
-					$this->form_post_id
+					"SELECT COUNT(*) FROM $table_name WHERE value LIKE %s AND form_id = %d" . $status_where,
+					array_merge( array( $like, $this->form_post_id ), $status_params )
 				)
 			);
 		} else {
@@ -82,8 +103,8 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 			 */
 			$totalItems = $cfdb->get_var(
 				$cfdb->prepare(
-					"SELECT COUNT(*) FROM $table_name WHERE form_id = %d",
-					$this->form_post_id
+					"SELECT COUNT(*) FROM $table_name WHERE form_id = %d" . $status_where,
+					array_merge( array( $this->form_post_id ), $status_params )
 				)
 			);
 		}
@@ -152,6 +173,9 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
 			$columns['entry_id'] = 'Entry ID';
 
+			// Status column (Read / Unread)
+			$columns['status'] = esc_html__( 'Status', 'cf7-google-sheets-connector' );
+
 			foreach ( $first_row as $key => $value ) {
 
 				$matches = array();
@@ -188,16 +212,11 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 				 * rows lacking a field triggered undefined-key warnings.
 				 */
 				$this->column_titles[] = $key;
-
-				if ( sizeof( $columns ) > 5 ) {
-
-					break;
-				}
 			}
 
 			$columns['date'] = 'Date';
 
-			$columns['sent_sheet'] = '<label>Send to SpreadSheet</label>';
+			$columns['actions'] = esc_html__( 'Actions', 'cf7-google-sheets-connector' );
 		}
 
 		$this->columns_cache = $columns;
@@ -215,7 +234,14 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 	 */
 	public function column_cb( $item ) {
 
-		if ( ! isset( $item['id'] ) ) {
+		/*
+		 * Row data is keyed 'entry_id' (see get_columns()/table_data()), not
+		 * 'id' -- this previously always fell through to the empty-string
+		 * return below, so no row checkbox has ever actually rendered and
+		 * every bulk action (delete/read/unread/send-to-sheet) has had no
+		 * way to receive any entry IDs from the UI.
+		 */
+		if ( ! isset( $item['entry_id'] ) ) {
 
 			return '';
 		}
@@ -223,21 +249,182 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 		return sprintf(
 			'<input type="checkbox" name="%1$s[]" value="%2$s" />',
 			esc_attr( $this->_args['singular'] ),
-			esc_attr( $item['id'] )
+			esc_attr( $item['entry_id'] )
 		);
 	}
 
-	public function column_sent_sheet( $item ) {
+	/**
+	 * Render the Status column as a Read / Unread badge.
+	 *
+	 * Reads the raw, unlinked status value stashed in `status_raw` by
+	 * table_data() -- the generic per-field loop there wraps every value
+	 * in an entry-detail link, so the flag itself is kept separately to
+	 * avoid rendering a badge inside a link.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param array $item Row data.
+	 * @return string
+	 */
+	public function column_status( $item ) {
 
-		$entry_id = isset( $item['id'] ) ? absint( $item['id'] ) : 0;
+		$status = isset( $item['status_raw'] ) && 'read' === $item['status_raw'] ? 'read' : 'unread';
+
+		$label = ( 'read' === $status )
+			? esc_html__( 'Read', 'cf7-google-sheets-connector' )
+			: esc_html__( 'Unread', 'cf7-google-sheets-connector' );
 
 		return sprintf(
-			'<button type="button" class="button action sendToGoogleSheetCF7DB" data-id="%2$s" form-id="%1$s">%3$s</button>
-        <span class="loading-sign-all loading-sign-%2$s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-        <span class="msg-%2$s"></span>',
-			esc_attr( $this->form_post_id ),
+			'<span class="gscf7-status-badge gscf7-status-%1$s">%2$s</span>',
+			esc_attr( $status ),
+			$label
+		);
+	}
+
+	/**
+	 * Render the Entry ID column, prefixed with a small unread-status dot.
+	 *
+	 * Purely presentational -- the read/unread flag itself is untouched and
+	 * still lives in status_raw / column_status().
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param array $item Row data.
+	 * @return string
+	 */
+	public function column_entry_id( $item ) {
+
+		$entry_id = isset( $item['entry_id'] ) ? absint( $item['entry_id'] ) : 0;
+		$status   = isset( $item['status_raw'] ) && 'read' === $item['status_raw'] ? 'read' : 'unread';
+
+		$dot = ( 'unread' === $status )
+			? '<span class="gscf7-status-dot" aria-hidden="true"></span>'
+			: '';
+
+		return $dot . '#' . esc_html( $entry_id );
+	}
+
+	/**
+	 * Render the Actions column: a "View" link to the existing entry-details
+	 * screen, plus the existing "Send To SpreadSheet" button (unchanged
+	 * markup/classes/data attributes).
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param array $item Row data.
+	 * @return string
+	 */
+	public function column_actions( $item ) {
+
+		$entry_id = isset( $item['entry_id'] ) ? absint( $item['entry_id'] ) : 0;
+		$form_id  = absint( $this->form_post_id );
+
+		$view_url = add_query_arg(
+			array(
+				'page'    => 'wpcf7-google-sheet-config',
+				'tab'     => 'cf7_db',
+				'formId'  => $form_id,
+				'entryId' => $entry_id,
+			),
+			admin_url( 'admin.php' )
+		);
+
+		return sprintf(
+			'<a class="button action" href="%1$s">%2$s</a>
+        <button type="button" class="button action sendToGoogleSheetCF7DB" data-id="%3$s" form-id="%4$s">%5$s</button>
+        <span class="loading-sign-all loading-sign-%3$s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span class="msg-%3$s"></span>',
+			esc_url( $view_url ),
+			esc_html__( 'View', 'cf7-google-sheets-connector' ),
 			esc_attr( $entry_id ),
+			esc_attr( $form_id ),
 			esc_html__( 'Send To SpreadSheet', 'cf7-google-sheets-connector' )
+		);
+	}
+
+	/**
+	 * Render this table in the Dashboard's card/pill style instead of the
+	 * default WP_List_Table chrome, for both a normal page load and the
+	 * gscf7_cf7db_table_query AJAX endpoint. Must be called after
+	 * prepare_items(). Reuses get_columns()/single_row_columns()/column_*()
+	 * and bulk_actions() unchanged -- only the outer markup differs.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @return array{head_html:string,rows_html:string,toolbar_html:string}
+	 */
+	public function render_dashboard_style() {
+
+		$columns  = $this->get_columns();
+		$sortable = $this->get_sortable_columns();
+		$hidden   = $this->get_hidden_columns();
+
+		ob_start();
+		?>
+		<tr>
+			<?php
+			foreach ( $columns as $col_key => $col_label ) {
+
+				if ( in_array( $col_key, $hidden, true ) ) {
+					continue;
+				}
+
+				// The 'cb' column's label is a raw <input type="checkbox">
+				// (see get_columns()) -- render it with the cb-select-all-1 id
+				// convention core's own admin JS already wires up for
+				// check/uncheck-all, rather than passing it through wp_kses_post()
+				// (which would strip the <input> as a non-post-content tag).
+				if ( 'cb' === $col_key ) {
+					?>
+					<th scope="col" class="manage-column column-cb check-column">
+						<label class="screen-reader-text" for="cb-select-all-1"><?php esc_html_e( 'Select All', 'cf7-google-sheets-connector' ); ?></label>
+						<input id="cb-select-all-1" type="checkbox">
+					</th>
+					<?php
+					continue;
+				}
+
+				$is_sortable = isset( $sortable[ $col_key ] );
+				?>
+				<th scope="col"
+					class="column-<?php echo esc_attr( $col_key ); ?><?php echo $is_sortable ? ' gscf7-sortable' : ''; ?>"
+					<?php if ( $is_sortable ) : ?>data-orderby="<?php echo esc_attr( $col_key ); ?>"<?php endif; ?>>
+					<?php echo $col_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_columns() only ever returns already-escaped plain text or esc_html__()-wrapped labels here (the one raw-HTML case, 'cb', is handled above). ?>
+					<?php if ( $is_sortable ) : ?><span class="gscf7-sort-arrow"></span><?php endif; ?>
+				</th>
+				<?php
+			}
+			?>
+		</tr>
+		<?php
+		$head_html = ob_get_clean();
+
+		ob_start();
+		if ( empty( $this->items ) ) {
+			?>
+			<tr>
+				<td colspan="<?php echo esc_attr( count( $columns ) ); ?>">
+					<?php esc_html_e( 'No entries match the selected filters.', 'cf7-google-sheets-connector' ); ?>
+				</td>
+			</tr>
+			<?php
+		} else {
+			foreach ( $this->items as $item ) {
+				echo '<tr>';
+				$this->single_row_columns( $item );
+				echo '</tr>';
+			}
+		}
+		$rows_html = ob_get_clean();
+
+		ob_start();
+		$this->bulk_actions( 'top' );
+		$toolbar_html = ob_get_clean();
+
+		return array(
+			'head_html'    => $head_html,
+			'rows_html'    => $rows_html,
+			'toolbar_html' => $toolbar_html,
 		);
 	}
 	/**
@@ -259,7 +446,17 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 	 */
 	public function get_sortable_columns() {
 
-		return array( 'date' => array( 'date', true ) );
+		/*
+		 * table_data()'s $orderby only ever resolves to 'date' or 'id' (it
+		 * sorts by 'id' whenever $_GET['orderby'] isn't literally 'date' --
+		 * see its own comment), so 'entry_id' here just needs to produce a
+		 * data-orderby value that isn't the string "date" for that fallback
+		 * to kick in; the AJAX handler's shim treats any such value the same way.
+		 */
+		return array(
+			'date'     => array( 'date', true ),
+			'entry_id' => array( 'id', false ),
+		);
 	}
 
 	/**
@@ -282,6 +479,37 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 			'sendtospreadsheet' => esc_html__( 'Spread Sheet', 'cf7-google-sheets-connector' ),
 
 		);
+	}
+
+	/**
+	 * Build the SQL fragment (and its bound param) for the entry_status filter.
+	 *
+	 * The read/unread flag is stored inside the serialized `value` blob, so
+	 * it's matched as a fixed-length LIKE fragment rather than a real column.
+	 * 'unread' is matched as "does not have the read fragment", which also
+	 * covers legacy rows saved before this flag existed (they default to
+	 * unread, same as column_status()).
+	 *
+	 * @since 5.3.0
+	 *
+	 * @return array{0:string,1:array} SQL fragment and its bound params.
+	 */
+	private function get_entry_status_filter() {
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter, not a form submission.
+		$status = isset( $_GET['entry_status'] ) ? sanitize_key( wp_unslash( $_GET['entry_status'] ) ) : 'all';
+
+		if ( ! in_array( $status, array( 'unread', 'read' ), true ) ) {
+			return array( '', array() );
+		}
+
+		$fragment = '%s:12:"cfdb7_status";s:4:"read";%';
+
+		if ( 'read' === $status ) {
+			return array( ' AND value LIKE %s', array( $fragment ) );
+		}
+
+		return array( ' AND value NOT LIKE %s', array( $fragment ) );
 	}
 
 	/**
@@ -315,6 +543,8 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
 		// Build query safely
 
+		list( $status_where, $status_params ) = $this->get_entry_status_filter();
+
 		if ( ! empty( $search ) ) {
 
 			$like = '%' . $cfdb->esc_like( $search ) . '%';
@@ -324,29 +554,24 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
              WHERE value LIKE %s
 
-             AND form_id = %d
+             AND form_id = %d" . $status_where . "
 
              ORDER BY $orderby $order
 
              LIMIT %d, %d",
-				$like,
-				$form_post_id,
-				$offset,
-				$perPage
+				array_merge( array( $like, $form_post_id ), $status_params, array( $offset, $perPage ) )
 			);
 		} else {
 
 			$query = $cfdb->prepare(
 				"SELECT id, form_id, value, date FROM $table_name
 
-             WHERE form_id = %d
+             WHERE form_id = %d" . $status_where . "
 
              ORDER BY $orderby $order
 
              LIMIT %d, %d",
-				$form_post_id,
-				$offset,
-				$perPage
+				array_merge( array( $form_post_id ), $status_params, array( $offset, $perPage ) )
 			);
 		}
 
@@ -368,6 +593,17 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 			$fid = $result->form_id;
 
 			$form_values['entry_id'] = $result->id;
+
+			/*
+			 * Keep the raw status separately (unlinked, unescaped-for-link).
+			 *
+			 * The generic loop below wraps every field value in an entry-detail
+			 * anchor tag, which would turn 'read'/'unread' into HTML instead of
+			 * a plain flag that column_status() can key off cleanly.
+			 */
+			$form_values['status_raw'] = ( isset( $form_value['cfdb7_status'] ) && 'read' === $form_value['cfdb7_status'] )
+				? 'read'
+				: 'unread';
 
 			if ( ! empty( $this->column_titles ) ) {
 
@@ -791,7 +1027,7 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 
 				?>
 
-				<option value="<?php echo esc_attr( $name ); ?>" <?php echo wp_kses( $class, array( 'class' => array() ) ); ?> disabled>
+				<option value="<?php echo esc_attr( $name ); ?>" <?php echo wp_kses( $class, array( 'class' => array() ) ); ?>>
 
 					<?php echo esc_html( $title ); ?>
 
@@ -806,15 +1042,19 @@ class GSCF7_FormEntry_Table extends WP_List_Table {
 		<?php
 
 		// Submit button
-
+		//
+		// Previously hardcoded disabled="disabled" with nothing in the UI ever
+		// re-enabling it, so bulk actions (delete/read/unread/send-to-sheet)
+		// were unreachable through this button regardless of selection --
+		// combined with the column_cb() key bug fixed above (row checkboxes
+		// never rendered either), the entire bulk-actions UI has been inert.
 		submit_button(
 			esc_html__( 'Apply', 'cf7-google-sheets-connector' ),
 			'action',
 			'',
 			false,
 			array(
-				'id'       => "doaction$two",
-				'disabled' => 'disabled',
+				'id' => "doaction$two",
 			)
 		);
 

@@ -117,7 +117,7 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 								</p>
 
 								<?php
-								if ( empty( get_option( 'gs_token' ) ) ) {
+								if ( ! Gs_Connector_Free_Utility::instance()->has_live_google_token() ) {
 
 									if ( $gscf7_code == '' ) {
 										?>
@@ -236,9 +236,7 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 
 									// connected-email-account
 
-									$gscf7_token = get_option( 'gs_token' );
-
-									if ( ! empty( $gscf7_token ) && $gscf7_token !== '' ) {
+									if ( Gs_Connector_Free_Utility::instance()->has_live_google_token() ) {
 
 										$gscf7_google_sheet = new CF7GSC_googlesheet();
 
@@ -300,6 +298,13 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 												</div>
 
 												<?php
+												if ( Gs_Connector_Free_Utility::instance()->has_pending_api_credentials() ) {
+													?>
+													<div class="gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin">
+														<?php echo esc_html__( 'Updated Google API credentials are available. Reconnecting your Google account will apply them.', 'cf7-google-sheets-connector' ); ?>
+													</div>
+													<?php
+												}
 											}
 										} else {
 
@@ -312,7 +317,7 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 
 
 
-										<?php if ( ! empty( get_option( 'gs_token' ) ) && get_option( 'gs_token' ) !== '' ) { ?>
+										<?php if ( Gs_Connector_Free_Utility::instance()->has_live_google_token() ) { ?>
 
 
 
@@ -449,9 +454,7 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 
 								if ( ! empty( get_option( 'gs_verify' ) ) && ( get_option( 'gs_verify' ) == 'invalid-auth' ) || ( $gscf7_code == '' ) ) {
 
-									$gscf7_token = get_option( 'gs_token' );
-
-									if ( ! empty( $gscf7_token ) && $gscf7_token !== '' ) {
+									if ( Gs_Connector_Free_Utility::instance()->has_live_google_token() ) {
 
 										?>
 

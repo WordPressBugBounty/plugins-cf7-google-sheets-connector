@@ -38,13 +38,19 @@ jQuery(document).ready(function ($) {
       $("#gs-validation-message").empty();
 
       if (!response.success) {
-        $(
-          "<div class='gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Access code Can't be blank</div>",
-          ).appendTo("#gs-validation-message");
+        var errorMessage =
+          (response.data && response.data.message) ||
+          "Something went wrong. Please try again.";
+
+        $("<div/>", {
+          class:
+            "gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin",
+          text: errorMessage,
+        }).appendTo("#gs-validation-message");
       } else {
         $(
           "<div class='gsc-msg gsc-success fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your Google Access Code is Authorized and Saved.</div>",
-          ).appendTo("#gs-validation-message");
+        ).appendTo("#gs-validation-message");
 
         setTimeout(function () {
           window.location.href = $("#redirect_auth").val();
@@ -79,21 +85,20 @@ jQuery(document).ready(function ($) {
 
       $("#deactivate-message").empty();
       if (!response.success) {
-       $("#deactivate-message").html(
-        "<div class='gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Error while deactivation.</div>",
+        $("#deactivate-message").html(
+          "<div class='gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Error while deactivation.</div>",
         );
-     } else {
-       $("#deactivate-message").html(
-        "<div class='gsc-msg gsc-success fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your account is removed. Reauthenticate again to integrate Contact Form with Google Sheet.</div>",
+      } else {
+        $("#deactivate-message").html(
+          "<div class='gsc-msg gsc-success fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your account is removed. Reauthenticate again to integrate Contact Form with Google Sheet.</div>",
         );
-       setTimeout(function () {
-        location.reload();
-      }, 1000);
-     }
-   });
-     // close popup
+        setTimeout(function () {
+          location.reload();
+        }, 1000);
+      }
+    });
+    // close popup
     $("#gscf7-confirm-deactive-popup-free").addClass("d-none");
-
   });
 
   $(document).on("click", ".gscf7-free-clear-content-logs", function () {
@@ -111,17 +116,17 @@ jQuery(document).ready(function ($) {
           setTimeout(() => location.reload(), 1000);
         }
       },
-      );
+    );
   });
 
   $(".system-error-cf7free-logs")
-  .hide()
+    .hide()
 
-  .on("click", function (e) {
-    e.stopPropagation();
-  });
+    .on("click", function (e) {
+      e.stopPropagation();
+    });
 
-const faqTrigger = $(".cd-faq-trigger");
+  const faqTrigger = $(".cd-faq-trigger");
 
   faqTrigger.on("click", function (event) {
     event.preventDefault();
@@ -135,15 +140,15 @@ const faqTrigger = $(".cd-faq-trigger");
     }
 
     $(this)
-    .next(".cd-faq-content" + dataid)
+      .next(".cd-faq-content" + dataid)
 
-    .slideToggle(200)
+      .slideToggle(200)
 
-    .end()
+      .end()
 
-    .parent("li")
+      .parent("li")
 
-    .toggleClass("content-visible");
+      .toggleClass("content-visible");
   });
 
   const opener = document.getElementById("opener");
@@ -266,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.stopPropagation();
 
       optionsBox.style.display =
-      optionsBox.style.display === "block" ? "none" : "block";
+        optionsBox.style.display === "block" ? "none" : "block";
     });
 
     wrapper.appendChild(display);
@@ -356,16 +361,16 @@ jQuery(document).ready(function ($) {
 jQuery(document).ready(function ($) {
   function disableButton() {
     $(".uninstall-settings-save-free")
-    .prop("disabled", true)
+      .prop("disabled", true)
 
-    .addClass("common-disable");
+      .addClass("common-disable");
   }
 
   function enableButton() {
     $(".uninstall-settings-save-free")
-    .prop("disabled", false)
+      .prop("disabled", false)
 
-    .removeClass("common-disable");
+      .removeClass("common-disable");
   }
 
   disableButton();
@@ -396,8 +401,8 @@ jQuery(document).ready(function ($) {
     e.preventDefault();
 
     let settingValue = $("#gscf7_uninstall_settings_free").is(":checked")
-    ? "Yes"
-    : "No";
+      ? "Yes"
+      : "No";
 
     saveUninstallSetting(settingValue);
   });
@@ -449,34 +454,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document
 
-    .querySelectorAll(".nav-tab-wrapper .nav-tab")
+      .querySelectorAll(".nav-tab-wrapper .nav-tab")
 
-    .forEach(function (tab) {
-      var href = tab.getAttribute("href") || "";
+      .forEach(function (tab) {
+        var href = tab.getAttribute("href") || "";
 
-      if (href.indexOf("tab=integration") !== -1) {
-        tab.style.position = "relative";
+        if (href.indexOf("tab=integration") !== -1) {
+          tab.style.position = "relative";
 
-        if (
-          tab.querySelector(".gscf7-free-selected-badge") ||
-          tab.querySelector(".gscf7-free-selected-authrequired-badge")
+          if (
+            tab.querySelector(".gscf7-free-selected-badge") ||
+            tab.querySelector(".gscf7-free-selected-authrequired-badge")
           ) {
-          return;
-      }
+            return;
+          }
 
-      var badge = document.createElement("div");
+          var badge = document.createElement("div");
 
-      if (getvalue == "Auth Required") {
-        badge.className = "gscf7-free-selected-authrequired-badge";
-      } else {
-        badge.className = "gscf7-free-selected-badge";
-      }
+          if (getvalue == "Auth Required") {
+            badge.className = "gscf7-free-selected-authrequired-badge";
+          } else {
+            badge.className = "gscf7-free-selected-badge";
+          }
 
-      badge.textContent = badgeText;
+          badge.textContent = badgeText;
 
-      tab.appendChild(badge);
-    }
-  });
+          tab.appendChild(badge);
+        }
+      });
   }
 });
 
@@ -494,7 +499,7 @@ jQuery(document).ready(function ($) {
   });
 
   $btn.on("click", function (e) {
-    var isChecked = $toggle.is(":checked") ? 1 : 0;
+    var isChecked = $toggle.is(":checked") ? 1 : 1;
 
     var nonce = $("#gs-ajax-nonce").val();
 
@@ -601,8 +606,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const detailsCell = cols[4];
 
       const details = detailsCell.querySelector("pre")
-      ? detailsCell.querySelector("pre").innerText.trim()
-      : (detailsCell.innerText || "").trim();
+        ? detailsCell.querySelector("pre").innerText.trim()
+        : (detailsCell.innerText || "").trim();
 
       output += `Date: ${date}\n`;
 
@@ -620,15 +625,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
 
-      .writeText(output)
+        .writeText(output)
 
-      .then(function () {
-        showMessage("Copied successfully", "success");
-      })
+        .then(function () {
+          showMessage("Copied successfully", "success");
+        })
 
-      .catch(function () {
-        fallbackCopy(output);
-      });
+        .catch(function () {
+          fallbackCopy(output);
+        });
     } else {
       fallbackCopy(output);
     }
@@ -666,8 +671,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 jQuery(document).ready(function ($) {
-
-
   const isNewPage = window.location.href.includes("page=wpcf7-new");
 
   /* ---------------------------
@@ -712,9 +715,9 @@ jQuery(document).ready(function ($) {
     $("#contact-form-editor-tabs li").removeClass("cf7-sub-tab-active");
 
     $('.cf7gs-tab-toggle[data-tab="' + savedSubTab + '"]')
-    .parent("li")
+      .parent("li")
 
-    .addClass("cf7-sub-tab-active");
+      .addClass("cf7-sub-tab-active");
   }
 
   /* ---------------------------
@@ -770,10 +773,10 @@ jQuery(document).ready(function ($) {
         btn.has(e.target).length === 0 &&
         !menu.is(e.target) &&
         menu.has(e.target).length === 0
-        ) {
+      ) {
         menu.removeClass("active");
-    }
-  });
+      }
+    });
   }
 });
 
@@ -794,7 +797,10 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  $(document).on("click", ".sent_sheet", function (e) {
+  // The "Send To SpreadSheet" row button's actual class -- .sent_sheet
+  // (below) doesn't exist on any rendered element, so this popup never
+  // showed and the button was fully inert.
+  $(document).on("click", ".sendToGoogleSheetCF7DB", function (e) {
     e.preventDefault();
 
     $("#cf7gs-free-pro").removeClass("d-none");
@@ -809,6 +815,26 @@ jQuery(document).ready(function ($) {
       $(this).addClass("d-none");
     }
   });
+
+  // The "Spread Sheet" bulk action otherwise submits the form as a normal
+  // POST, which process_bulk_action() (Free version) turns into a full page
+  // reload with a "Pro version" notice banner. Show the same upsell popup
+  // used elsewhere (Export CSV, the per-row Send To SpreadSheet button)
+  // instead, and skip the actual submit.
+  $(document).on("submit", "#gscf7-entries-bulk-form", function (e) {
+    var $form = $(this);
+    var action = $form
+      .find('select[name="action"], select[name="action2"]')
+      .filter(function () {
+        return "-1" !== $(this).val();
+      })
+      .val();
+
+    if ("sendtospreadsheet" === action) {
+      e.preventDefault();
+      $("#cf7gs-free-pro").removeClass("d-none");
+    }
+  });
 });
 
 jQuery(document).ready(function ($) {
@@ -819,11 +845,11 @@ jQuery(document).ready(function ($) {
 
     if (btn.length) {
       $("html, body").animate(
-      {
-        scrollTop: btn.offset().top - 100,
-      },
+        {
+          scrollTop: btn.offset().top - 100,
+        },
 
-      500,
+        500,
       );
 
       btn.focus();
@@ -956,10 +982,7 @@ jQuery(document).ready(function ($) {
         $(".loading-sign-service-auth").removeClass("loading");
 
         if (res.success) {
-          cf7gsServiceNotify(
-            "Your Service Account has been saved.",
-            true,
-          );
+          cf7gsServiceNotify("Your Service Account has been saved.", true);
           location.reload();
         } else {
           cf7gsServiceNotify(
@@ -1052,6 +1075,13 @@ document.addEventListener("DOMContentLoaded", function () {
   let index = 0;
 
   function updateSlider() {
+    // The notice slider markup is only present on the plugin's own screens,
+    // but this script is enqueued on every CF7 admin page. Without this guard
+    // slides[index] is undefined there and the listener dies on load.
+    if (!slides.length) {
+      return;
+    }
+
     slides.forEach((slide) => slide.classList.remove("active"));
 
     slides[index].classList.add("active");
@@ -1085,7 +1115,7 @@ jQuery(document).ready(function ($) {
 
   let totalSlides = $(
     ".notification-gsc-slider-track .notification-gsc-slide",
-    ).length;
+  ).length;
 
   if (totalSlides <= 1) {
     $(".notification-gsc-slider-arrows").hide();
@@ -1134,7 +1164,7 @@ jQuery(document).ready(function ($) {
       function () {
         showNextSlide(currentSlide);
       },
-      );
+    );
   });
 
   $(document).on("click", ".gsc-btn-later", function () {
@@ -1156,7 +1186,7 @@ jQuery(document).ready(function ($) {
       function () {
         showNextSlide(currentSlide);
       },
-      );
+    );
   });
 });
 
@@ -1255,7 +1285,7 @@ document.addEventListener("DOMContentLoaded", function () {
       $loader.addClass("active-loading").addClass("loading");
       $("#gs-validation-message-auth").append(
         "<div class='gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your account is removed. Reauthenticate again to integrate Contact Form with Google Sheet</div>",
-        );
+      );
       $.post(ajaxurl, data, function () {
         location.reload();
       }).fail(function () {
@@ -1356,102 +1386,420 @@ jQuery(document).ready(function ($) {
     let countTo = parseFloat($this.attr("data-count"));
 
     $({ countNum: 0 }).animate(
-    {
-      countNum: countTo,
-    },
+      {
+        countNum: countTo,
+      },
 
-    {
-      duration: 2500,
+      {
+        duration: 2500,
 
-      easing: "swing",
+        easing: "swing",
 
-      step: function () {
-        if (countTo % 1 !== 0) {
-          $this.text(this.countNum.toFixed(1));
-        } else {
-          $this.text(Math.floor(this.countNum));
+        step: function () {
+          if (countTo % 1 !== 0) {
+            $this.text(this.countNum.toFixed(1));
+          } else {
+            $this.text(Math.floor(this.countNum));
+          }
+        },
+
+        complete: function () {
+          if (countTo % 1 !== 0) {
+            $this.text(countTo.toFixed(1));
+          } else {
+            $this.text(countTo);
+          }
+        },
+      },
+    );
+  });
+});
+jQuery(function ($) {
+  $("#gsc-clear-logs").on("click", function (e) {
+    e.preventDefault();
+
+    $.ajax({
+      url: ajaxurl,
+      type: "POST",
+      dataType: "json",
+      data: {
+        action: "gscf7_clear_logs",
+        nonce: $("#gs-ajax-nonce").val(),
+      },
+      success: function (response) {
+        if (response.success) {
+          location.reload();
         }
+      },
+    });
+  });
+});
+
+jQuery(function ($) {
+  "use strict";
+
+  /**
+   * Wires up the GDPR notice block: editor (Visual/Code) -> live preview
+   * below the "Form Preview" CF7 embed.
+   *
+   * The preview node (identified by cssClass) is looked up fresh on every
+   * edit -- and created on the fly when the saved notice is empty -- because
+   * the CF7 embed's HTML is swapped wholesale whenever the previewed form
+   * changes or the settings are saved.
+   */
+  function initNoticeBlock(prefix, editorId, cssClass) {
+    var $editorTextarea = $("#" + editorId);
+    var $enable = $("#" + prefix + "_enable");
+    if (!$editorTextarea.length) {
+      return null;
+    }
+
+    // Return the notice node for the live preview, creating it if needed and
+    // always keeping it as a direct child of #gscf7_form_preview -- i.e. below
+    // the scrollable .wpcf7 box, never clipped by the form's max-height.
+    function getPreviewNode() {
+      if (!cssClass) {
+        return $();
+      }
+      var $wrap = $("#gscf7_form_preview");
+      if (!$wrap.length) {
+        return $();
+      }
+      var $node = $wrap.find("." + cssClass).first();
+      if (!$node.length) {
+        $node = $('<div class="' + cssClass + '"></div>');
+      }
+      if (!$node.parent().is($wrap)) {
+        $node.appendTo($wrap);
+      }
+      return $node;
+    }
+
+    // The Visual tab is TinyMCE; the Code tab edits the textarea directly.
+    // Read from whichever is currently active.
+    function getContent() {
+      if (typeof tinymce !== "undefined") {
+        var ed = tinymce.get(editorId);
+        if (ed && !ed.isHidden()) {
+          return ed.getContent();
+        }
+      }
+      return $editorTextarea.val();
+    }
+
+    // Text with no visible characters (e.g. "<p><br></p>" left by TinyMCE
+    // after deleting everything) counts as empty.
+    function isBlank(html) {
+      return (
+        $("<div>")
+          .html(html || "")
+          .text()
+          .trim() === ""
+      );
+    }
+
+    function applyText() {
+      // An empty editor shows an empty preview: on the front end an empty
+      // notice renders nothing at all (no fallback to the default text).
+      var html = getContent();
+      getPreviewNode().html(isBlank(html) ? "" : html);
+    }
+    function applyEnabled() {
+      var isOn = !$enable.length || $enable.is(":checked");
+      getPreviewNode().toggle(isOn && !isBlank(getContent()));
+    }
+
+    function applyAll() {
+      applyText();
+      applyEnabled();
+    }
+
+    // Keep the preview in sync from every edit path: the raw textarea (Code
+    // tab / quicktags) and TinyMCE (Visual tab). applyAll() (not just
+    // applyText) so an edit that empties/refills the notice also re-runs the
+    // show/hide check. TinyMCE may already be initialised by the time this
+    // runs, so bind directly as well as on the init event.
+    $editorTextarea.on("input keyup change", applyAll);
+
+    function bindTinyEditor(editor) {
+      if (editor && editor.id === editorId) {
+        editor.on(
+          "input keyup change SetContent Undo Redo ExecCommand",
+          applyAll,
+        );
+      }
+    }
+    $(document).on("tinymce-editor-init", function (e, editor) {
+      bindTinyEditor(editor);
+      applyAll();
+    });
+    if (typeof tinymce !== "undefined" && tinymce.get) {
+      bindTinyEditor(tinymce.get(editorId));
+    }
+    // Visual <-> Code tab switch.
+    $(document).on("click", ".wp-switch-editor", function () {
+      setTimeout(applyAll, 50);
+    });
+
+    $enable.on("change", applyEnabled);
+
+    applyAll();
+
+    return {
+      editorId: editorId,
+      enable: $enable,
+      applyAll: applyAll,
+      getContent: getContent,
+    };
+  }
+
+  function syncSectionVisibility() {
+    var $gdprToggle = $("#gscf7_gdpr_enable");
+    var gdprOn = $gdprToggle.length && $gdprToggle.is(":checked");
+    $(".gdpr-section").toggleClass("d-none", !gdprOn);
+  }
+
+  $("#gscf7_gdpr_enable").on("change", syncSectionVisibility);
+  syncSectionVisibility();
+
+  var gdprBlock = initNoticeBlock(
+    "gscf7_gdpr",
+    "gscf7gdprtext",
+    "gscf7-frontend-gdpr-notice",
+  );
+
+  $("#gscf7_privacy_save").on("click", function () {
+    var $btn = $(this);
+    var $loader = $(".gscf7_privacy_loder");
+    var $msg = $("#gscf7-privacy-popup");
+
+    // Show loader.
+    $loader.addClass("loading");
+
+    // Keep button visible but prevent double click.
+    $btn.prop("disabled", true);
+
+    var data = {
+      action: "gscf7_save_privacy_setting",
+      nonce: $("#gscf7-privacy-setting-ajax-nonce").val(),
+    };
+
+    if (gdprBlock) {
+      data.gscf7_gdpr_enable = 1;
+      data.gscf7_gdpr_text = gdprBlock.getContent();
+    }
+
+    $.ajax({
+      url: ajaxurl,
+      type: "POST",
+      dataType: "json",
+      data: data,
+
+      success: function (response) {
+        var message = "Settings saved successfully.";
+
+        if (response && response.data && response.data.message) {
+          message = response.data.message;
+        }
+
+        $msg.removeClass("d-none").addClass("gsc-success");
+      },
+
+      error: function (xhr) {
+        var message = "Failed to save settings. Please try again.";
+
+        if (
+          xhr &&
+          xhr.responseJSON &&
+          xhr.responseJSON.data &&
+          xhr.responseJSON.data.message
+        ) {
+          message = xhr.responseJSON.data.message;
+        }
+
+        $msg.removeClass("d-none gsc-success");
       },
 
       complete: function () {
-        if (countTo % 1 !== 0) {
-          $this.text(countTo.toFixed(1));
+        // Hide loader.
+        $loader.removeClass("loading");
+
+        // Enable Save button again.
+        $btn.prop("disabled", false);
+
+        // Re-render the Form Preview from the server so it reflects exactly
+        // what was just saved (an empty notice disappears, new text shows),
+        // without a full page reload that would reset the form selection.
+        loadFormPreview();
+
+        // Hide the confirmation message after 2.5 seconds.
+        setTimeout(function () {
+          $msg.addClass("d-none");
+        }, 2500);
+      },
+    });
+  });
+
+  function loadFormPreview() {
+    var formId = $("#gscf7_preview_form").val();
+    var $preview = $("#gscf7_form_preview");
+
+    if (!$preview.length) {
+      return;
+    }
+
+    if (!formId) {
+      $preview.html("");
+      return;
+    }
+
+    $preview.html('<span class="loading"></span>');
+
+    $.ajax({
+      url: ajaxurl,
+      type: "POST",
+      dataType: "json",
+      data: {
+        action: "gscf7_preview_form",
+        form_id: formId,
+        nonce: $("#gscf7-privacy-setting-ajax-nonce").val(),
+      },
+
+      success: function (response) {
+        if (
+          response &&
+          response.success &&
+          response.data &&
+          response.data.html
+        ) {
+          $preview.html(response.data.html);
         } else {
-          $this.text(countTo);
+          $preview.html("<p>Unable to load form preview.</p>");
+        }
+
+        // Place the notice below the form and fill it with the current
+        // editor content (getPreviewNode() moves it out of the scroll box).
+        if (gdprBlock) {
+          gdprBlock.applyAll();
         }
       },
-    },
-    );
-  });
-function gscf7LoadFeedPage(page) {
-    $.post(
-        ajaxurl,
-        {
-            action: "gscf7_paginate_feed_list",
-            paged: page,
-            security: $("#gscf7-pagination-nonce").val()
-        },
-        function (res) {
-            if (res.success) {
-                let rows = res.data.rows_html;
-                let pagination = res.data.pagination_html;
 
-                // Inject table rows
-                $("#gscf7-feed-table-body").html(rows);
+      error: function () {
+        $preview.html("<p>Unable to load form preview.</p>");
+      },
 
-                // Inject pagination links
-                $("#gscf7-pagination-wrap").html(pagination);
+      complete: function () {
+        $preview.removeClass("loading");
+      },
+    });
+  }
 
-                // Toggle headers and pagination visibility based on feed existence
-                if (!res.data.has_feeds) {
-                    $("#gscf7-feed-table thead").hide();
-                    $("#gscf7-pagination-wrap").hide();
-                } else {
-                    $("#gscf7-feed-table thead").show();
-                    $("#gscf7-pagination-wrap").show();
-                }
+  $("#gscf7_preview_form").on("change", loadFormPreview);
 
-                $("#gscf7-feed-table").attr("data-page", page);
-            }
-        }
-    );
-}
-
-// Initial load
-$(document).ready(function () {
-    gscf7LoadFeedPage(1);
+  // Initial render (the server sends an empty #gscf7_form_preview so the CF7
+  // form markup never has to be echoed unescaped from PHP).
+  loadFormPreview();
 });
 
-// Event delegation for pagination buttons
-$(document).on("click", ".gscf7-page-link", function (e) {
-    e.preventDefault();
-    let page = $(this).data("page");
-    if (page) {
-        gscf7LoadFeedPage(page);
+jQuery(function ($) {
+  "use strict";
+
+  var $rows = $(".wp-list-table.posts tbody tr, .wp-list-table tbody tr");
+
+  if (!$rows.length) {
+    return;
+  }
+
+  var nonce = window.gscf7ExportNonce || "";
+
+  $rows.each(function () {
+    var $row = $(this);
+    var $actions = $row.find(".row-actions");
+
+    if (!$actions.length) {
+      return;
     }
-});
+
+    var formId = $row.find('input[type="checkbox"][name^="post"]').val();
+
+    if (!formId) {
+      return;
+    }
+
+    var exportUrl =
+      "/wp-admin/admin-post.php" +
+      "?action=gscf7_export_form" +
+      "&form_id=" +
+      encodeURIComponent(formId) +
+      "&_wpnonce=" +
+      encodeURIComponent(nonce);
+
+    var $exportLink = $(
+      '<span class="export"> | <a href="' + exportUrl + '">Export</a></span>',
+    );
+
+    $actions.append($exportLink);
+  });
 });
 jQuery(function ($) {
-    $('#gsc-clear-logs').on('click', function (e) {
-        e.preventDefault();
+  "use strict";
 
-        $.ajax({
-            url: ajaxurl, 
-            type: 'POST',
-            dataType: 'json',
-            data: {
-                action: 'gscf7_clear_logs',
-                nonce: $('#gs-ajax-nonce').val()
-            },
-            success: function (response) {
-              
-                if (response.success) {
-                   
-                    location.reload();
-                } 
-            }
-        });
+  var $addBtn = $(".page-title-action").first();
 
-    });
+  if (!$addBtn.length) {
+    return;
+  }
 
+  var $importBtn = $(
+    '<a href="#" class="page-title-action" id="gscf7-import-json-btn">Import</a>',
+  );
+  var $fileInput = $(
+    '<input type="file" id="gscf7-import-json-file" accept="application/json" style="display:none">',
+  );
+
+  $addBtn.after($importBtn);
+  $("body").append($fileInput);
+
+  $importBtn.on("click", function (e) {
+    e.preventDefault();
+    $fileInput.trigger("click");
+  });
+
+  $fileInput.on("change", function () {
+    var file = this.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    var reader = new FileReader();
+
+    reader.onload = function (e) {
+      $.ajax({
+        url: ajaxurl,
+        type: "POST",
+        data: {
+          action: "gscf7_import_form",
+          nonce: window.gscf7ImportNonce || "",
+          json_data: e.target.result,
+        },
+        success: function (response) {
+          if (response && response.success) {
+            window.location.href = response.data.edit_url;
+          } else {
+            alert(
+              (response && response.data && response.data.message) ||
+                "Import failed.",
+            );
+          }
+        },
+        error: function () {
+          alert("Import failed. Please try again.");
+        },
+      });
+    };
+
+    reader.readAsText(file);
+    $fileInput.val("");
+  });
 });

@@ -5,45 +5,47 @@
  */
 
 // Exit if accessed directly
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit();
 }
 
 $gscf7_active_tab = 'dashboard';
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-if ( isset( $_GET['tab'] ) ) {
+if (isset($_GET['tab'])) {
 	$gscf7_active_tab = sanitize_text_field(
-		wp_unslash( $_GET['tab'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
+		wp_unslash($_GET['tab']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 	);
 }
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-if ( isset( $_GET['code'] ) ) {
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-	if ( is_string( $_GET['code'] ) ) {
+if (isset($_GET['code'])) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
+	if (is_string($_GET['code'])) {
 		$gscf7_active_tab = 'integration';
 	}
 }
 $gscf7_active_tab_name = '';
-if ( $gscf7_active_tab == 'dashboard' ) {
+if ($gscf7_active_tab == 'dashboard') {
 	$gscf7_active_tab_name = 'Dashboard';
-} elseif ( $gscf7_active_tab == 'integration' ) {
+} elseif ($gscf7_active_tab == 'integration') {
 	$gscf7_active_tab_name = 'Integration';
-} elseif ( $gscf7_active_tab == 'settings' ) {
+} elseif ($gscf7_active_tab == 'settings') {
 	$gscf7_active_tab_name = 'Settings';
-} elseif ( $gscf7_active_tab == 'cf7_db' ) {
+} elseif ($gscf7_active_tab == 'cf7_db') {
 	$gscf7_active_tab_name = 'CF7 Database';
-} elseif ( $gscf7_active_tab == 'gs-integrate-info' ) {
+} elseif ($gscf7_active_tab == 'gs-integrate-info') {
 	$gscf7_active_tab_name = 'System Status';
-} elseif ( $gscf7_active_tab == 'extension' ) {
+} elseif ($gscf7_active_tab == 'gdpr-privacy-policy') {
+	$gscf7_active_tab_name = 'GDPR & Privacy Policy';
+} elseif ($gscf7_active_tab == 'extension') {
 	$gscf7_active_tab_name = 'Extension';
 }
 // Check plugin version and subscription plan
-$gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION : 'N/A';
+$gscf7_plugin_version = defined('GS_CONNECTOR_VERSION') ? GS_CONNECTOR_VERSION : 'N/A';
 ?>
 <div class="gscf7-free">
 	<!--Start NOTICE BAR-->
 	<div id="pro-notice-bar" class="pro-header-notice">
-		<span class="pro-notice-bar-message"><?php echo esc_html__( 'You`re using CF7 Google Sheet Connector Lite. To unlock more features consider ', 'cf7-google-sheets-connector' ); ?><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" class="link-hover-white" target="_blank" rel="noopener"><?php echo esc_html__( 'upgrading to Pro', 'cf7-google-sheets-connector' ); ?></a></span>
+		<span class="pro-notice-bar-message"><?php echo esc_html__('You`re using CF7 Google Sheet Connector Lite. To unlock more features consider ', 'cf7-google-sheets-connector'); ?><a href="https://www.gsheetconnector.com/cf7-google-sheet-connector-pro" class="link-hover-white" target="_blank" rel="noopener"><?php echo esc_html__('upgrading to Pro', 'cf7-google-sheets-connector'); ?></a></span>
 		<button type="button" id="pro-dismiss-header-notice" title="Dismiss this message" data-page="overview" class="pro-dismiss">
 			<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M15.8327 5.34175L14.6577 4.16675L9.99935 8.82508L5.34102 4.16675L4.16602 5.34175L8.82435 10.0001L4.16602 14.6584L5.34102 15.8334L9.99935 11.1751L14.6577 15.8334L15.8327 14.6584L11.1744 10.0001L15.8327 5.34175Z" fill="white"></path>
@@ -55,70 +57,73 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 	<?php
 	$gscf7_is_authenticated     = false;
 	$gscf7_selected_method      = '';
-	$gscf7_authenticated        = get_option( 'gs_token' );
-	$gscf7_manual               = get_option( 'cf7_manual' );
-	$gscf7_authenticatedService = get_option( 'gs_cf7_service_account_json' );
-	$gscf7_auth_method          = get_option( 'gs_cf7_auth_method' );
-	$gscf7_per                  = get_option( 'gs_verify' );
+	$gscf7_authenticated        = get_option('gs_token');
+	$gscf7_manual               = get_option('cf7_manual');
+	$gscf7_authenticatedService = get_option('gs_cf7_service_account_json');
+	$gscf7_auth_method          = get_option('gs_cf7_auth_method');
+	$gscf7_per                  = get_option('gs_verify');
 	$gscf7_email_account        = '';
 
 	// Check if the user is authenticated when saving existing API method
-	if ( ( ! empty( $gscf7_authenticated ) && $gscf7_per == 'valid' && $gscf7_auth_method === 'cf7_existing' ) ) {
+	if ((Gs_Connector_Free_Utility::instance()->has_live_google_token() && $gscf7_per == 'valid' && $gscf7_auth_method === 'cf7_existing')) {
 		$gscf7_google_sheet  = new CF7GSC_googlesheet();
 		$gscf7_email_account = $gscf7_google_sheet->gsheet_print_google_account_email();
-		if ( $gscf7_email_account ) {
+		if ($gscf7_email_account) {
 			$gscf7_is_authenticated = true;
-			$gscf7_selected_method  = esc_html( __( 'Existing', 'cf7-google-sheets-connector' ) );
+			$gscf7_selected_method  = esc_html(__('Existing', 'cf7-google-sheets-connector'));
 		}
-	} elseif ( ( ! empty( $gscf7_authenticatedService ) && $gscf7_auth_method === 'cf7_service' ) ) {
+	} elseif ((! empty($gscf7_authenticatedService) && $gscf7_auth_method === 'cf7_service')) {
 		$gscf7_is_authenticated = true;
-		$gscf7_decoded_json     = json_decode( $gscf7_authenticatedService, true );
+		$gscf7_decoded_json     = json_decode($gscf7_authenticatedService, true);
 
-		if ( json_last_error() === JSON_ERROR_NONE && isset( $gscf7_decoded_json['client_email'] ) ) {
+		if (json_last_error() === JSON_ERROR_NONE && isset($gscf7_decoded_json['client_email'])) {
 
-			$gscf7_selected_method = esc_html( __( 'Service', 'cf7-google-sheets-connector' ) );
+			$gscf7_selected_method = esc_html(__('Service', 'cf7-google-sheets-connector'));
 		}
 	} else {
-		$gscf7_selected_method = esc_html( __( 'Auth Required', 'cf7-google-sheets-connector' ) );
+		$gscf7_selected_method = esc_html(__('Auth Required', 'cf7-google-sheets-connector'));
 	}
 
 	$gscf7_show_auth_notice = ! $gscf7_is_authenticated;
 
-	$gscf7_install_time     = strtotime( get_option( 'gscf7_free_install_time' ) );
-	$gscf7_install_time_raw = get_option( 'gscf7_free_install_time' );
+	$gscf7_install_time     = strtotime(get_option('gscf7_free_install_time'));
+	$gscf7_install_time_raw = get_option('gscf7_free_install_time');
 
-	$gscf7_install_time = $gscf7_install_time_raw ? strtotime( $gscf7_install_time_raw ) : 0;
+	$gscf7_install_time = $gscf7_install_time_raw ? strtotime($gscf7_install_time_raw) : 0;
 
-	$gscf7_time_passed = $gscf7_install_time && ( time() - $gscf7_install_time >= 2 * DAY_IN_SECONDS );
+	$gscf7_time_passed = $gscf7_install_time && (time() - $gscf7_install_time >= 2 * DAY_IN_SECONDS);
 
-	$gscf7_is_dismissed = gscf7_is_dismissed( 'review' );
-	$gscf7_is_snoozed   = gscf7_is_snoozed( 'review' );
+	$gscf7_is_dismissed = gscf7_is_dismissed('review');
+	$gscf7_is_snoozed   = gscf7_is_snoozed('review');
 
 	$gscf7_show_review_notice =
 		$gscf7_time_passed &&
 		! $gscf7_is_dismissed &&
 		! $gscf7_is_snoozed;
 	$gscf7_show_addon_notice  =
-		! gscf7_is_dismissed( 'addons' ) &&
-		! gscf7_is_snoozed( 'addons' );
+		! gscf7_is_dismissed('addons') &&
+		! gscf7_is_snoozed('addons');
 
-	$gscf7_show_pro_upsell_notice = ! gscf7_is_dismissed( 'pro_upsell' ) &&
-		! gscf7_is_snoozed( 'pro_upsell' );
-	function gscf7_is_dismissed( $key ) {
-		return get_option( 'gscf7_free_notice_' . $key ) === 'dismissed';
+	$gscf7_show_pro_upsell_notice = ! gscf7_is_dismissed('pro_upsell') &&
+		! gscf7_is_snoozed('pro_upsell');
+
+	function gscf7_is_dismissed($key)
+	{
+		return get_option('gscf7_free_notice_' . $key) === 'dismissed';
 	}
 
-	function gscf7_is_snoozed( $key ) {
-		$time = get_option( 'gscf7_free_notice_' . $key . '_time' );
-		return $time && ( time() - $time < 15 * DAY_IN_SECONDS );
+	function gscf7_is_snoozed($key)
+	{
+		$time = get_option('gscf7_free_notice_' . $key . '_time');
+		return $time && (time() - $time < 15 * DAY_IN_SECONDS);
 	}
 	// ==============================
 	// CHECK IF ANY NOTICE EXISTS
 	// ==============================
 	$gscf7_has_notice =
 		$gscf7_show_auth_notice ||
-		( $gscf7_show_review_notice && $gscf7_is_authenticated ) || ( $gscf7_show_pro_upsell_notice && $gscf7_is_authenticated ) ||
-		( $gscf7_is_authenticated && $gscf7_show_addon_notice );
+		($gscf7_show_review_notice && $gscf7_is_authenticated) || ($gscf7_show_pro_upsell_notice && $gscf7_is_authenticated) ||
+		($gscf7_is_authenticated && $gscf7_show_addon_notice);
 
 	?>
 	<!-- ============================== -->
@@ -131,36 +136,36 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			<!-- ========================= -->
 			<!-- 2. Auth -->
 			<!-- ========================= -->
-			<?php if ( $gscf7_show_auth_notice ) : ?>
+			<?php if ($gscf7_show_auth_notice) : ?>
 
 				<div class="notification-gsc-slide">
 					<div class="gsc-activate-banner">
 						<div class="gsc-activate-content">
 
 							<div class="gsc-activate-content-header">
-								<?php esc_html_e( 'Authenticate with Your Google Account', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Authenticate with Your Google Account', 'cf7-google-sheets-connector'); ?>
 							</div>
 
 							<p>
-								<?php esc_html_e( 'Your connection has expired or hasn’t been set up yet.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Your connection has expired or hasn’t been set up yet.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<p>
-								<?php esc_html_e( 'Your Google connection is missing or expired. Please authenticate to continue syncing data without interruptions.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Your Google connection is missing or expired. Please authenticate to continue syncing data without interruptions.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<div class="gsc-activate-actions">
 
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpcf7-google-sheet-config&tab=integration' ) ); ?>"
+								<a href="<?php echo esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config&tab=integration')); ?>"
 									class="gsc-btn-activate link-hover-white">
-									<?php esc_html_e( 'Authenticate Now', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Authenticate Now', 'cf7-google-sheets-connector'); ?>
 								</a>
 
-								<a href="<?php echo esc_url( 'https://www.gsheetconnector.com/docs/cf7-gsheetconnector' ); ?>"
+								<a href="<?php echo esc_url('https://www.gsheetconnector.com/docs/cf7-gsheetconnector'); ?>"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="gsc-btn-secondary">
-									<?php esc_html_e( 'Learn How', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Learn How', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 							</div>
@@ -174,44 +179,44 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			<!-- 2. REVIEW -->
 			<!-- ========================= -->
 
-			<?php if ( $gscf7_is_authenticated && $gscf7_show_review_notice ) : ?>
+			<?php if ($gscf7_is_authenticated && $gscf7_show_review_notice) : ?>
 				<div class="notification-gsc-slide">
 					<div class="gsc-upgrade-banner">
 
 						<div class="gsc-upgrade-content">
 							<div class="gsc-upgrade-heading">
-								<?php esc_html_e( 'Enjoying the Plugin?', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Enjoying the Plugin?', 'cf7-google-sheets-connector'); ?>
 							</div>
 
 							<p>
-								<?php esc_html_e( 'If you are enjoying the plugin, please consider leaving a 5-star review. Your support helps us improve and grow.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('If you are enjoying the plugin, please consider leaving a 5-star review. Your support helps us improve and grow.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<div class="gsc-upgrade-actions">
 
 
-								<a href="<?php echo esc_url( 'https://wordpress.org/support/plugin/cf7-google-sheets-connector/reviews' ); ?>"
+								<a href="<?php echo esc_url('https://wordpress.org/support/plugin/cf7-google-sheets-connector/reviews'); ?>"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="gsc-btn-upgrade gsc-review-btn link-hover-white">
-									<?php esc_html_e( 'Ok, you deserve it!', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Ok, you deserve it!', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 								<button class="gsc-dismiss-btn gsc-no-thanks-btn" data-key="review">
-									<?php esc_html_e( 'I already did', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('I already did', 'cf7-google-sheets-connector'); ?>
 								</button>
 
 
-								<a href="<?php echo esc_url( 'https://www.gsheetconnector.com/support' ); ?>"
+								<a href="<?php echo esc_url('https://www.gsheetconnector.com/support'); ?>"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="gsc-btn-secondary">
-									<?php esc_html_e( 'I need help', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('I need help', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 
 								<button class="gsc-btn-later" data-key="review">
-									<?php esc_html_e( 'Maybe Later', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Maybe Later', 'cf7-google-sheets-connector'); ?>
 								</button>
 
 							</div>
@@ -228,21 +233,21 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			<!-- ========================= -->
 			<!-- 3. ADDONS -->
 			<!-- ========================= -->
-			<?php if ( $gscf7_is_authenticated && $gscf7_show_addon_notice ) : ?>
+			<?php if ($gscf7_is_authenticated && $gscf7_show_addon_notice) : ?>
 				<div class="notification-gsc-slide">
 					<div class="gsc-ad-banner">
 						<div class="gsc-ad-content">
 
 							<div class="gsc-ad-content-header">
-								<?php esc_html_e( 'Enhance Your Setup', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Enhance Your Setup', 'cf7-google-sheets-connector'); ?>
 							</div>
 
 							<p>
-								<?php esc_html_e( 'Extend your workflow with our add-ons.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Extend your workflow with our add-ons.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<p>
-								<?php esc_html_e( 'Discover tools that integrate seamlessly and help you get more done.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Discover tools that integrate seamlessly and help you get more done.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<div class="gsc-ad-actions">
@@ -250,17 +255,17 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 								<a href="https://www.gsheetconnector.com/plugins"
 									target="_blank"
 									class="gsc-btn-ad link-hover-white">
-									<?php esc_html_e( 'Explore Add-ons', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Explore Add-ons', 'cf7-google-sheets-connector'); ?>
 								</a>
 
-								<a href="<?php echo esc_url( 'https://www.gsheetconnector.com/docs' ); ?>"
+								<a href="<?php echo esc_url('https://www.gsheetconnector.com/docs'); ?>"
 									target="_blank"
 									class="gsc-btn-ad link-hover-white">
-									<?php esc_html_e( 'View Details', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('View Details', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 								<button class="gsc-btn-later" data-key="addons">
-									<?php esc_html_e( 'Maybe Later', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Maybe Later', 'cf7-google-sheets-connector'); ?>
 								</button>
 
 							</div>
@@ -277,41 +282,41 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			<!-- 4. Show PRO Benefits -->
 			<!-- ========================= -->
 
-			<?php if ( $gscf7_is_authenticated && $gscf7_show_pro_upsell_notice ) : ?>
+			<?php if ($gscf7_is_authenticated && $gscf7_show_pro_upsell_notice) : ?>
 
 				<div class="notification-gsc-slide">
 					<div class="gsc-upgrade-banner">
 
 						<div class="gsc-upgrade-content">
 							<div class="gsc-upgrade-heading">
-								<?php esc_html_e( 'Unlock Advance Features of CF7 Google Sheet Connector Pro', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Unlock Advance Features of CF7 Google Sheet Connector Pro', 'cf7-google-sheets-connector'); ?>
 							</div>
 
 							<p>
-								<?php esc_html_e( 'Use advanced features like Manual Authentication and automatic field mapping, no need to create columns in Google Sheets manually. Choose only the fields you need with simple toggles, use advanced tags, sync past form entries, and get priority support.', 'cf7-google-sheets-connector' ); ?>
+								<?php esc_html_e('Use advanced features like Manual Authentication and automatic field mapping, no need to create columns in Google Sheets manually. Choose only the fields you need with simple toggles, use advanced tags, sync past form entries, and get priority support.', 'cf7-google-sheets-connector'); ?>
 							</p>
 
 							<div class="gsc-upgrade-actions">
 
 								<!-- View License -->
-								<a href="<?php echo esc_url( 'https://www.gsheetconnector.com/cf7-google-sheet-connector-pro' ); ?>"
+								<a href="<?php echo esc_url('https://www.gsheetconnector.com/cf7-google-sheet-connector-pro'); ?>"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="gsc-btn-upgrade  link-hover-white">
-									<?php esc_html_e( 'View License Types', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('View License Types', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 								<!-- Compare -->
-								<a href="<?php echo esc_url( 'https://www.gsheetconnector.com/cf7-google-sheet-connector-pro#compare' ); ?>"
+								<a href="<?php echo esc_url('https://www.gsheetconnector.com/cf7-google-sheet-connector-pro#compare'); ?>"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="gsc-btn-secondary">
-									<?php esc_html_e( 'Compare Features', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Compare Features', 'cf7-google-sheets-connector'); ?>
 								</a>
 
 								<!-- Maybe Later (15 days logic handled in JS) -->
 								<button class="gsc-btn-later" data-key="pro_upsell">
-									<?php esc_html_e( 'Maybe Later', 'cf7-google-sheets-connector' ); ?>
+									<?php esc_html_e('Maybe Later', 'cf7-google-sheets-connector'); ?>
 								</button>
 
 							</div>
@@ -326,7 +331,7 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			<?php endif; ?>
 
 		</div>
-		<?php if ( $gscf7_has_notice ) : ?>
+		<?php if ($gscf7_has_notice) : ?>
 			<!-- ARROWS -->
 			<div class="notification-gsc-slider-arrows">
 				<button class="notification-gsc-slider-btn prev">❮</button>
@@ -334,8 +339,9 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			</div>
 		<?php endif; ?>
 	</div>
-	<?php wp_nonce_field( 'gs-ajax-nonce', 'gs-ajax-nonce' ); ?>
+	<?php wp_nonce_field('gs-ajax-nonce', 'gs-ajax-nonce'); ?>
 	<!-- END NOTICE SLIDER -->
+
 	<!--Start Gsheet-Header Section-->
 	<div class="gsheet-header-wrapper pt-10 pb-10 justify-between bg-white">
 		<div class="container">
@@ -347,10 +353,10 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 					<div class="gsheet-header-logo-text">
 						<a href="https://gsheetconnector.com/docs/cf7-gsheetconnector" class="text-decoration-none" target="_blank">
 							<div class="line-height-zero m-0">
-								<span class="title fw-600"><?php echo esc_html( __( 'CF7 Google Sheet Connector', 'cf7-google-sheets-connector' ) ); ?></span>
+								<span class="title fw-600"><?php echo esc_html(__('CF7 Google Sheet Connector', 'cf7-google-sheets-connector')); ?></span>
 							</div>
 						</a>
-						<small class="p-0"><?php echo esc_html( __( 'v', 'cf7-google-sheets-connector' ) ); ?> <?php echo esc_html( $gscf7_plugin_version, 'cf7-google-sheets-connector' ); ?> </small>
+						<small class="p-0"><?php echo esc_html(__('v', 'cf7-google-sheets-connector')); ?> <?php echo esc_html($gscf7_plugin_version, 'cf7-google-sheets-connector'); ?> </small>
 					</div>
 				</div>
 				<div class="right-gsheet-header">
@@ -388,49 +394,50 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 	<!--Start Breadcrumb Section-->
 	<div class="breadcrumb-wrapper pt-13 pb-13 text-uppercase fw-500 text-gray">
 		<div class="container">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpcf7-google-sheet-config' ) ); ?>" class="text-primary text-decoration-none">
-				<?php echo esc_html__( 'Google Sheet', 'cf7-google-sheets-connector' ); ?>
+			<a href="<?php echo esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config')); ?>" class="text-primary text-decoration-none">
+				<?php echo esc_html__('Google Sheet', 'cf7-google-sheets-connector'); ?>
 			</a>
 			<span>/</span>
-			<span><?php echo esc_html( $gscf7_active_tab_name ); ?></span>
+			<span><?php echo esc_html($gscf7_active_tab_name); ?></span>
 		</div>
 	</div>
 	<!--End Breadcrumb Section-->
 	<!--Start Tab Panel Section-->
 	<?php
 	$tabs = array(
-		'dashboard'         => esc_html__( 'Dashboard', 'cf7-google-sheets-connector' ),
-		'integration'       => esc_html__( 'Integration', 'cf7-google-sheets-connector' ),
-		'settings'          => esc_html__( 'Settings', 'cf7-google-sheets-connector' ),
-		'cf7_db'            => esc_html__( 'CF7 Database', 'cf7-google-sheets-connector' ),
-		'gs-integrate-info' => esc_html__( 'System Status', 'cf7-google-sheets-connector' ),
-		'extension'         => esc_html__( 'Extensions', 'cf7-google-sheets-connector' ),
+		'dashboard'         => esc_html__('Dashboard', 'cf7-google-sheets-connector'),
+		'integration'       => esc_html__('Integration', 'cf7-google-sheets-connector'),
+		'settings'          => esc_html__('Settings', 'cf7-google-sheets-connector'),
+		'cf7_db'            => esc_html__('CF7 Database', 'cf7-google-sheets-connector'),
+		'gs-integrate-info' => esc_html__('System Status', 'cf7-google-sheets-connector'),
+		'gdpr-privacy-policy'      => esc_html__('GDPR & Privacy Policy', 'cf7-google-sheets-connector'),
+		'extension'         => esc_html__('Extensions', 'cf7-google-sheets-connector'),
 	);
 
 	echo '<div class="d-none">
         <div class="gscf7-free-selected-method"
-        data-value="' . esc_attr( $gscf7_selected_method ) . '">'
-		. esc_html( $gscf7_selected_method ) .
+        data-value="' . esc_attr($gscf7_selected_method) . '">'
+		. esc_html($gscf7_selected_method) .
 		'</div>
         </div>';
 	echo '<div class="nav-tab-wrapper d-flex justify-flex-start w-100 m-0">';
-	foreach ( $tabs as $tab => $gscf7_name ) {
-		$gscf7_class = ( $tab == $gscf7_active_tab ) ? ' nav-tab-active' : '';
-		echo '<a class="nav-tab text-decoration-none fw-500 text-center' . esc_attr( $gscf7_class ) . '" href="' .
+	foreach ($tabs as $tab => $gscf7_name) {
+		$gscf7_class = ($tab == $gscf7_active_tab) ? ' nav-tab-active' : '';
+		echo '<a class="nav-tab text-decoration-none fw-500 text-center' . esc_attr($gscf7_class) . '" href="' .
 			esc_url(
 				add_query_arg(
 					array(
 						'page' => 'wpcf7-google-sheet-config',
 						'tab'  => $tab,
 					),
-					admin_url( 'admin.php' )
+					admin_url('admin.php')
 				)
 			) . '">' .
-			esc_html( $gscf7_name ) .
+			esc_html($gscf7_name) .
 			'</a>';
 	}
 	echo '</div><div class="wrap-gsc">';
-	switch ( $gscf7_active_tab ) {
+	switch ($gscf7_active_tab) {
 		case 'integration':
 			echo '<div class="wrap w-100 m-0"><div class="inner-wrap  w-100 bg-white p-40">';
 			$gscf7_intigrate = new Gs_Connector_Free_Init();
@@ -450,6 +457,9 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 		case 'gs-integrate-info':
 			include GS_CONNECTOR_PATH . 'includes/pages/gs-integrate-info.php';
 			break;
+		case 'gdpr-privacy-policy':
+			include GS_CONNECTOR_PATH . 'includes/pages/gs-privacy-gdpr.php';
+			break;
 		case 'extension':
 			include GS_CONNECTOR_PATH . 'includes/pages/extensions/extensions.php';
 			break;
@@ -460,13 +470,13 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 <!--End Tab Panel Section-->
 
 <!--Start Common Pro Feature-->
-<?php if ( $gscf7_active_tab != 'dashboard' ) { ?>
+<?php if ($gscf7_active_tab != 'dashboard') { ?>
 	<div class="gscf7-free">
 		<div class="common-section-gsc-promo-wrapper">
 			<!-- Left Image Area -->
 			<div class="d-flex flex-wrap gap-50 align-center">
 				<div class="cf7-to-gsheet">
-					<img src="<?php echo esc_url( GS_CONNECTOR_URL ); ?>/assets/img/pro-cf7-gsc.webp">
+					<img src="<?php echo esc_url(GS_CONNECTOR_URL); ?>/assets/img/pro-cf7-gsc.webp">
 				</div>
 				<!-- <div class="common-section-gsc-promo-left">
 				<div class="common-section-gsc-card gsc-card-1">
@@ -502,35 +512,35 @@ $gscf7_plugin_version = defined( 'GS_CONNECTOR_VERSION' ) ? GS_CONNECTOR_VERSION
 			</div> -->
 				<!-- Right Content -->
 				<div class="common-section-gsc-promo-content">
-					<div class="common-section-heading"><?php echo esc_html( __( 'Advanced Tools for Easy Spreadsheet Control', 'cf7-google-sheets-connector' ) ); ?></div>
-					<p class="mb-0"><?php echo esc_html( __( 'Improve your sheet management with smart automation and flexible customization features.', 'cf7-google-sheets-connector' ) ); ?></p>
+					<div class="common-section-heading"><?php echo esc_html(__('Advanced Tools for Easy Spreadsheet Control', 'cf7-google-sheets-connector')); ?></div>
+					<p class="mb-0"><?php echo esc_html(__('Improve your sheet management with smart automation and flexible customization features.', 'cf7-google-sheets-connector')); ?></p>
 					<div class="d-flex gap-40">
 						<ul>
-							<li><?php echo esc_html__( 'Google Sheets API v4', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'One-Click Authentication', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Authenticated Email Display', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Click & Fetch Automation', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Create New Spreadsheet', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Manual Sheet / Tab Name', 'cf7-google-sheets-connector' ); ?></li>
+							<li><?php echo esc_html__('Google Sheets API v4', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('One-Click Authentication', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Authenticated Email Display', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Click & Fetch Automation', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Create New Spreadsheet', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Manual Sheet / Tab Name', 'cf7-google-sheets-connector'); ?></li>
 
 						</ul>
 
 						<ul>
-							<li><?php echo esc_html__( 'Automated Sheet & Tab', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Multiple Feeds to Sheets', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Drag-and-Drop Column Order', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Headers On / Off + Rename', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Image / PDF Attachment Link', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Freeze & Color Headers', 'cf7-google-sheets-connector' ); ?></li>
+							<li><?php echo esc_html__('Automated Sheet & Tab', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Multiple Feeds to Sheets', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Drag-and-Drop Column Order', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Headers On / Off + Rename', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Image / PDF Attachment Link', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Freeze & Color Headers', 'cf7-google-sheets-connector'); ?></li>
 						</ul>
 
 						<ul>
-							<li><?php echo esc_html__( 'Sync Past Entries', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Role Management', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Quick Configuration', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Multi-Language Support', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Multi-Site Support', 'cf7-google-sheets-connector' ); ?></li>
-							<li><?php echo esc_html__( 'Latest WP & PHP Support', 'cf7-google-sheets-connector' ); ?></li>
+							<li><?php echo esc_html__('Sync Past Entries', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Role Management', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Quick Configuration', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Multi-Language Support', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Multi-Site Support', 'cf7-google-sheets-connector'); ?></li>
+							<li><?php echo esc_html__('Latest WP & PHP Support', 'cf7-google-sheets-connector'); ?></li>
 						</ul>
 					</div>
 					<div class="mt-30 d-flex align-center gap-20">

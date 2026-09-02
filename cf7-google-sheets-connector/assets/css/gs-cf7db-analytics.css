@@ -1,0 +1,479 @@
+/* Entries Dashboard — stat cards */
+.gscf7-free .gscf7-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+
+.gscf7-free .gscf7-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 25px !important;
+}
+
+.gscf7-free .gscf7-stat-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+}
+
+.gscf7-free .gscf7-stat-icon .dashicons {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.gscf7-free .gscf7-stat-icon-total {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.gscf7-free .gscf7-stat-icon-unread {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.gscf7-free .gscf7-stat-icon-read {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.gscf7-free .gscf7-stat-icon-new {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.gscf7-free .gscf7-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 15px !important;
+}
+
+.gscf7-free .gscf7-stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.gscf7-free .gscf7-stat-number {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+/* Entries Dashboard — charts */
+.gscf7-free .gscf7-chart-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .gscf7-free .gscf7-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gscf7-free .gscf7-chart-card-pie canvas {
+  max-height: 220px;
+}
+
+/* Entries Dashboard — recent entries table */
+.gscf7-free .gscf7-recent-entries-wrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.gscf7-free .gscf7-sortable-table th.gscf7-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.gscf7-free .gscf7-sortable-table th.gscf7-sortable:hover {
+  color: #4338ca;
+}
+
+.gscf7-free .gscf7-sort-arrow {
+  display: inline-block;
+  width: 10px;
+}
+
+.gscf7-free .gscf7-sort-arrow::after {
+  content: "";
+}
+
+th.gscf7-sort-asc .gscf7-sort-arrow::after {
+  content: "\25B2";
+  font-size: 10px;
+}
+
+th.gscf7-sort-desc .gscf7-sort-arrow::after {
+  content: "\25BC";
+  font-size: 10px;
+}
+
+.gscf7-free .gscf7-entries-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.gscf7-free .gscf7-filter-form {
+  display: flex;
+  gap: 6px;
+  width: 230px;
+  align-items: center;
+}
+.gscf7-free .gscf7-entries-pagination .auto-select {
+  width: auto;
+}
+
+.gscf7-free .gscf7-filter-form label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.gscf7-free .gscf7-status-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  width: auto;
+}
+
+.gscf7-free .gscf7-status-filter-btn {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  padding: 8px 14px;
+  border-radius: 3px;
+  font-size: 13px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.gscf7-free .gscf7-menu-db {
+  align-items: baseline;
+}
+.gscf7-free .gscf7-status-filter-btn.is-active,
+.gscf7-free .gscf7-status-filter-btn:hover {
+  border-color: #4338ca;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.gscf7-free .gscf7-entries-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.gscf7-free .gscf7-pg-total {
+  font-size: 14px;
+  color: #374151;
+  margin-right: auto;
+  min-width: 100px;
+}
+
+.gscf7-free .gscf7-pg-per-page,
+.gscf7-free .gscf7-pg-goto-input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #111827;
+  min-width: 80px;
+}
+
+.gscf7-free .gscf7-pg-arrow {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  min-width: 36px;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.gscf7-free .gscf7-pg-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gscf7-free .gscf7-pg-current {
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+.gscf7-free .gscf7-pg-goto-label {
+  color: #6b7280;
+}
+
+.gscf7-free .gscf7-status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gscf7-free .gscf7-status-read {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.gscf7-free .gscf7-status-unread {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.gscf7-free .gscf7-recent-entries-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.gscf7-free .gscf7-sortable-table {
+  width: 100%;
+  /*
+   * position: sticky on <td>/<th> (used to freeze the Entry ID column while
+   * scrolling, below) does not work in any browser when the table's
+   * border-collapse is "collapse" -- separate + zero spacing keeps the same
+   * visual appearance without that restriction.
+   */
+  border-collapse: separate;
+  border-spacing: 0;
+  /*
+   * No blanket min-width here on purpose: table-layout below is "auto", so
+   * the table's real width is whatever its columns' own min-widths add up
+   * to. A form with few fields (or the "All Forms" generic table) fits
+   * without scrolling; one with many dynamic fields naturally overflows and
+   * scrolls. A large fixed min-width here previously forced scrolling
+   * unconditionally, which left a wide band of empty space past the last
+   * column on any table that didn't actually need that much room.
+   */
+  table-layout: auto;
+}
+
+.gscf7-free .gscf7-sortable-table th,
+.gscf7-free .gscf7-sortable-table td {
+  padding: 5px 14px;
+  /*
+   * Without a floor on every column, a table with many dynamic per-form
+   * fields can just shrink to fit a wide browser window instead of
+   * overflowing -- which meant it never actually needed to scroll, so the
+   * frozen Entry ID column never had anything to demonstrate itself against.
+   * 190px covers even a handful of columns comfortably exceeding a typical
+   * wp-admin content width (roughly 1400-1700px after the admin sidebar).
+   */
+  min-width: 190px;
+  white-space: nowrap;
+}
+
+.gscf7-free .gscf7-sortable-table th.column-actions,
+.gscf7-free .gscf7-sortable-table td.column-actions {
+  min-width: 230px;
+}
+
+.gscf7-free .gscf7-sortable-table td.column-actions .button {
+  min-height: 20px;
+  line-height: 2.2;
+}
+
+/* Entry ID only ever holds "#12345" plus the unread dot -- no need for the
+   same width as a real data column. */
+.gscf7-free .gscf7-sortable-table th.column-entry_id,
+.gscf7-free .gscf7-sortable-table td.column-entry_id {
+  min-width: 110px;
+}
+
+.gscf7-free .gscf7-sortable-table th.column-cb,
+.gscf7-free .gscf7-sortable-table td.column-cb,
+.gscf7-free .gscf7-sortable-table th.check-column,
+.gscf7-free .gscf7-sortable-table td.check-column {
+  min-width: 0;
+  width: 40px;
+  /*
+   * Overrides WP core's own .check-column/.manage-column rules (padding,
+   * width, vertical-align: top), which this table's markup inherits since
+   * it reuses those core class names but isn't a real .wp-list-table. Left
+   * unset, core's rules shifted the header checkbox (inside .manage-column)
+   * out of line with the plain .check-column checkbox on each row.
+   */
+  padding: 5px 14px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.gscf7-free .gscf7-sortable-table th.column-cb input[type="checkbox"],
+.gscf7-free .gscf7-sortable-table td.column-cb input[type="checkbox"],
+.gscf7-free .gscf7-sortable-table th.check-column input[type="checkbox"],
+.gscf7-free .gscf7-sortable-table td.check-column input[type="checkbox"] {
+  margin: 0;
+  vertical-align: middle;
+}
+
+.gscf7-free .gscf7-entries-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.gscf7-free .gscf7-pg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.gscf7-free .gscf7-pg-total {
+  font-size: 14px;
+  color: #374151;
+  min-width: 100px;
+}
+
+/* CF7 Database screen -- unread-entry dot indicator (next to the Entry ID) */
+.gscf7-free .gscf7-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* CF7 Database screen -- Actions column: keep the row-action buttons from
+   wrapping awkwardly and give them breathing room. */
+.gscf7-free .gscf7-sortable-table td.column-actions {
+  white-space: nowrap;
+}
+
+.gscf7-free .gscf7-sortable-table td.column-actions .button + .button {
+  margin-left: 6px;
+}
+
+/* Dim the table briefly while an AJAX filter/pagination request is in flight. */
+.gscf7-free .gscf7-recent-entries-wrap.is-loading .gscf7-table-scroll {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+/* CF7 Database screen -- horizontal scroll for wide, dynamic per-form
+   columns, with the Entry ID column frozen in place while scrolling. */
+.gscf7-free .gscf7-table-scroll {
+  overflow-x: auto;
+}
+
+.gscf7-free .gscf7-freeze-col1 table th.column-cb,
+.gscf7-free .gscf7-freeze-col1 table td.column-cb,
+.gscf7-free .gscf7-freeze-col1 table th.check-column,
+.gscf7-free .gscf7-freeze-col1 table td.check-column {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+/* Entry ID sits right after the 40px-wide checkbox column, so it needs a
+   matching left offset to avoid overlapping it while both stay frozen. */
+.gscf7-free .gscf7-freeze-col1 table th.column-entry_id,
+.gscf7-free .gscf7-freeze-col1 table td.column-entry_id {
+  position: sticky;
+  left: 40px;
+  z-index: 1;
+  background: #fff;
+  box-shadow: 1px 0 0 #e5e7eb;
+}
+
+.gscf7-free .gscf7-freeze-col1 table thead th.column-cb,
+.gscf7-free .gscf7-freeze-col1 table thead th.check-column,
+.gscf7-free .gscf7-freeze-col1 table thead th.column-entry_id {
+  z-index: 2;
+}
+
+/* Actions (View / Send To SpreadSheet) frozen on the right edge too, so both
+   ends of the row stay reachable while the middle columns scroll. */
+.gscf7-free .gscf7-freeze-col1 table th.column-actions,
+.gscf7-free .gscf7-freeze-col1 table td.column-actions {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: -1px 0 0 #e5e7eb;
+}
+
+.gscf7-free .gscf7-freeze-col1 table thead th.column-actions {
+  z-index: 2;
+}
+
+@media (max-width: 1180px) {
+.gscf7-free #normal-sortables {
+    display: block;
+}
+.gscf7-free .postbox {
+	margin-bottom: 20px;
+}
+}
+
+@media (max-width: 1024px) {
+.gscf7-free .gscf7-chart-grid {
+	    grid-template-columns: 1fr;
+}
+}
+
+@media (max-width: 900px) {
+  .gscf7-free .gscf7-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .gscf7-free .gscf7-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+@media (max-width: 420px) {
+	.gscf7-free .inner-wrap #gscf7-entries-line-chart,
+	.gscf7-free .inner-wrap #gscf7-entries-pie-chart {
+        width: 240px !important;
+    }
+}
+
+

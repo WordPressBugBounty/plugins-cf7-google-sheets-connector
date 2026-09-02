@@ -12,14 +12,49 @@ class CF7GSC_googlesheet {
 	private $worksheet;
 
 	/**
-	GET GOOGLE CREDS
-
-	@since 1.0.0
+	 * GET GOOGLE CREDS
+	 *
+	 * Validated on the way out: a half-written or error-shaped credential row
+	 * must never reach Google as a client_id/client_secret pair.
+	 *
+	 * @since 1.0.0
+	 * @since 5.2.4 Routed through Gs_Connector_Free_Utility::get_api_credentials()
+	 *              for validation instead of reading the raw option.
 	 */
 	private static function creds() {
-		return is_multisite()
-		? get_site_option( 'cf7gsc_free_api_creds' )
-		: get_option( 'cf7gsc_free_api_creds' );
+		return Gs_Connector_Free_Utility::instance()->get_api_credentials();
+	}
+
+	/**
+	 * Extracts Google's OAuth error slug from a token-endpoint response.
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param mixed $body Decoded token-endpoint response.
+	 * @return string Error slug, or an empty string.
+	 */
+	private static function oauth_error( $body ) {
+		if ( ! is_array( $body ) || empty( $body['error'] ) ) {
+			return '';
+		}
+
+		return is_string( $body['error'] ) ? $body['error'] : '';
+	}
+
+	/**
+	 * Whether an OAuth error means OUR managed client credentials are wrong.
+	 *
+	 * Deliberately narrow. `invalid_grant` is excluded: it means the user
+	 * revoked access or the code/token has already been used, and rotating
+	 * credentials in response would replace a working set for no reason.
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param string $error Google OAuth error slug.
+	 * @return bool True when the stored managed credentials are the problem.
+	 */
+	private static function is_client_credential_error( $error ) {
+		return in_array( $error, array( 'invalid_client', 'unauthorized_client' ), true );
 	}
 
 	/**
@@ -38,28 +73,35 @@ class CF7GSC_googlesheet {
 		try {
 			$creds = self::creds();
 			if ( ! $creds ) {
-				return;
-			}
-
-			$response = wp_remote_post(
-				'https://oauth2.googleapis.com/token',
-				array(
-					'body' => array(
-						'code'          => $access_code,
-						'client_id'     => $creds['client_id_web'],
-						'client_secret' => $creds['client_secret_web'],
-						'redirect_uri'  => 'https://oauth.gsheetconnector.com/auth-api.php',
-						'grant_type'    => 'authorization_code',
-					),
-				)
-			);
-			if ( is_wp_error( $response ) ) {
 				return false;
 			}
 
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( ! is_array( $body ) ) {
-				$body = array();
+			$body = self::exchange_auth_code( $access_code, $creds );
+
+			/*
+			 * The consent leg of this handshake ran on the relay, using
+			 * whichever client ID the relay currently holds; this exchange
+			 * runs here, using whatever is cached in `cf7gsc_free_api_creds`.
+			 * The caller (verify_gs_integation()) already refreshes the
+			 * credentials before reaching this method, so landing here means
+			 * the relay rotated inside the handshake window itself. Re-fetch
+			 * once and retry rather than making the user start over.
+			 */
+			if ( self::is_client_credential_error( self::oauth_error( $body ) ) ) {
+
+				Gs_Connector_Free_Utility::gs_debug_log(
+					__METHOD__ . ' exchange rejected as invalid_client; refetching managed credentials and retrying once.'
+				);
+
+				if ( Gs_Connector_Free_Utility::instance()->maybe_refresh_api_credentials( 'oauth_exchange_retry', 0, true ) ) {
+
+					$retry_creds = self::creds();
+
+					if ( $retry_creds && $retry_creds['client_id_web'] !== $creds['client_id_web'] ) {
+						$creds = $retry_creds;
+						$body  = self::exchange_auth_code( $access_code, $creds );
+					}
+				}
 			}
 
 			if ( empty( $body['access_token'] ) ) {
@@ -68,11 +110,82 @@ class CF7GSC_googlesheet {
 			}
 
 			self::updateToken( $body );
+
+			// Record which client minted this token. A refresh_token is only
+			// redeemable by its issuing client, so this is what lets the
+			// credential layer tell a safe rotation from one that would break
+			// the connection.
+			Gs_Connector_Free_Utility::instance()->record_token_client_fingerprint( $creds );
+
+			/*
+			 * The handshake must be confirmed against Google itself: a token
+			 * response alone does not prove the account is usable, and a
+			 * previously cached address must never be accepted here.
+			 */
+			$google_sheet = new self();
+			$email        = $google_sheet->gsheet_print_google_account_email( true );
+
+			if ( empty( $email ) ) {
+
+				update_option( 'cf7gf_email_account', '', false );
+
+				if ( class_exists( 'gscf7_error_logs' ) ) {
+
+					gscf7_error_logs::log_to_db(
+						'Google_User_Email_Empty',
+						403,
+						'Google user email could not be retrieved (Existing Method)',
+						array(
+							'error_type'            => 'connected_email_empty',
+							'authentication_method' => 'Existing',
+							'message'               => 'Failed to retrieve the connected Google account email address.',
+						)
+					);
+				}
+
+				return false;
+			}
+
 			return true;
 		} catch ( Exception $e ) {
 			Gs_Connector_Free_Utility::gs_debug_log( '[Auth Exception]. ' . $e->getMessage() );
-			throw new LogicException( 'Auth error: ' . esc_html( $e->getMessage() ) );
+			return false;
 		}
+	}
+
+	/**
+	 * Posts an authorization code to Google's token endpoint.
+	 *
+	 * Split out of preauth() so the exchange can be repeated with a second
+	 * credential set without duplicating the request.
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param string $code  Authorization code returned by Google.
+	 * @param array  $creds Managed credentials to present.
+	 * @return array Decoded response body. Empty array on transport failure.
+	 */
+	private static function exchange_auth_code( $code, $creds ) {
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'body' => array(
+					'code'          => $code,
+					'client_id'     => $creds['client_id_web'],
+					'client_secret' => $creds['client_secret_web'],
+					'redirect_uri'  => 'https://oauth.gsheetconnector.com/auth-api.php',
+					'grant_type'    => 'authorization_code',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		return is_array( $body ) ? $body : array();
 	}
 
 	/**
@@ -92,26 +205,36 @@ class CF7GSC_googlesheet {
 		// Invalid token response
 		if ( empty( $tokenData['access_token'] ) ) {
 
-			update_option( 'cf7gf_email_account', '', false );
-
-			update_option(
-				'gs_token',
-				wp_json_encode( $tokenData ),
-				false
-			);
+			$google_error = isset( $tokenData['error'] ) ? (string) $tokenData['error'] : 'unknown_error';
 
 			if ( class_exists( 'gscf7_error_logs' ) ) {
 
 				gscf7_error_logs::log_to_db(
 					'Google_Access_Token_Invalid_Existing',
 					403,
-					'Google access token is invalid or expired (Existing Method)',
+					'Google access token exchange failed (Existing Method)',
 					array(
 						'error_type'            => 'invalid_token',
 						'authentication_method' => 'Existing',
-						'message'               => 'Authentication failed. The stored Google access token is invalid, expired, or refresh token is no longer valid. Please re-authenticate your Google account.',
+						'google_error'          => $google_error,
+						'message'               => 'Authentication failed. Google did not return an access token. Please re-authenticate your Google account.',
 					)
 				);
+			}
+
+			/*
+			 * Never write Google's error body (or a bare, unexchanged auth
+			 * code) into gs_token: every "is this site connected?" check used
+			 * to only test that option for emptiness, so a failed exchange
+			 * both looked connected and hid the sign-in button, leaving no
+			 * way to retry.
+			 *
+			 * A working token from an earlier successful exchange must also
+			 * survive one failed attempt -- do not touch it.
+			 */
+			if ( ! Gs_Connector_Free_Utility::instance()->has_live_google_token() ) {
+				update_option( 'cf7gf_email_account', '', false );
+				delete_option( 'gs_token' );
 			}
 
 			return;
@@ -282,32 +405,127 @@ class CF7GSC_googlesheet {
 			if ( empty( $token['refresh_token'] ) ) {
 				return false;
 			}
-			$creds = self::creds();
 
-			$response = wp_remote_post(
-				'https://oauth2.googleapis.com/token',
-				array(
-					'body' => array(
-						'client_id'     => $creds['client_id_web'],
-						'client_secret' => $creds['client_secret_web'],
-						'refresh_token' => $token['refresh_token'] ?? '',
-						'grant_type'    => 'refresh_token',
-					),
-				)
-			);
-			if ( is_wp_error( $response ) ) {
-						return false;
+			$utility = Gs_Connector_Free_Utility::instance();
+			$creds   = self::creds();
+
+			if ( ! $creds ) {
+				// Nothing usable stored -- try to obtain a set before giving up.
+				$utility->maybe_refresh_api_credentials( 'token_refresh_no_creds' );
+
+				$creds = self::creds();
+
+				if ( ! $creds ) {
+					return false;
+				}
 			}
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			$body = $this->post_refresh_token( $token['refresh_token'], $creds );
+
+			/*
+			 * This is the quiet failure mode that no amount of fixing the
+			 * connect screen would have caught: a site that authenticated long
+			 * ago, never touches the integration page, and simply stops
+			 * syncing once its access token expires because the managed
+			 * credentials it refreshes with are no longer accepted.
+			 *
+			 * Rotating credentials here is safe in a way it is NOT elsewhere --
+			 * Google has just rejected the current set, so the refresh token it
+			 * supports is already unusable. There is no working connection left
+			 * to protect. `invalid_grant` is excluded deliberately: that means
+			 * the user revoked access, and no credential change can repair it.
+			 */
+			if ( self::is_client_credential_error( self::oauth_error( $body ) ) ) {
+
+				Gs_Connector_Free_Utility::gs_debug_log(
+					__METHOD__ . ' token refresh rejected as invalid_client; refetching managed credentials.'
+				);
+
+				$utility->maybe_refresh_api_credentials( 'token_refresh_invalid_client', 0, true );
+				$utility->promote_pending_api_credentials();
+
+				$retry_creds = self::creds();
+
+				if ( $retry_creds && $retry_creds['client_id_web'] !== $creds['client_id_web'] ) {
+					$creds = $retry_creds;
+					$body  = $this->post_refresh_token( $token['refresh_token'], $creds );
+				}
+			}
 
 			if ( ! empty( $body['access_token'] ) ) {
-					$body['refresh_token'] = $token['refresh_token'];
+				$body['refresh_token'] = $token['refresh_token'];
+
+				// This set demonstrably works for this token.
+				$utility->record_token_client_fingerprint( $creds );
+
+				update_option( 'cf7gs_auth_expired_free', 'false' );
+
+				return $body;
+			}
+
+			// Still failing after the retry: the user has to reconnect. Flag it
+			// so the admin notice can say so instead of the site failing in
+			// silence.
+			update_option( 'cf7gs_auth_expired_free', 'true' );
+
+			if ( class_exists( 'gscf7_error_logs' ) ) {
+
+				$google_error = self::oauth_error( $body );
+
+				gscf7_error_logs::log_to_db(
+					'Google_Token_Refresh_Failed',
+					403,
+					'Google access token could not be refreshed (Existing Method)',
+					array(
+						'error_type'            => 'refresh_failed',
+						'authentication_method' => 'Existing',
+						'oauth_error'            => '' !== $google_error ? $google_error : 'unknown',
+						'client_fingerprint'     => $utility->creds_fingerprint( $creds ),
+						'message'                => self::is_client_credential_error( $google_error )
+							? 'The Google API credentials stored for this site are no longer accepted. Please reconnect your Google account.'
+							: 'The stored Google refresh token was rejected. Please reconnect your Google account.',
+					)
+				);
 			}
 
 			return $body;
 		} catch ( Exception $e ) {
 			Gs_Connector_Free_Utility::gs_debug_log( 'Refresh Auto Token fail! - ' . $e->getMessage() );
 		}
+	}
+
+	/**
+	 * Posts a refresh token to Google's token endpoint.
+	 *
+	 * Split out so the request can be repeated with a second credential set.
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param string $refresh_token Stored refresh token.
+	 * @param array  $creds         Managed credentials to present.
+	 * @return array Decoded response body. Empty array on transport failure.
+	 */
+	private function post_refresh_token( $refresh_token, $creds ) {
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => self::GSC_API_TIMEOUT,
+				'body'    => array(
+					'client_id'     => $creds['client_id_web'],
+					'client_secret' => $creds['client_secret_web'],
+					'refresh_token' => $refresh_token,
+					'grant_type'    => 'refresh_token',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array();
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		return is_array( $body ) ? $body : array();
 	}
 
 	/**
@@ -615,7 +833,19 @@ class CF7GSC_googlesheet {
 		return $this->worksheet;
 	}
 
-	public function add_row( $data ) {
+	/**
+	 * Append one submission as a new row.
+	 *
+	 * @param array $data        Column header => value.
+	 * @param array $text_fields Column header => bool, for the columns whose
+	 *                           value must be written verbatim and pinned to
+	 *                           the Plain text number format. A true value also
+	 *                           asks for the re-write described in step 7,
+	 *                           needed only by values Sheets recognises as a
+	 *                           date/time (the [_date] / [_time] columns).
+	 * @return true|WP_Error
+	 */
+	public function add_row( $data, $text_fields = array() ) {
 		try {
 
 			$spreadsheetId = $this->getSpreadsheetId();
@@ -708,11 +938,38 @@ class CF7GSC_googlesheet {
 			|--------------------------------------------------------------------------
 			*/
 
-			$insert_data = array();
+			$insert_data     = array();
+			$text_columns    = array();
+			$rewrite_columns = array();
 
-			foreach ( $headers as $colName ) {
-				$insert_data[] = isset( $data[ $colName ] ) ? $data[ $colName ] : '';
+			foreach ( $headers as $col_index => $colName ) {
+
+				$cell_value = isset( $data[ $colName ] ) ? $data[ $colName ] : '';
+
+				// Columns listed in $text_fields (the submission date/time
+				// columns and any [date] field) hold a value that is already
+				// formatted for display and must reach the sheet character for
+				// character. Their value is written unchanged and the cell is
+				// pinned to the Plain text number format in step 6 below, so
+				// Sheets never re-formats it to the spreadsheet's locale. The
+				// value is kept here too: step 7 re-writes the flagged ones
+				// once that format is in place.
+				if ( array_key_exists( $colName, $text_fields ) && '' !== $cell_value ) {
+
+					$insert_data[]                 = (string) $cell_value;
+					$text_columns[ $col_index ]    = (string) $cell_value;
+					$rewrite_columns[ $col_index ] = ! empty( $text_fields[ $colName ] );
+					continue;
+				}
+
+				$insert_data[] = $cell_value;
 			}
+
+			// The row must always span column A through the last header column so
+			// every value sits exactly under its own header. Re-index and pad to the
+			// header count: a short row would narrow the block Sheets treats as the
+			// table when appending (step 5).
+			$insert_data = array_pad( array_values( $insert_data ), count( $headers ), '' );
 
 			// Force Entry ID to be treated as a string.
 			$entry_id_col = array_search( 'Entry ID', $headers, true );
@@ -803,9 +1060,15 @@ class CF7GSC_googlesheet {
 
 			} else {
 
+				// The range is anchored at A1 on purpose. Passing the bare tab name let
+				// Sheets re-detect the "table" across the whole tab on every submission,
+				// and append always starts at the first column of the table it finds --
+				// so a single row with empty leading cells moved that start column right
+				// and every later row drifted further across. Anchoring at A1 pins the
+				// table to the header row, so values are always written from column A.
 				$response = wp_remote_post(
 					"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
-					rawurlencode( $sheet_title ) .
+					rawurlencode( $sheet_title . '!A1' ) .
 					':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
 					self::gsc_request_args(
 						$token,
@@ -822,9 +1085,75 @@ class CF7GSC_googlesheet {
 					return $result;
 				}
 
-				$row_number = self::gsc_row_from_range(
-					isset( $result['updates']['updatedRange'] ) ? $result['updates']['updatedRange'] : ''
-				);
+				$updated_range = isset( $result['updates']['updatedRange'] ) ? $result['updates']['updatedRange'] : '';
+
+				$row_number = self::gsc_row_from_range( $updated_range );
+
+				// Safety net. append() resolves the target cell server-side, so if
+				// Sheets ever reports a start column other than A the values landed
+				// under the wrong headers. Re-write the row anchored at column A,
+				// then clear whatever spilled past the last header column.
+				$start_column = self::gsc_column_from_range( $updated_range );
+
+				if ( $row_number > 0 && '' !== $start_column && 'A' !== $start_column ) {
+
+					Gs_Connector_Free_Utility::gs_debug_log(
+						array(
+							'context' => 'google_sheets:append row',
+							'error'   => sprintf(
+								/* translators: 1: column letter reported by the API, 2: the range that was written. */
+								__( 'The row was appended starting at column %1$s instead of column A (%2$s); realigning it under the header row.', 'cf7-google-sheets-connector' ),
+								$start_column,
+								$updated_range
+							),
+						)
+					);
+
+					$realign_response = wp_remote_request(
+						"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
+						rawurlencode( $sheet_title . '!A' . $row_number ) .
+						'?valueInputOption=RAW',
+						self::gsc_request_args(
+							$token,
+							array(
+								'method'  => 'PUT',
+								'headers' => array( 'Content-Type' => 'application/json' ),
+								'body'    => wp_json_encode( array( 'values' => array( $insert_data ) ) ),
+							)
+						)
+					);
+
+					$realigned = self::gsc_parse_response( $realign_response, 'realign appended row' );
+
+					// Clear the misplaced tail only once the correct values are safely
+					// in place, so a failed re-write can never lose the submission.
+					if ( ! is_wp_error( $realigned ) ) {
+
+						$spill_start = count( $headers );
+						$spill_end   = self::gsc_column_index( $start_column ) + count( $insert_data ) - 1;
+
+						if ( $spill_end >= $spill_start ) {
+
+							$clear_range = $sheet_title . '!' .
+								self::gsc_column_letter( $spill_start ) . $row_number . ':' .
+								self::gsc_column_letter( $spill_end ) . $row_number;
+
+							$clear_response = wp_remote_post(
+								"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
+								rawurlencode( $clear_range ) . ':clear',
+								self::gsc_request_args(
+									$token,
+									array(
+										'headers' => array( 'Content-Type' => 'application/json' ),
+										'body'    => '{}',
+									)
+								)
+							);
+
+							self::gsc_parse_response( $clear_response, 'clear misplaced cells' );
+						}
+					}
+				}
 			}
 
 			/*
@@ -892,7 +1221,35 @@ class CF7GSC_googlesheet {
 					);
 				}
 
-				wp_remote_post(
+				// Date/time columns were written as already-formatted strings
+				// (step 3 above); pin each to the Plain text number format so
+				// Sheets keeps them exactly as written -- no locale-dependent
+				// re-formatting, and no leading apostrophe in the formula bar.
+				foreach ( array_keys( $text_columns ) as $text_col_index ) {
+
+					$clearRequests[] = array(
+						'repeatCell' => array(
+							'range'  => array(
+								'sheetId'          => $sheet_id,
+								'startRowIndex'    => $row_number - 1,
+								'endRowIndex'      => $row_number,
+								'startColumnIndex' => $text_col_index,
+								'endColumnIndex'   => $text_col_index + 1,
+							),
+							'cell'   => array(
+								'userEnteredFormat' => array(
+									'numberFormat' => array(
+										'type'    => 'TEXT',
+										'pattern' => '@',
+									),
+								),
+							),
+							'fields' => 'userEnteredFormat.numberFormat',
+						),
+					);
+				}
+
+				$format_response = wp_remote_post(
 					"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}:batchUpdate",
 					self::gsc_request_args(
 						$token,
@@ -902,6 +1259,78 @@ class CF7GSC_googlesheet {
 						)
 					)
 				);
+
+				// This step is cosmetic (row background/text formatting, the
+				// Entry ID / date columns' number format) and never affects
+				// the data already written above, so a failure here doesn't
+				// fail the submission -- but it was previously silent, which
+				// made a cell stuck showing the wrong date format (e.g. the
+				// sheet's default locale format instead of the configured
+				// dd-mm-yyyy) impossible to diagnose. Log it instead.
+				self::gsc_parse_response( $format_response, 'format written row' );
+
+				/*
+				|----------------------------------------------------------------
+				| 7. RE-WRITE THE DATE/TIME CELLS NOW THAT THEY ARE PLAIN TEXT
+				|----------------------------------------------------------------
+				|
+				| The row above is appended with valueInputOption=RAW, which
+				| stores the value as a string but marks it as text that had to
+				| be forced -- Sheets then shows a leading apostrophe in the
+				| formula bar for anything it would otherwise have read as a
+				| date or time ("August 22, 2026", "9:45 AM"). Setting the Plain
+				| text number format afterwards does not clear that marker.
+				|
+				| Writing the same string again with USER_ENTERED, now that the
+				| cell has been formatted as Plain text just above, is what
+				| typing into a plain-text cell does: the value stays a string,
+				| but Sheets has no reason to record it as forced text, so the
+				| formula bar shows exactly what the cell shows.
+				|
+				| Only the columns flagged for it are re-written -- a value
+				| Sheets does not recognise as a date/time (a [date] field's
+				| dd-mm-yyyy, say) never grew the apostrophe in the first place
+				| and is deliberately left untouched.
+				*/
+				$rewrite_data = array();
+
+				foreach ( $rewrite_columns as $rewrite_col_index => $needs_rewrite ) {
+
+					if ( ! $needs_rewrite || ! isset( $text_columns[ $rewrite_col_index ] ) ) {
+						continue;
+					}
+
+					$rewrite_data[] = array(
+						'range'  => "'" . str_replace( "'", "''", $sheet_title ) . "'!" .
+							self::gsc_column_letter( $rewrite_col_index ) . $row_number,
+						'values' => array( array( $text_columns[ $rewrite_col_index ] ) ),
+					);
+				}
+
+				if ( ! empty( $rewrite_data ) ) {
+
+					$rewrite_response = wp_remote_post(
+						"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values:batchUpdate",
+						self::gsc_request_args(
+							$token,
+							array(
+								'headers' => array( 'Content-Type' => 'application/json' ),
+								'body'    => wp_json_encode(
+									array(
+										'valueInputOption' => 'USER_ENTERED',
+										'data'             => $rewrite_data,
+									)
+								),
+							)
+						)
+					);
+
+					// Cosmetic like step 6: the values are already in the sheet
+					// and correct, this only settles how the formula bar renders
+					// them, so a failure is logged rather than failing the
+					// submission.
+					self::gsc_parse_response( $rewrite_response, 'rewrite date/time cells as plain text' );
+				}
 			}
 
 			return $result;
@@ -938,6 +1367,60 @@ class CF7GSC_googlesheet {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Extract the starting column letters from an A1 notation range.
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param string $range Range such as "Sheet1!C5:N5".
+	 * @return string Column letters, or an empty string when undeterminable.
+	 */
+	private static function gsc_column_from_range( $range ) {
+		if ( empty( $range ) ) {
+			return '';
+		}
+
+		// A quoted tab name may itself contain '!', so read the cell reference
+		// from after the last separator.
+		$separator = strrpos( $range, '!' );
+		$reference = ( false === $separator ) ? $range : substr( $range, $separator + 1 );
+
+		$matches = array();
+
+		if ( preg_match( '/^([A-Z]+)\d/', $reference, $matches ) ) {
+			return $matches[1];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Convert A1 notation column letters into a zero-based column index.
+	 *
+	 * The inverse of gsc_column_letter().
+	 *
+	 * @since 5.2.4
+	 *
+	 * @param string $letters Column letters, e.g. "A", "AA".
+	 * @return int Zero-based column index, or 0 when $letters has no letters.
+	 */
+	private static function gsc_column_index( $letters ) {
+		$letters = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $letters ) );
+
+		if ( '' === $letters ) {
+			return 0;
+		}
+
+		$index  = 0;
+		$length = strlen( $letters );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$index = ( $index * 26 ) + ( ord( $letters[ $i ] ) - 64 );
+		}
+
+		return $index - 1;
 	}
 
 	public function add_multiple_row( $data ) {
@@ -1229,10 +1712,14 @@ class CF7GSC_googlesheet {
 	 * WordPress options table.
 	 *
 	 * @since 3.1
+	 * @since 5.2.4 Added $bypass_cache, used by the OAuth handshake to confirm
+	 *              a newly connected account against Google itself rather than
+	 *              accepting a previously cached address.
 	 *
+	 * @param bool $bypass_cache Skip the cached result and query Google directly.
 	 * @return string|false Google account email on success, false on failure.
 	 */
-	public function gsheet_print_google_account_email() {
+	public function gsheet_print_google_account_email( $bypass_cache = false ) {
 		try {
 
 			/*
@@ -1241,7 +1728,7 @@ class CF7GSC_googlesheet {
 			 * The connected account changes only when the user re-authenticates, so
 			 * the result is cached and explicitly invalidated by the auth flows.
 			 */
-			$cached = get_transient( 'cf7gsc_connected_email' );
+			$cached = $bypass_cache ? false : get_transient( 'cf7gsc_connected_email' );
 
 			if ( false !== $cached ) {
 				return '' === $cached ? false : $cached;

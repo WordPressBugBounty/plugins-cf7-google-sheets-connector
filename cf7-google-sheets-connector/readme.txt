@@ -1,10 +1,10 @@
-=== GSheetConnector – Contact Form 7 Google Sheets Connector & Save CF7 Entries to Database ===
+=== GSheetConnector – CF7 Google Sheets Connector & Save CF7 Entries to Database ===
 Contributors: westerndeal, abdullah17
 Tags: cf7, contact form 7, google sheets, google sheets integration, form submissions
 Requires at least: 6.7
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.3
+Stable tag: 5.2.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,18 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.2.4 (02-09-2026) =
+* Added: Chart and graph table structure for the Contact Form 7 database.
+* Added: Charts and graphs to the dashboard.
+* Added: GDPR compliance and Privacy Policy functionality.
+* Changed: Contact Form 7 database table structure.
+* Improved: Authentication functionality and reliability.
+* Fixed: Entries were being written to incorrect columns and shifting further to the right with each submission instead of being added to new rows.
+* Fixed: Date and time columns no longer display a stray apostrophe in the Google Sheets formula bar and are no longer automatically reformatted based on the spreadsheet locale.
+* Fixed: Contact Form 7 date field values are now sent to Google Sheets in `dd-mm-yyyy` format instead of the raw `yyyy-mm-dd` format submitted by the browser.
+* Fixed: Nonce validation for feed pagination requests.
+* Fixed: JavaScript `updateSlider()` error affecting the loading and saving of Manual Google Sheets Configuration.
 
 = 5.2.3 (01-08-2026) =
 * Fixed: Minor stability improvements and enhanced error logging.
