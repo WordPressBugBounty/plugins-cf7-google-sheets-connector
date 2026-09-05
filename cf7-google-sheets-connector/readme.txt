@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.5
+Stable tag: 5.2.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,10 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.2.6 (05-09-2026) =
+* Fixed: Fatal error (ArgumentCountError) on the Integration page after Google authentication when translations, such as German, added a %s placeholder to the "Connected Email Account" string.
+* Improved: Updated the connected email account label to use a single translatable string with an explicit %s placeholder, ensuring compatibility with translated strings.
 
 = 5.2.5 (05-09-2026) =
 * Fixed: Database issue where data was not showing.

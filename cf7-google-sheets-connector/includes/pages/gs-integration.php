@@ -263,15 +263,13 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 
 																	<span class="gsc-connected-label">
 
-																		<?php printf( esc_html__( 'Connected Email Account', 'cf7-google-sheets-connector' ) ); ?>
-
-																	</span>
-
-
-
-																	<span class="connected-account-manual gsc-connected-email">
-
-																		<?php echo esc_html( $gscf7_email_account ); ?>
+																		<?php
+																		printf(
+																			/* translators: %s: email address of the connected Google account. */
+																			esc_html__( 'Connected Email Account: %s', 'cf7-google-sheets-connector' ),
+																			'<span class="connected-account-manual gsc-connected-email">' . esc_html( $gscf7_email_account ) . '</span>'
+																		);
+																		?>
 
 																	</span>
 

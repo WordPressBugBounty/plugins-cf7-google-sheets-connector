@@ -485,9 +485,10 @@ msgstr "Pro"
 msgid "Google Account Connection"
 msgstr "Verbindung mit Google-Konto"
 
+#. translators: %s: email address of the connected Google account.
 #: includes/class-gs-service.php:3188 includes/pages/dashboard.php:72
 #: includes/pages/gs-integration.php:266
-msgid "Connected Email Account"
+msgid "Connected Email Account: %s"
 msgstr "Verbundenes E-Mail-Konto: %s"
 
 #: includes/class-gs-service.php:3209 includes/pages/dashboard.php:93
