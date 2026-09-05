@@ -656,8 +656,12 @@ class CF7GSC_googlesheet {
 	 * worst-case latency predictable.
 	 *
 	 * @since 5.2.1
+	 * @since 5.2.5 Raised from 10 to 30: Google Sheets API responses that are
+	 *              merely slow (as opposed to actually down) were being cut off
+	 *              and logged as cURL timeouts, dropping the row from Sheets
+	 *              even though a slightly longer wait would have succeeded.
 	 */
-	const GSC_API_TIMEOUT = 10;
+	const GSC_API_TIMEOUT = 30;
 
 	/**
 	 * Build the shared request arguments for a Google API call.

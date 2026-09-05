@@ -354,197 +354,197 @@
 			* @since 5.2.4
 			*/
 
-			if (empty($gscf7_table)) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name only (from $wpdb->prefix), not user input; escaped since identifiers cannot use $wpdb->prepare() placeholders.
-				$gscf7_total_entries = (int) $wpdb->get_var('SELECT COUNT(*) FROM `' . esc_sql($gscf7_table) . '`');
 
-				/**
-				 * Cap the number of rows pulled to compute status counts / the trend chart.
-				 * 0 = no cap. Large installs can filter this down for performance.
-				 *
-				 * @since 5.2.4
-				 */
-				$gscf7_dashboard_cap = (int) apply_filters('gscf7_dashboard_entries_limit', 0);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name only (from $wpdb->prefix), not user input; escaped since identifiers cannot use $wpdb->prepare() placeholders.
+			$gscf7_total_entries = (int) $wpdb->get_var('SELECT COUNT(*) FROM `' . esc_sql($gscf7_table) . '`');
 
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name only, escaped with esc_sql(); not user input.
-				$gscf7_sql = 'SELECT id, form_id, date, value FROM `' . esc_sql($gscf7_table) . '` ORDER BY date DESC';
+			/**
+			 * Cap the number of rows pulled to compute status counts / the trend chart.
+			 * 0 = no cap. Large installs can filter this down for performance.
+			 *
+			 * @since 5.2.4
+			 */
+			$gscf7_dashboard_cap = (int) apply_filters('gscf7_dashboard_entries_limit', 0);
 
-				if ($gscf7_dashboard_cap > 0) {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table.
-					$gscf7_rows = $wpdb->get_results($wpdb->prepare($gscf7_sql . ' LIMIT %d', $gscf7_dashboard_cap)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $gscf7_sql's only interpolated value is the table name, escaped with esc_sql() above; the query itself is passed through $wpdb->prepare().
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name only, escaped with esc_sql(); not user input.
+			$gscf7_sql = 'SELECT id, form_id, date, value FROM `' . esc_sql($gscf7_table) . '` ORDER BY date DESC';
+
+			if ($gscf7_dashboard_cap > 0) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table.
+				$gscf7_rows = $wpdb->get_results($wpdb->prepare($gscf7_sql . ' LIMIT %d', $gscf7_dashboard_cap)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $gscf7_sql's only interpolated value is the table name, escaped with esc_sql() above; the query itself is passed through $wpdb->prepare().
+			} else {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table, hardcoded literal query; $gscf7_sql's only interpolated value is the table name, escaped with esc_sql() above.
+				$gscf7_rows = $wpdb->get_results($gscf7_sql);
+			}
+
+			$gscf7_unread_count = 0;
+			$gscf7_read_count   = 0;
+			$gscf7_new_today    = 0;
+			$gscf7_today        = current_time('Y-m-d');
+
+			// Build 30 empty day-buckets (oldest first) for the trend line chart.
+			$gscf7_daily_counts = array();
+			for ($gscf7_i = 29; $gscf7_i >= 0; $gscf7_i--) {
+				$gscf7_day                          = gmdate('Y-m-d', strtotime("-{$gscf7_i} days", current_time('timestamp'))); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Site-local "today" is intentional here.
+				$gscf7_daily_counts[$gscf7_day] = 0;
+			}
+
+			$gscf7_form_titles = array(); // form_id => cached title, used for the daily-stats loop only.
+
+			foreach ($gscf7_rows as $gscf7_row) {
+				$gscf7_data   = @unserialize($gscf7_row->value); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- Matches the storage format used across the rest of this plugin.
+				$gscf7_status = (is_array($gscf7_data) && isset($gscf7_data['cfdb7_status']) && 'read' === $gscf7_data['cfdb7_status']) ? 'read' : 'unread';
+
+				if ('read' === $gscf7_status) {
+					++$gscf7_read_count;
 				} else {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table, hardcoded literal query; $gscf7_sql's only interpolated value is the table name, escaped with esc_sql() above.
-					$gscf7_rows = $wpdb->get_results($gscf7_sql);
+					++$gscf7_unread_count;
 				}
 
-				$gscf7_unread_count = 0;
-				$gscf7_read_count   = 0;
-				$gscf7_new_today    = 0;
-				$gscf7_today        = current_time('Y-m-d');
+				$gscf7_day = gmdate('Y-m-d', strtotime($gscf7_row->date));
 
-				// Build 30 empty day-buckets (oldest first) for the trend line chart.
-				$gscf7_daily_counts = array();
-				for ($gscf7_i = 29; $gscf7_i >= 0; $gscf7_i--) {
-					$gscf7_day                          = gmdate('Y-m-d', strtotime("-{$gscf7_i} days", current_time('timestamp'))); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Site-local "today" is intentional here.
-					$gscf7_daily_counts[$gscf7_day] = 0;
+				if (isset($gscf7_daily_counts[$gscf7_day])) {
+					++$gscf7_daily_counts[$gscf7_day];
 				}
 
-				$gscf7_form_titles = array(); // form_id => cached title, used for the daily-stats loop only.
-
-				foreach ($gscf7_rows as $gscf7_row) {
-					$gscf7_data   = @unserialize($gscf7_row->value); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- Matches the storage format used across the rest of this plugin.
-					$gscf7_status = (is_array($gscf7_data) && isset($gscf7_data['cfdb7_status']) && 'read' === $gscf7_data['cfdb7_status']) ? 'read' : 'unread';
-
-					if ('read' === $gscf7_status) {
-						++$gscf7_read_count;
-					} else {
-						++$gscf7_unread_count;
-					}
-
-					$gscf7_day = gmdate('Y-m-d', strtotime($gscf7_row->date));
-
-					if (isset($gscf7_daily_counts[$gscf7_day])) {
-						++$gscf7_daily_counts[$gscf7_day];
-					}
-
-					if ($gscf7_day === $gscf7_today) {
-						++$gscf7_new_today;
-					}
+				if ($gscf7_day === $gscf7_today) {
+					++$gscf7_new_today;
 				}
+			}
 
-				// Forms list for the "Form" filter dropdown on the Recent Entries table.
-				$gscf7_forms = get_posts(
-					array(
-						'post_type'      => 'wpcf7_contact_form',
-						'post_status'    => 'publish',
-						'posts_per_page' => -1,
-						'orderby'        => 'title',
-						'order'          => 'ASC',
-					)
-				);
+			// Forms list for the "Form" filter dropdown on the Recent Entries table.
+			$gscf7_forms = get_posts(
+				array(
+					'post_type'      => 'wpcf7_contact_form',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
 
-				$gscf7_chart_labels = array_map(
-					function ($gscf7_d) {
-						return gmdate('M j', strtotime($gscf7_d));
-					},
-					array_keys($gscf7_daily_counts)
-				);
-				$gscf7_chart_values = array_values($gscf7_daily_counts);
+			$gscf7_chart_labels = array_map(
+				function ($gscf7_d) {
+					return gmdate('M j', strtotime($gscf7_d));
+				},
+				array_keys($gscf7_daily_counts)
+			);
+			$gscf7_chart_values = array_values($gscf7_daily_counts);
 			?>
 
-				<div class="welcome-wrapper w-100 p-40 mb-30 mt-30">
-					<div class="gscf7-entries-dashboard">
+			<div class="welcome-wrapper w-100 p-40 mb-30 mt-30">
+				<div class="gscf7-entries-dashboard">
 
-						<div class="welcome-heading mb-20">
-							<span><?php echo esc_html__('Entries Dashboard', 'cf7-google-sheets-connector'); ?></span>
-						</div>
-						<p class="mb-30"><?php echo esc_html__('Track how your Contact Form 7 submissions are coming in and which ones still need attention.', 'cf7-google-sheets-connector'); ?></p>
-
-						<div class="gscf7-filter-form mb-20">
-							<label for="gscf7-entries-filter-form"><?php echo esc_html__('Form', 'cf7-google-sheets-connector'); ?></label>
-
-							<select id="gscf7-entries-filter-form" class="gsc-select">
-								<option value="0"><?php echo esc_html__('All Forms', 'cf7-google-sheets-connector'); ?></option>
-
-								<?php foreach ($gscf7_forms as $gscf7_form) : ?>
-									<option value="<?php echo esc_attr($gscf7_form->ID); ?>"><?php echo esc_html(get_the_title($gscf7_form)); ?></option>
-								<?php endforeach; ?>
-							</select>
-							<span id="gscf7-entries-loader" class="loading d-none" aria-hidden="true"></span>
-						</div>
-
-						<input type="hidden" id="gscf7-dashboard-stats-nonce" value="<?php echo esc_attr(wp_create_nonce('gscf7-dashboard-stats')); ?>">
-
-						<!-- ============================= -->
-						<!-- STAT CARDS                     -->
-						<!-- ============================= -->
-						<div class="gscf7-stat-grid mb-30">
-							<div class="gscf7-stat-card">
-								<div class="gscf7-stat-icon gscf7-stat-icon-total">
-									<span class="dashicons dashicons-list-view"></span>
-								</div>
-								<div class="gscf7-stat-body">
-									<div class="gscf7-stat-label"><?php echo esc_html__('Total Entries', 'cf7-google-sheets-connector'); ?></div>
-									<div class="gscf7-stat-number" id="gscf7-stat-total"><?php echo esc_html(number_format_i18n($gscf7_total_entries)); ?></div>
-								</div>
-							</div>
-
-							<div class="gscf7-stat-card">
-								<div class="gscf7-stat-icon gscf7-stat-icon-unread">
-									<span class="dashicons dashicons-email-alt"></span>
-								</div>
-								<div class="gscf7-stat-body">
-									<div class="gscf7-stat-label"><?php echo esc_html__('Unread', 'cf7-google-sheets-connector'); ?></div>
-									<div class="gscf7-stat-number" id="gscf7-stat-unread"><?php echo esc_html(number_format_i18n($gscf7_unread_count)); ?></div>
-								</div>
-							</div>
-
-							<div class="gscf7-stat-card">
-								<div class="gscf7-stat-icon gscf7-stat-icon-read">
-									<span class="dashicons dashicons-yes"></span>
-								</div>
-								<div class="gscf7-stat-body">
-									<div class="gscf7-stat-label"><?php echo esc_html__('Read', 'cf7-google-sheets-connector'); ?></div>
-									<div class="gscf7-stat-number" id="gscf7-stat-read"><?php echo esc_html(number_format_i18n($gscf7_read_count)); ?></div>
-								</div>
-							</div>
-
-							<div class="gscf7-stat-card">
-								<div class="gscf7-stat-icon gscf7-stat-icon-new">
-									<span class="dashicons dashicons-plus-alt2"></span>
-								</div>
-								<div class="gscf7-stat-body">
-									<div class="gscf7-stat-label"><?php echo esc_html__('New Today', 'cf7-google-sheets-connector'); ?></div>
-									<div class="gscf7-stat-number" id="gscf7-stat-new-today"><?php echo esc_html(number_format_i18n($gscf7_new_today)); ?></div>
-								</div>
-							</div>
-						</div>
-
-						<!-- ============================= -->
-						<!-- CHARTS                         -->
-						<!-- ============================= -->
-
-
-						<div class="gscf7-chart-grid mb-30">
-							<div class="gscf7-chart-card inner-wrap gscf7-chart-card-line p-20">
-								<div class="para-heading fw-600 mb-20"><?php echo esc_html__('Entries Over Time (Last 30 Days)', 'cf7-google-sheets-connector'); ?></div>
-								<canvas id="gscf7-entries-line-chart" height="110"></canvas>
-							</div>
-
-							<div class="gscf7-chart-card inner-wrap gscf7-chart-card-pie p-20">
-								<div class="para-heading fw-600 mb-20"><?php echo esc_html__('Entries by Status', 'cf7-google-sheets-connector'); ?></div>
-								<canvas id="gscf7-entries-pie-chart" height="180"></canvas>
-							</div>
-						</div>
-
-						<div class="text-right">
-							<a href="<?php echo esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config&tab=cf7_db')); ?>"
-								class="button gscf7-view-all-entries">
-								<?php echo esc_html__('View All Entries', 'cf7-google-sheets-connector'); ?>
-							</a>
-						</div>
-
-						<script type="application/json" id="gscf7-dashboard-chart-data">
-							<?php
-							echo wp_json_encode(
-								array(
-									'labels' => $gscf7_chart_labels,
-									'values' => $gscf7_chart_values,
-									'read'   => $gscf7_read_count,
-									'unread' => $gscf7_unread_count,
-									'i18n'   => array(
-										'entries' => esc_html__('Entries', 'cf7-google-sheets-connector'),
-										'read'    => esc_html__('Read', 'cf7-google-sheets-connector'),
-										'unread'  => esc_html__('Unread', 'cf7-google-sheets-connector'),
-									),
-								)
-							);
-							?>
-						</script>
-
+					<div class="welcome-heading mb-20">
+						<span><?php echo esc_html__('Entries Dashboard', 'cf7-google-sheets-connector'); ?></span>
 					</div>
+					<p class="mb-30"><?php echo esc_html__('Track how your Contact Form 7 submissions are coming in and which ones still need attention.', 'cf7-google-sheets-connector'); ?></p>
+
+					<div class="gscf7-filter-form mb-20">
+						<label for="gscf7-entries-filter-form"><?php echo esc_html__('Form', 'cf7-google-sheets-connector'); ?></label>
+
+						<select id="gscf7-entries-filter-form" class="gsc-select">
+							<option value="0"><?php echo esc_html__('All Forms', 'cf7-google-sheets-connector'); ?></option>
+
+							<?php foreach ($gscf7_forms as $gscf7_form) : ?>
+								<option value="<?php echo esc_attr($gscf7_form->ID); ?>"><?php echo esc_html(get_the_title($gscf7_form)); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<span id="gscf7-entries-loader" class="loading d-none" aria-hidden="true"></span>
+					</div>
+
+					<input type="hidden" id="gscf7-dashboard-stats-nonce" value="<?php echo esc_attr(wp_create_nonce('gscf7-dashboard-stats')); ?>">
+
+					<!-- ============================= -->
+					<!-- STAT CARDS                     -->
+					<!-- ============================= -->
+					<div class="gscf7-stat-grid mb-30">
+						<div class="gscf7-stat-card">
+							<div class="gscf7-stat-icon gscf7-stat-icon-total">
+								<span class="dashicons dashicons-list-view"></span>
+							</div>
+							<div class="gscf7-stat-body">
+								<div class="gscf7-stat-label"><?php echo esc_html__('Total Entries', 'cf7-google-sheets-connector'); ?></div>
+								<div class="gscf7-stat-number" id="gscf7-stat-total"><?php echo esc_html(number_format_i18n($gscf7_total_entries)); ?></div>
+							</div>
+						</div>
+
+						<div class="gscf7-stat-card">
+							<div class="gscf7-stat-icon gscf7-stat-icon-unread">
+								<span class="dashicons dashicons-email-alt"></span>
+							</div>
+							<div class="gscf7-stat-body">
+								<div class="gscf7-stat-label"><?php echo esc_html__('Unread', 'cf7-google-sheets-connector'); ?></div>
+								<div class="gscf7-stat-number" id="gscf7-stat-unread"><?php echo esc_html(number_format_i18n($gscf7_unread_count)); ?></div>
+							</div>
+						</div>
+
+						<div class="gscf7-stat-card">
+							<div class="gscf7-stat-icon gscf7-stat-icon-read">
+								<span class="dashicons dashicons-yes"></span>
+							</div>
+							<div class="gscf7-stat-body">
+								<div class="gscf7-stat-label"><?php echo esc_html__('Read', 'cf7-google-sheets-connector'); ?></div>
+								<div class="gscf7-stat-number" id="gscf7-stat-read"><?php echo esc_html(number_format_i18n($gscf7_read_count)); ?></div>
+							</div>
+						</div>
+
+						<div class="gscf7-stat-card">
+							<div class="gscf7-stat-icon gscf7-stat-icon-new">
+								<span class="dashicons dashicons-plus-alt2"></span>
+							</div>
+							<div class="gscf7-stat-body">
+								<div class="gscf7-stat-label"><?php echo esc_html__('New Today', 'cf7-google-sheets-connector'); ?></div>
+								<div class="gscf7-stat-number" id="gscf7-stat-new-today"><?php echo esc_html(number_format_i18n($gscf7_new_today)); ?></div>
+							</div>
+						</div>
+					</div>
+
+					<!-- ============================= -->
+					<!-- CHARTS                         -->
+					<!-- ============================= -->
+
+
+					<div class="gscf7-chart-grid mb-30">
+						<div class="gscf7-chart-card inner-wrap gscf7-chart-card-line p-20">
+							<div class="para-heading fw-600 mb-20"><?php echo esc_html__('Entries Over Time (Last 30 Days)', 'cf7-google-sheets-connector'); ?></div>
+							<canvas id="gscf7-entries-line-chart" height="110"></canvas>
+						</div>
+
+						<div class="gscf7-chart-card inner-wrap gscf7-chart-card-pie p-20">
+							<div class="para-heading fw-600 mb-20"><?php echo esc_html__('Entries by Status', 'cf7-google-sheets-connector'); ?></div>
+							<canvas id="gscf7-entries-pie-chart" height="180"></canvas>
+						</div>
+					</div>
+
+					<div class="text-right">
+						<a href="<?php echo esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config&tab=cf7_db')); ?>"
+							class="button gscf7-view-all-entries">
+							<?php echo esc_html__('View All Entries', 'cf7-google-sheets-connector'); ?>
+						</a>
+					</div>
+
+					<script type="application/json" id="gscf7-dashboard-chart-data">
+						<?php
+						echo wp_json_encode(
+							array(
+								'labels' => $gscf7_chart_labels,
+								'values' => $gscf7_chart_values,
+								'read'   => $gscf7_read_count,
+								'unread' => $gscf7_unread_count,
+								'i18n'   => array(
+									'entries' => esc_html__('Entries', 'cf7-google-sheets-connector'),
+									'read'    => esc_html__('Read', 'cf7-google-sheets-connector'),
+									'unread'  => esc_html__('Unread', 'cf7-google-sheets-connector'),
+								),
+							)
+						);
+						?>
+					</script>
+
 				</div>
-			<?php } ?>
+			</div>
+
 
 			<!---Start PRO FEATURE--->
 			<div class="pro-container mt-30 welcome-wrapper">

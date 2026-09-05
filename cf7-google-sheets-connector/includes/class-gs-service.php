@@ -204,6 +204,14 @@ class Gs_Connector_Service
 			)
 		);
 
+		// This is a preview only -- disable the submit button so it can't
+		// actually be triggered (submitting here isn't a real form request).
+		$html = preg_replace(
+			'/(<(?:input|button)\b[^>]*type=["\']submit["\'][^>]*)(\/?>)/i',
+			'$1 disabled="disabled"$2',
+			$html
+		);
+
 		wp_send_json_success(
 			array(
 				'html' => $html,

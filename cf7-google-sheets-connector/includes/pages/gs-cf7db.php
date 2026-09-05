@@ -386,7 +386,7 @@ class GS_CF7DB
 				</span>
 			<?php endforeach; ?>
 		</div>
-		<?php
+	<?php
 	}
 
 	/**
@@ -488,104 +488,106 @@ class GS_CF7DB
 			* @since 5.2.4
 			*/
 
-		if (empty($gscf7_table)) { ?>
-			<div class="gsc-cf7-wrapper mt-40">
-				<div class="inner-wrap w-100 bg-white p-40">
-					<div class="gscf7-entries-dashboard">
+		//	if (empty($gscf7_table)) { 
+	?>
+		<div class="gsc-cf7-wrapper mt-40">
+			<div class="inner-wrap w-100 bg-white p-40">
+				<div class="gscf7-entries-dashboard">
 
-						<div class="welcome-heading mb-20">
-							<span><?php echo esc_html__('CF7 Database', 'cf7-google-sheets-connector'); ?></span>
-						</div>
+					<div class="welcome-heading mb-20">
+						<span><?php echo esc_html__('CF7 Database', 'cf7-google-sheets-connector'); ?></span>
+					</div>
 
-						<p class="mb-30"><?php echo esc_html__('Browse, filter, and manage every Contact Form 7 submission stored in your database.', 'cf7-google-sheets-connector'); ?></p>
-						<?php $this->gscf7_render_entries_analytics($form_id); ?>
+					<p class="mb-30"><?php echo esc_html__('Browse, filter, and manage every Contact Form 7 submission stored in your database.', 'cf7-google-sheets-connector'); ?></p>
+					<?php $this->gscf7_render_entries_analytics($form_id); ?>
 
-						<form method="post" action="" id="gscf7-entries-bulk-form">
+					<form method="post" action="" id="gscf7-entries-bulk-form">
 
-							<?php
-							/*
+						<?php
+						/*
 						 * GSCF7_FormEntry_Table::process_bulk_action() checks a
 						 * 'bulk-contact_forms' nonce, but nothing ever rendered
 						 * that field -- so a bulk submit was always rejected by
 						 * wp_verify_nonce() before this fix.
 						 */
-							wp_nonce_field('bulk-contact_forms');
-							?>
+						wp_nonce_field('bulk-contact_forms');
+						?>
 
-							<div class="gscf7-menu-db d-flex justify-between align-center flex-wrap gap-15">
-								<div class="gscf7-menu-db-left d-flex align-center flex-wrap gap-15">
-									<div id="gscf7-entries-toolbar" class="d-flex align-center flex-wrap gap-10"></div>
+						<div class="gscf7-menu-db d-flex justify-between align-center flex-wrap gap-15">
+							<div class="gscf7-menu-db-left d-flex align-center flex-wrap gap-15">
+								<div id="gscf7-entries-toolbar" class="d-flex align-center flex-wrap gap-10"></div>
 
-									<div class="gscf7-filter-form">
-										<label for="gscf7-entries-filter-form"><?php echo esc_html__('Form', 'cf7-google-sheets-connector'); ?></label>
-										<select id="gscf7-entries-filter-form" class="gsc-select">
-											<option value="0">
-												<?php echo esc_html__('All Forms', 'cf7-google-sheets-connector'); ?>
-											</option>
-
-											<?php foreach ($forms as $gscf7_form) : ?>
-												<option value="<?php echo esc_attr($gscf7_form['id']); ?>">
-													<?php echo esc_html($gscf7_form['title']); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
-										<span id="gscf7-entries-loader" class="loading d-none" aria-hidden="true"></span>
-									</div>
-								</div>
-								<?php $this->gscf7_render_status_tabs($form_id); ?>
-							</div>
-
-							<div class="gscf7-recent-entries-wrap mt-20" id="gscf7-entries-table-wrap">
-
-								<div class="gscf7-table-scroll gscf7-freeze-col1">
-									<table class="widefat gscf7-sortable-table" id="gscf7-entries-table">
-										<thead id="gscf7-entries-thead">
-											<tr>
-												<th><?php esc_html_e('Loading…', 'cf7-google-sheets-connector'); ?></th>
-											</tr>
-										</thead>
-										<tbody id="gscf7-entries-table-body">
-											<tr>
-												<td><?php esc_html_e('Loading…', 'cf7-google-sheets-connector'); ?></td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-
-						</form>
-
-						<div class="gscf7-entries-pagination">
-							<div class="gscf7-pg-total"><?php echo esc_html__('Total', 'cf7-google-sheets-connector'); ?> <span id="gscf7-pg-total-count">0</span></div>
-							<div class="gscf7-pg-controls">
-								<select id="gscf7-entries-per-page" class="gscf7-pg-per-page auto-select">
-									<?php foreach (array(10, 20, 50, 100) as $per_page_option) : ?>
-										<option value="<?php echo esc_attr($per_page_option); ?>">
-											<?php
-											echo esc_html(
-												sprintf(
-													/* translators: %d: number of items per page */
-													__('%d / Page', 'cf7-google-sheets-connector'),
-													$per_page_option
-												)
-											);
-											?>
+								<div class="gscf7-filter-form">
+									<label for="gscf7-entries-filter-form"><?php echo esc_html__('Form', 'cf7-google-sheets-connector'); ?></label>
+									<select id="gscf7-entries-filter-form" class="gsc-select">
+										<option value="0">
+											<?php echo esc_html__('All Forms', 'cf7-google-sheets-connector'); ?>
 										</option>
-									<?php endforeach; ?>
-								</select>
-								<button type="button" class="gscf7-pg-arrow" id="gscf7-pg-prev" aria-label="<?php esc_attr_e('Previous page', 'cf7-google-sheets-connector'); ?>">&lsaquo;</button>
-								<span class="gscf7-pg-current" id="gscf7-pg-current">1</span>
-								<button type="button" class="gscf7-pg-arrow" id="gscf7-pg-next" aria-label="<?php esc_attr_e('Next page', 'cf7-google-sheets-connector'); ?>">&rsaquo;</button>
-								<span class="gscf7-pg-goto-label"><?php esc_html_e('Go to', 'cf7-google-sheets-connector'); ?></span>
-								<input type="number" min="1" class="gscf7-pg-goto-input" id="gscf7-pg-goto" value="1">
+
+										<?php foreach ($forms as $gscf7_form) : ?>
+											<option value="<?php echo esc_attr($gscf7_form['id']); ?>">
+												<?php echo esc_html($gscf7_form['title']); ?>
+											</option>
+										<?php endforeach; ?>
+									</select>
+									<span id="gscf7-entries-loader" class="loading d-none" aria-hidden="true"></span>
+								</div>
 							</div>
+							<?php $this->gscf7_render_status_tabs($form_id); ?>
 						</div>
 
+						<div class="gscf7-recent-entries-wrap mt-20" id="gscf7-entries-table-wrap">
+
+							<div class="gscf7-table-scroll gscf7-freeze-col1">
+								<table class="widefat gscf7-sortable-table" id="gscf7-entries-table">
+									<thead id="gscf7-entries-thead">
+										<tr>
+											<th><?php esc_html_e('Loading…', 'cf7-google-sheets-connector'); ?></th>
+										</tr>
+									</thead>
+									<tbody id="gscf7-entries-table-body">
+										<tr>
+											<td><?php esc_html_e('Loading…', 'cf7-google-sheets-connector'); ?></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+
+					</form>
+
+					<div class="gscf7-entries-pagination">
+						<div class="gscf7-pg-total"><?php echo esc_html__('Total', 'cf7-google-sheets-connector'); ?> <span id="gscf7-pg-total-count">0</span></div>
+						<div class="gscf7-pg-controls">
+							<select id="gscf7-entries-per-page" class="gscf7-pg-per-page auto-select">
+								<?php foreach (array(10, 20, 50, 100) as $per_page_option) : ?>
+									<option value="<?php echo esc_attr($per_page_option); ?>">
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: %d: number of items per page */
+												__('%d / Page', 'cf7-google-sheets-connector'),
+												$per_page_option
+											)
+										);
+										?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<button type="button" class="gscf7-pg-arrow" id="gscf7-pg-prev" aria-label="<?php esc_attr_e('Previous page', 'cf7-google-sheets-connector'); ?>">&lsaquo;</button>
+							<span class="gscf7-pg-current" id="gscf7-pg-current">1</span>
+							<button type="button" class="gscf7-pg-arrow" id="gscf7-pg-next" aria-label="<?php esc_attr_e('Next page', 'cf7-google-sheets-connector'); ?>">&rsaquo;</button>
+							<span class="gscf7-pg-goto-label"><?php esc_html_e('Go to', 'cf7-google-sheets-connector'); ?></span>
+							<input type="number" min="1" class="gscf7-pg-goto-input" id="gscf7-pg-goto" value="1">
+						</div>
 					</div>
 
 				</div>
+
 			</div>
-			</div>
-		<?php } ?>
+		</div>
+		</div>
+		<?php // } 
+		?>
 		<input type="hidden" id="gscf7-dashboard-stats-nonce" value="<?php echo esc_attr(wp_create_nonce('gscf7-dashboard-stats')); ?>">
 		<input type="hidden" id="gscf7-dashboard-entries-nonce" value="<?php echo esc_attr(wp_create_nonce('gscf7-dashboard-entries')); ?>">
 		<input type="hidden" id="gscf7-cf7db-table-nonce" value="<?php echo esc_attr(wp_create_nonce('gscf7-cf7db-entries')); ?>">

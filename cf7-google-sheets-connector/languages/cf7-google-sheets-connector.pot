@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: GSheetConnector for CF7\n"
-"POT-Creation-Date: 2026-09-02 18:26+0530\n"
+"POT-Creation-Date: 2026-09-05 18:18+0530\n"
 "PO-Revision-Date: 2025-11-01 15:44+0530\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -21,106 +21,106 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: *.min.js\n"
 "X-Poedit-SearchPathExcluded-1: lib/vendor\n"
 
-#: google-sheet-connector.php:255 includes/pages/google-sheet-settings.php:410
+#: google-sheet-connector.php:254 includes/pages/google-sheet-settings.php:410
 msgid "Settings"
 msgstr ""
 
-#: google-sheet-connector.php:1035
+#: google-sheet-connector.php:1034
 msgid "View Documentation"
 msgstr ""
 
-#: google-sheet-connector.php:1035 includes/pages/admin-footer.php:108
+#: google-sheet-connector.php:1034 includes/pages/admin-footer.php:108
 msgid "Docs"
 msgstr ""
 
-#: google-sheet-connector.php:1036
+#: google-sheet-connector.php:1035
 msgid "Get Support"
 msgstr ""
 
-#: google-sheet-connector.php:1036 includes/pages/admin-footer.php:128
+#: google-sheet-connector.php:1035 includes/pages/admin-footer.php:128
 msgid "Support"
 msgstr ""
 
-#: google-sheet-connector.php:1132
+#: google-sheet-connector.php:1131
 msgid ""
 "Google Sheet Connector Add-on requires Contact Form 7 plugin to be installed "
 "and activated."
 msgstr ""
 
-#: google-sheet-connector.php:1146 google-sheet-connector.php:1147
-#: includes/class-gs-service.php:2114 includes/pages/gs-integration.php:173
+#: google-sheet-connector.php:1145 google-sheet-connector.php:1146
+#: includes/class-gs-service.php:2122 includes/pages/gs-integration.php:173
 msgid "Google Sheets"
 msgstr ""
 
-#: google-sheet-connector.php:1162
+#: google-sheet-connector.php:1161
 msgid "You are not allowed to access this page."
 msgstr ""
 
-#: google-sheet-connector.php:1404 includes/pages/gs-entries-dashboard.php:145
+#: google-sheet-connector.php:1403 includes/pages/gs-entries-dashboard.php:145
 msgid "ID"
 msgstr ""
 
-#: google-sheet-connector.php:1405 includes/class-gsc-error-logs.php:239
+#: google-sheet-connector.php:1404 includes/class-gsc-error-logs.php:239
 #: includes/pages/gs-entries-dashboard.php:146
 msgid "Date"
 msgstr ""
 
-#: google-sheet-connector.php:1406 includes/class-gs-service.php:1155
+#: google-sheet-connector.php:1405 includes/class-gs-service.php:1163
 #: includes/pages/multisheet-sheets-connection.php:173
 #: includes/pages/multisheet-sheets-connection.php:447
 msgid "Form Name"
 msgstr ""
 
-#: google-sheet-connector.php:1407
+#: google-sheet-connector.php:1406
 #: includes/pages/class-gs-cf7db-formEntryList.php:177
 #: includes/pages/gs-entries-dashboard.php:148
 #: includes/pages/multisheet-sheets-connection.php:205
 msgid "Status"
 msgstr ""
 
-#: google-sheet-connector.php:1408
+#: google-sheet-connector.php:1407
 #: includes/pages/class-gs-cf7db-formEntryList.php:219
 #: includes/pages/gs-entries-dashboard.php:149
 #: includes/pages/multisheet-sheets-connection.php:189
 msgid "Actions"
 msgstr ""
 
-#: google-sheet-connector.php:1409 includes/pages/gs-cf7db.php:544
-#: includes/pages/gs-cf7db.php:549
+#: google-sheet-connector.php:1408 includes/pages/gs-cf7db.php:545
+#: includes/pages/gs-cf7db.php:550
 msgid "Loading…"
 msgstr ""
 
-#: google-sheet-connector.php:1410
+#: google-sheet-connector.php:1409
 msgid "Unable to load entries."
 msgstr ""
 
-#: google-sheet-connector.php:1411
+#: google-sheet-connector.php:1410
 msgid "Delete the selected entries? This cannot be undone."
 msgstr ""
 
-#: google-sheet-connector.php:1412
+#: google-sheet-connector.php:1411
 msgid "Select at least one entry first."
 msgstr ""
 
-#: google-sheet-connector.php:1413
+#: google-sheet-connector.php:1412
 #: includes/pages/class-gs-cf7db-formEntryList.php:380
 msgid "Select All"
 msgstr ""
 
-#: google-sheet-connector.php:1860 includes/class-gs-service.php:2827
+#: google-sheet-connector.php:1859 includes/class-gs-service.php:2835
 #: includes/pages/dashboard.php:589
 msgid "Upgrade to Pro"
 msgstr ""
 
-#: google-sheet-connector.php:1898
+#: google-sheet-connector.php:1897
 msgid "Contact Form 7 - GSheetConnector"
 msgstr ""
 
-#: includes/class-gs-service.php:172 includes/class-gs-service.php:246
-#: includes/class-gs-service.php:547 includes/class-gs-service.php:838
-#: includes/class-gs-service.php:879 includes/class-gs-service.php:5844
-#: includes/class-gs-service.php:6083 includes/class-gs-service.php:6127
-#: includes/class-gs-service.php:6249 includes/class-gsc-error-logs.php:436
+#: includes/class-gs-service.php:172 includes/class-gs-service.php:254
+#: includes/class-gs-service.php:555 includes/class-gs-service.php:846
+#: includes/class-gs-service.php:887 includes/class-gs-service.php:5852
+#: includes/class-gs-service.php:6091 includes/class-gs-service.php:6135
+#: includes/class-gs-service.php:6257 includes/class-gsc-error-logs.php:436
 msgid "Permission denied."
 msgstr ""
 
@@ -132,280 +132,280 @@ msgstr ""
 msgid "Contact Form 7 form not found."
 msgstr ""
 
-#: includes/class-gs-service.php:254
+#: includes/class-gs-service.php:262
 msgid "Invalid form."
 msgstr ""
 
-#: includes/class-gs-service.php:260
+#: includes/class-gs-service.php:268
 msgid "Form not found."
 msgstr ""
 
-#: includes/class-gs-service.php:367
+#: includes/class-gs-service.php:375
 msgid "Imported Feed"
 msgstr ""
 
-#: includes/class-gs-service.php:551
+#: includes/class-gs-service.php:559
 msgid "Contact Form 7 is not active."
 msgstr ""
 
-#: includes/class-gs-service.php:559
+#: includes/class-gs-service.php:567
 msgid "That file is not a valid form export."
 msgstr ""
 
-#: includes/class-gs-service.php:567
+#: includes/class-gs-service.php:575
 msgid "Imported Form"
 msgstr ""
 
-#: includes/class-gs-service.php:581
+#: includes/class-gs-service.php:589
 msgid "Could not save the imported form."
 msgstr ""
 
-#: includes/class-gs-service.php:592
+#: includes/class-gs-service.php:600
 msgid ""
 "Form and its Google Sheets Connector settings were imported successfully."
 msgstr ""
 
-#: includes/class-gs-service.php:593
+#: includes/class-gs-service.php:601
 msgid "Form imported successfully."
 msgstr ""
 
-#: includes/class-gs-service.php:606
+#: includes/class-gs-service.php:614
 #, php-format
 msgid "%d saved entry in the file was not imported."
 msgid_plural "%d saved entries in the file were not imported."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-gs-service.php:863
+#: includes/class-gs-service.php:871
 msgid "GDPR notice settings saved successfully."
 msgstr ""
 
-#: includes/class-gs-service.php:895
+#: includes/class-gs-service.php:903
 msgid "Failed to clear logs."
 msgstr ""
 
-#: includes/class-gs-service.php:902
+#: includes/class-gs-service.php:910
 msgid "Logs cleared successfully."
 msgstr ""
 
-#: includes/class-gs-service.php:930 includes/class-gs-service.php:941
+#: includes/class-gs-service.php:938 includes/class-gs-service.php:949
 msgid "Your uploaded JSON key is invalid."
 msgstr ""
 
-#: includes/class-gs-service.php:945
+#: includes/class-gs-service.php:953
 msgid "Invalid JSON: file is not a service_account type."
 msgstr ""
 
-#: includes/class-gs-service.php:967 includes/class-gs-service.php:1043
-#: includes/class-gs-service.php:1927
+#: includes/class-gs-service.php:975 includes/class-gs-service.php:1051
+#: includes/class-gs-service.php:1935
 msgid "Permission denied"
 msgstr ""
 
-#: includes/class-gs-service.php:984
+#: includes/class-gs-service.php:992
 msgid "Invalid JSON format"
 msgstr ""
 
-#: includes/class-gs-service.php:1156
+#: includes/class-gs-service.php:1164
 #: includes/pages/multisheet-sheets-connection.php:105
 #: includes/pages/multisheet-sheets-connection.php:165
 #: includes/pages/multisheet-sheets-connection.php:423
 msgid "Feed Name"
 msgstr ""
 
-#: includes/class-gs-service.php:1157
+#: includes/class-gs-service.php:1165
 msgid "Sheet URL"
 msgstr ""
 
-#: includes/class-gs-service.php:1164
+#: includes/class-gs-service.php:1172
 msgid "No Contact Form 7 feeds found."
 msgstr ""
 
-#: includes/class-gs-service.php:1206
+#: includes/class-gs-service.php:1214
 msgid "Not connected"
 msgstr ""
 
-#: includes/class-gs-service.php:1317 includes/class-gs-service.php:2867
+#: includes/class-gs-service.php:1325 includes/class-gs-service.php:2875
 msgid "Authenticated Using Existing Method"
 msgstr ""
 
-#: includes/class-gs-service.php:1320
+#: includes/class-gs-service.php:1328
 msgid "Authenticated Using Service Account"
 msgstr ""
 
-#: includes/class-gs-service.php:1498
+#: includes/class-gs-service.php:1506
 msgid "Active plugins"
 msgstr ""
 
-#: includes/class-gs-service.php:1619
+#: includes/class-gs-service.php:1627
 msgid ".htaccess Rules"
 msgstr ""
 
-#: includes/class-gs-service.php:1760
+#: includes/class-gs-service.php:1768
 msgid "The main WordPress directory"
 msgstr ""
 
-#: includes/class-gs-service.php:1767
+#: includes/class-gs-service.php:1775
 msgid "The wp-content directory"
 msgstr ""
 
-#: includes/class-gs-service.php:1774
+#: includes/class-gs-service.php:1782
 msgid "The uploads directory"
 msgstr ""
 
-#: includes/class-gs-service.php:1781
+#: includes/class-gs-service.php:1789
 msgid "The plugins directory"
 msgstr ""
 
-#: includes/class-gs-service.php:1788
+#: includes/class-gs-service.php:1796
 msgid "The themes directory"
 msgstr ""
 
-#: includes/class-gs-service.php:1945
+#: includes/class-gs-service.php:1953
 msgid "Access code can't be blank."
 msgstr ""
 
-#: includes/class-gs-service.php:1981
+#: includes/class-gs-service.php:1989
 msgid ""
 "Google did not accept this authorization. Please click \"Sign in with "
 "Google\" and try connecting again. If the problem continues, check the Error "
 "Logs below for details."
 msgstr ""
 
-#: includes/class-gs-service.php:2047 includes/class-gs-service.php:2056
+#: includes/class-gs-service.php:2055 includes/class-gs-service.php:2064
 msgid "Filesystem access is unavailable on this site."
 msgstr ""
 
-#: includes/class-gs-service.php:2103
+#: includes/class-gs-service.php:2111
 #: includes/pages/google-sheet-settings.php:73
 msgid "Existing"
 msgstr ""
 
-#: includes/class-gs-service.php:2107
+#: includes/class-gs-service.php:2115
 #: includes/pages/google-sheet-settings.php:81
 msgid "Service"
 msgstr ""
 
-#: includes/class-gs-service.php:2807
+#: includes/class-gs-service.php:2815
 msgid "Automatic sheet configuration"
 msgstr ""
 
-#: includes/class-gs-service.php:2809
+#: includes/class-gs-service.php:2817
 msgid "Smart field mapping"
 msgstr ""
 
-#: includes/class-gs-service.php:2811
+#: includes/class-gs-service.php:2819
 msgid "Conditional logic support"
 msgstr ""
 
-#: includes/class-gs-service.php:2813
+#: includes/class-gs-service.php:2821
 msgid "Header and row customization"
 msgstr ""
 
-#: includes/class-gs-service.php:2815
+#: includes/class-gs-service.php:2823
 msgid "Advanced mail tags"
 msgstr ""
 
-#: includes/class-gs-service.php:2817
+#: includes/class-gs-service.php:2825
 msgid "Real-time submission sync"
 msgstr ""
 
-#: includes/class-gs-service.php:2819
+#: includes/class-gs-service.php:2827
 msgid "Spreadsheet download option"
 msgstr ""
 
-#: includes/class-gs-service.php:2884
+#: includes/class-gs-service.php:2892
 msgid "Service account"
 msgstr ""
 
-#: includes/class-gs-service.php:2906
+#: includes/class-gs-service.php:2914
 msgid "Existing Client / Secret Key (Auto Setup)."
 msgstr ""
 
-#: includes/class-gs-service.php:2937 includes/class-gs-service.php:3006
+#: includes/class-gs-service.php:2945 includes/class-gs-service.php:3014
 msgid "Google Sheets Setup Required"
 msgstr ""
 
-#: includes/class-gs-service.php:2939 includes/class-gs-service.php:3008
+#: includes/class-gs-service.php:2947 includes/class-gs-service.php:3016
 msgid "your selected Method is : "
 msgstr ""
 
-#: includes/class-gs-service.php:2941
+#: includes/class-gs-service.php:2949
 msgid ""
 "To start sending form entries to Google Sheets, please connect your Google "
 "account first."
 msgstr ""
 
-#: includes/class-gs-service.php:2945
+#: includes/class-gs-service.php:2953
 msgid "✔ Click on the Sign in with Google button"
 msgstr ""
 
-#: includes/class-gs-service.php:2947
+#: includes/class-gs-service.php:2955
 msgid "✔ Log in using your Google account"
 msgstr ""
 
-#: includes/class-gs-service.php:2949
+#: includes/class-gs-service.php:2957
 msgid "✔ Select the Google account where your Sheets are stored"
 msgstr ""
 
-#: includes/class-gs-service.php:2951
+#: includes/class-gs-service.php:2959
 msgid "✔ Grant access to: Google Drive & Google Sheets"
 msgstr ""
 
-#: includes/class-gs-service.php:2953
+#: includes/class-gs-service.php:2961
 msgid "✔ Save the authentication code if prompted"
 msgstr ""
 
-#: includes/class-gs-service.php:2959 includes/class-gs-service.php:3032
+#: includes/class-gs-service.php:2967 includes/class-gs-service.php:3040
 msgid "Go to Integration Setup"
 msgstr ""
 
-#: includes/class-gs-service.php:2977
+#: includes/class-gs-service.php:2985
 msgid "Service Account (Recommended)."
 msgstr ""
 
-#: includes/class-gs-service.php:3010
+#: includes/class-gs-service.php:3018
 msgid "To connect Google Sheets using Service Account:"
 msgstr ""
 
-#: includes/class-gs-service.php:3014
+#: includes/class-gs-service.php:3022
 msgid "✔ Go to Google Cloud Console"
 msgstr ""
 
-#: includes/class-gs-service.php:3016
+#: includes/class-gs-service.php:3024
 msgid "✔ Create or select a project"
 msgstr ""
 
-#: includes/class-gs-service.php:3018
+#: includes/class-gs-service.php:3026
 msgid "✔ Enable Google Sheets & Drive APIs"
 msgstr ""
 
-#: includes/class-gs-service.php:3020
+#: includes/class-gs-service.php:3028
 msgid "✔ Create a Service Account"
 msgstr ""
 
-#: includes/class-gs-service.php:3022
+#: includes/class-gs-service.php:3030
 msgid "✔ Generate and download the JSON key"
 msgstr ""
 
-#: includes/class-gs-service.php:3024
+#: includes/class-gs-service.php:3032
 msgid "✔ Upload the JSON file here"
 msgstr ""
 
-#: includes/class-gs-service.php:3026
+#: includes/class-gs-service.php:3034
 msgid "✔ Share your Google Sheet with the Service Account email"
 msgstr ""
 
-#: includes/class-gs-service.php:3137
+#: includes/class-gs-service.php:3145
 msgid "Single Sheet Connection"
 msgstr ""
 
-#: includes/class-gs-service.php:3147
+#: includes/class-gs-service.php:3155
 msgid "Multi Sheet Connection"
 msgstr ""
 
-#: includes/class-gs-service.php:3149 includes/class-gs-service.php:3877
-#: includes/class-gs-service.php:3943 includes/class-gs-service.php:4013
-#: includes/class-gs-service.php:4159
+#: includes/class-gs-service.php:3157 includes/class-gs-service.php:3885
+#: includes/class-gs-service.php:3951 includes/class-gs-service.php:4021
+#: includes/class-gs-service.php:4167
 #: includes/pages/extensions/extensions.php:505
 #: includes/pages/extensions/extensions.php:651
 #: includes/pages/extensions/extensions.php:687
@@ -421,297 +421,297 @@ msgstr ""
 msgid "Pro"
 msgstr ""
 
-#: includes/class-gs-service.php:3164 includes/pages/dashboard.php:57
+#: includes/class-gs-service.php:3172 includes/pages/dashboard.php:57
 #: includes/pages/gs-integration.php:105
 msgid "Google Account Connection"
 msgstr ""
 
-#: includes/class-gs-service.php:3180 includes/pages/dashboard.php:72
+#: includes/class-gs-service.php:3188 includes/pages/dashboard.php:72
 #: includes/pages/gs-integration.php:266
 msgid "Connected Email Account"
 msgstr ""
 
-#: includes/class-gs-service.php:3201 includes/pages/dashboard.php:93
+#: includes/class-gs-service.php:3209 includes/pages/dashboard.php:93
 msgid " Connected"
 msgstr ""
 
-#: includes/class-gs-service.php:3220
+#: includes/class-gs-service.php:3228
 msgid "Manual Google Sheets Configuration"
 msgstr ""
 
-#: includes/class-gs-service.php:3224
+#: includes/class-gs-service.php:3232
 msgid "Connect your Google Sheet by entering the required sheet information."
 msgstr ""
 
-#: includes/class-gs-service.php:3232 includes/class-gs-service.php:3889
+#: includes/class-gs-service.php:3240 includes/class-gs-service.php:3897
 #: includes/pages/multisheet-sheets-connection.php:631
 #: includes/pages/multisheet-sheets-connection.php:846
 msgid "Sheet Name"
 msgstr ""
 
-#: includes/class-gs-service.php:3236
+#: includes/class-gs-service.php:3244
 #: includes/pages/multisheet-sheets-connection.php:852
 msgid ""
 "Enter the exact name of your Google Spreadsheet (as shown in Google Sheets)."
 msgstr ""
 
-#: includes/class-gs-service.php:3252 includes/class-gs-service.php:3284
-#: includes/class-gs-service.php:3318 includes/class-gs-service.php:3352
+#: includes/class-gs-service.php:3260 includes/class-gs-service.php:3292
+#: includes/class-gs-service.php:3326 includes/class-gs-service.php:3360
 #: includes/pages/multisheet-sheets-connection.php:117
 #: includes/pages/multisheet-sheets-connection.php:659
 #: includes/pages/multisheet-sheets-connection.php:699
 msgid "Please fill out this field"
 msgstr ""
 
-#: includes/class-gs-service.php:3264
+#: includes/class-gs-service.php:3272
 #: includes/pages/multisheet-sheets-connection.php:900
 msgid "Sheet ID"
 msgstr ""
 
-#: includes/class-gs-service.php:3268
+#: includes/class-gs-service.php:3276
 msgid "Paste the Spreadsheet ID from your Google Sheet URL. (Example: "
 msgstr ""
 
-#: includes/class-gs-service.php:3298
+#: includes/class-gs-service.php:3306
 msgid "Tab Name"
 msgstr ""
 
-#: includes/class-gs-service.php:3302
+#: includes/class-gs-service.php:3310
 #: includes/pages/multisheet-sheets-connection.php:960
 msgid ""
 "Enter the exact sheet tab name (e.g., Sheet1) from the bottom of your Google "
 "Spreadsheet."
 msgstr ""
 
-#: includes/class-gs-service.php:3330
+#: includes/class-gs-service.php:3338
 #: includes/pages/multisheet-sheets-connection.php:1008
 msgid "Tab ID"
 msgstr ""
 
-#: includes/class-gs-service.php:3334
+#: includes/class-gs-service.php:3342
 #: includes/pages/multisheet-sheets-connection.php:1014
 msgid "Get the Tab ID from your sheet URL after gid=."
 msgstr ""
 
-#: includes/class-gs-service.php:3373
+#: includes/class-gs-service.php:3381
 msgid "View Spreadsheet"
 msgstr ""
 
-#: includes/class-gs-service.php:3466
+#: includes/class-gs-service.php:3474
 msgid "Google Sheets Connection"
 msgstr ""
 
-#: includes/class-gs-service.php:3478
+#: includes/class-gs-service.php:3486
 msgid ""
 "Your Google Spreadsheet is securely connected and ready to receive form "
 "submissions in real time."
 msgstr ""
 
-#: includes/class-gs-service.php:3496
+#: includes/class-gs-service.php:3504
 msgid "Connected Successfully"
 msgstr ""
 
-#: includes/class-gs-service.php:3510
+#: includes/class-gs-service.php:3518
 msgid "Green status means the spreadsheet access is configured correctly."
 msgstr ""
 
-#: includes/class-gs-service.php:3516
+#: includes/class-gs-service.php:3524
 msgid "Red status means permission is missing. Please grant editor access."
 msgstr ""
 
-#: includes/class-gs-service.php:3534
+#: includes/class-gs-service.php:3542
 msgid "Sharing Required"
 msgstr ""
 
-#: includes/class-gs-service.php:3542
+#: includes/class-gs-service.php:3550
 msgid ""
 "Please share your Google Spreadsheet with the following service account to "
 "enable automatic syncing."
 msgstr ""
 
-#: includes/class-gs-service.php:3550
+#: includes/class-gs-service.php:3558
 msgid ""
 "After sharing the spreadsheet, refresh the page to view the updated sharing "
 "status."
 msgstr ""
 
-#: includes/class-gs-service.php:3574
+#: includes/class-gs-service.php:3582
 msgid "Copy"
 msgstr ""
 
-#: includes/class-gs-service.php:3582
+#: includes/class-gs-service.php:3590
 msgid "Copied successfully!"
 msgstr ""
 
-#: includes/class-gs-service.php:3594
+#: includes/class-gs-service.php:3602
 msgid "Green email indicates the spreadsheet is shared successfully."
 msgstr ""
 
-#: includes/class-gs-service.php:3600
+#: includes/class-gs-service.php:3608
 msgid "Red email indicates access is missing. Please grant permission."
 msgstr ""
 
-#: includes/class-gs-service.php:3638
+#: includes/class-gs-service.php:3646
 msgid "Unlock Advanced Features with Form Feeds"
 msgstr ""
 
-#: includes/class-gs-service.php:3646 includes/pages/gs-role-settings.php:21
+#: includes/class-gs-service.php:3654 includes/pages/gs-role-settings.php:21
 msgid "Advanced options are available in PRO"
 msgstr ""
 
-#: includes/class-gs-service.php:3654
+#: includes/class-gs-service.php:3662
 msgid "Get Advanced Features"
 msgstr ""
 
-#: includes/class-gs-service.php:3690 includes/class-gs-service.php:3875
+#: includes/class-gs-service.php:3698 includes/class-gs-service.php:3883
 #: includes/pages/multisheet-sheets-connection.php:590
 msgid "Automatic Google Sheets Configuration"
 msgstr ""
 
-#: includes/class-gs-service.php:3702
+#: includes/class-gs-service.php:3710
 msgid "Auto fetch Google Sheets list"
 msgstr ""
 
-#: includes/class-gs-service.php:3704
+#: includes/class-gs-service.php:3712
 msgid "Auto detect sheet tabs"
 msgstr ""
 
-#: includes/class-gs-service.php:3706
+#: includes/class-gs-service.php:3714
 msgid "One-click configuration"
 msgstr ""
 
-#: includes/class-gs-service.php:3708
+#: includes/class-gs-service.php:3716
 msgid "Real-time entry sync"
 msgstr ""
 
-#: includes/class-gs-service.php:3724
+#: includes/class-gs-service.php:3732
 #: includes/pages/multisheet-sheets-connection.php:1082
 msgid "Select Fields to Sync"
 msgstr ""
 
-#: includes/class-gs-service.php:3736
+#: includes/class-gs-service.php:3744
 msgid "Drag & drop field reordering"
 msgstr ""
 
-#: includes/class-gs-service.php:3738
+#: includes/class-gs-service.php:3746
 msgid "Rename column headers"
 msgstr ""
 
-#: includes/class-gs-service.php:3740
+#: includes/class-gs-service.php:3748
 msgid "Select specific fields to sync"
 msgstr ""
 
-#: includes/class-gs-service.php:3756 includes/class-gs-service.php:4011
-#: includes/class-gs-service.php:5680
+#: includes/class-gs-service.php:3764 includes/class-gs-service.php:4019
+#: includes/class-gs-service.php:5688
 #: includes/pages/multisheet-sheets-connection.php:1209
 msgid "Conditional Logic"
 msgstr ""
 
-#: includes/class-gs-service.php:3768
+#: includes/class-gs-service.php:3776
 msgid "Apply rules based on form values"
 msgstr ""
 
-#: includes/class-gs-service.php:3770
+#: includes/class-gs-service.php:3778
 msgid "Sync data only when conditions match"
 msgstr ""
 
-#: includes/class-gs-service.php:3772
+#: includes/class-gs-service.php:3780
 msgid "Filter unwanted or incomplete entries"
 msgstr ""
 
-#: includes/class-gs-service.php:3774
+#: includes/class-gs-service.php:3782
 msgid "Create dynamic workflows automatically"
 msgstr ""
 
-#: includes/class-gs-service.php:3776
+#: includes/class-gs-service.php:3784
 msgid "Map data conditionally to sheet columns"
 msgstr ""
 
-#: includes/class-gs-service.php:3778
+#: includes/class-gs-service.php:3786
 msgid "Support multiple conditions (AND / OR)"
 msgstr ""
 
-#: includes/class-gs-service.php:3780
+#: includes/class-gs-service.php:3788
 msgid "Improve accuracy and reduce extra data"
 msgstr ""
 
-#: includes/class-gs-service.php:3796 includes/class-gs-service.php:4159
+#: includes/class-gs-service.php:3804 includes/class-gs-service.php:4167
 #: includes/pages/multisheet-sheets-connection.php:1440
 msgid "Header Settings"
 msgstr ""
 
-#: includes/class-gs-service.php:3808
+#: includes/class-gs-service.php:3816
 msgid "Freeze header row"
 msgstr ""
 
-#: includes/class-gs-service.php:3810
+#: includes/class-gs-service.php:3818
 msgid "Custom font styling"
 msgstr ""
 
-#: includes/class-gs-service.php:3812
+#: includes/class-gs-service.php:3820
 msgid "Header & row color control"
 msgstr ""
 
-#: includes/class-gs-service.php:3814
+#: includes/class-gs-service.php:3822
 msgid "Sort by any column"
 msgstr ""
 
-#: includes/class-gs-service.php:3816
+#: includes/class-gs-service.php:3824
 msgid "Download spreadsheet as file"
 msgstr ""
 
-#: includes/class-gs-service.php:3831
+#: includes/class-gs-service.php:3839
 msgid "Show Features ▼"
 msgstr ""
 
-#: includes/class-gs-service.php:3839
+#: includes/class-gs-service.php:3847
 msgid "Hide Features ▲"
 msgstr ""
 
-#: includes/class-gs-service.php:3881
+#: includes/class-gs-service.php:3889
 msgid ""
 "Automatic configure your Google Sheet and start syncing form submissions in "
 "real time."
 msgstr ""
 
-#: includes/class-gs-service.php:3895 includes/class-gs-service.php:3921
+#: includes/class-gs-service.php:3903 includes/class-gs-service.php:3929
 #: includes/pages/multisheet-sheets-connection.php:647
 msgid "Select"
 msgstr ""
 
-#: includes/class-gs-service.php:3899
+#: includes/class-gs-service.php:3907
 msgid "Create New"
 msgstr ""
 
-#: includes/class-gs-service.php:3915
+#: includes/class-gs-service.php:3923
 #: includes/pages/multisheet-sheets-connection.php:681
 #: includes/pages/multisheet-sheets-connection.php:954
 msgid "Sheet Tab Name"
 msgstr ""
 
-#: includes/class-gs-service.php:3945
+#: includes/class-gs-service.php:3953
 #: includes/pages/multisheet-sheets-connection.php:1099
 msgid ""
 "Enable the fields you want to send to Google Sheets and rename columns if "
 "needed."
 msgstr ""
 
-#: includes/class-gs-service.php:3955
+#: includes/class-gs-service.php:3963
 #: includes/pages/multisheet-sheets-connection.php:1123
 msgid "Field List"
 msgstr ""
 
-#: includes/class-gs-service.php:3963
+#: includes/class-gs-service.php:3971
 #: includes/pages/multisheet-sheets-connection.php:1139
 msgid "Submission Info"
 msgstr ""
 
-#: includes/class-gs-service.php:3969
+#: includes/class-gs-service.php:3977
 #: includes/pages/multisheet-sheets-connection.php:1155
 msgid "Custom Mail Tags"
 msgstr ""
 
-#: includes/class-gs-service.php:4019
+#: includes/class-gs-service.php:4027
 #: includes/pages/multisheet-sheets-connection.php:1224
 msgid ""
 "Control how and when your form data is sent to Google Sheets using powerful "
@@ -719,261 +719,261 @@ msgid ""
 "user input."
 msgstr ""
 
-#: includes/class-gs-service.php:4043
+#: includes/class-gs-service.php:4051
 #: includes/pages/multisheet-sheets-connection.php:1248
 msgid "Process this feed if"
 msgstr ""
 
-#: includes/class-gs-service.php:4047
+#: includes/class-gs-service.php:4055
 #: includes/pages/extensions/extensions.php:766 includes/pages/gs-cf7db.php:367
 #: includes/pages/multisheet-sheets-connection.php:1262
 msgid "All"
 msgstr ""
 
-#: includes/class-gs-service.php:4049
+#: includes/class-gs-service.php:4057
 #: includes/pages/multisheet-sheets-connection.php:1270
 msgid "Any"
 msgstr ""
 
-#: includes/class-gs-service.php:4053
+#: includes/class-gs-service.php:4061
 #: includes/pages/multisheet-sheets-connection.php:1280
 msgid "of the following match:"
 msgstr ""
 
-#: includes/class-gs-service.php:4065
+#: includes/class-gs-service.php:4073
 #: includes/pages/multisheet-sheets-connection.php:1302
 msgid "your-name"
 msgstr ""
 
-#: includes/class-gs-service.php:4067
+#: includes/class-gs-service.php:4075
 #: includes/pages/multisheet-sheets-connection.php:1310
 msgid "your-email"
 msgstr ""
 
-#: includes/class-gs-service.php:4069
+#: includes/class-gs-service.php:4077
 #: includes/pages/multisheet-sheets-connection.php:1318
 msgid "your-subject"
 msgstr ""
 
-#: includes/class-gs-service.php:4071
+#: includes/class-gs-service.php:4079
 #: includes/pages/multisheet-sheets-connection.php:1326
 msgid "your-message"
 msgstr ""
 
-#: includes/class-gs-service.php:4079
+#: includes/class-gs-service.php:4087
 #: includes/pages/multisheet-sheets-connection.php:1344
 msgid "is"
 msgstr ""
 
-#: includes/class-gs-service.php:4081
+#: includes/class-gs-service.php:4089
 #: includes/pages/multisheet-sheets-connection.php:1350
 msgid "is not"
 msgstr ""
 
-#: includes/class-gs-service.php:4083
+#: includes/class-gs-service.php:4091
 #: includes/pages/multisheet-sheets-connection.php:1356
 msgid "greater than"
 msgstr ""
 
-#: includes/class-gs-service.php:4085
+#: includes/class-gs-service.php:4093
 #: includes/pages/multisheet-sheets-connection.php:1362
 msgid "less than"
 msgstr ""
 
-#: includes/class-gs-service.php:4087
+#: includes/class-gs-service.php:4095
 #: includes/pages/multisheet-sheets-connection.php:1368
 msgid "contains"
 msgstr ""
 
-#: includes/class-gs-service.php:4089
+#: includes/class-gs-service.php:4097
 #: includes/pages/multisheet-sheets-connection.php:1374
 msgid "starts with"
 msgstr ""
 
-#: includes/class-gs-service.php:4091
+#: includes/class-gs-service.php:4099
 #: includes/pages/multisheet-sheets-connection.php:1380
 msgid "ends with"
 msgstr ""
 
-#: includes/class-gs-service.php:4161
+#: includes/class-gs-service.php:4169
 #: includes/pages/multisheet-sheets-connection.php:1442
 msgid ""
 "Customize the appearance and behavior of your sheet headers and rows for "
 "better readability and organization."
 msgstr ""
 
-#: includes/class-gs-service.php:4169
+#: includes/class-gs-service.php:4177
 #: includes/pages/multisheet-sheets-connection.php:1450
 msgid "Header Behavior"
 msgstr ""
 
-#: includes/class-gs-service.php:4175
+#: includes/class-gs-service.php:4183
 #: includes/pages/multisheet-sheets-connection.php:1456
 msgid "Freeze Header"
 msgstr ""
 
-#: includes/class-gs-service.php:4195
+#: includes/class-gs-service.php:4203
 #: includes/pages/multisheet-sheets-connection.php:1476
 msgid "Sheet Sorting"
 msgstr ""
 
-#: includes/class-gs-service.php:4217
+#: includes/class-gs-service.php:4225
 #: includes/pages/multisheet-sheets-connection.php:1498
 msgid "Sort Column"
 msgstr ""
 
-#: includes/class-gs-service.php:4229
+#: includes/class-gs-service.php:4237
 #: includes/pages/multisheet-sheets-connection.php:1510
 msgid "Sort Order"
 msgstr ""
 
-#: includes/class-gs-service.php:4233
+#: includes/class-gs-service.php:4241
 #: includes/pages/multisheet-sheets-connection.php:1514
 msgid "Ascending"
 msgstr ""
 
-#: includes/class-gs-service.php:4235
+#: includes/class-gs-service.php:4243
 #: includes/pages/multisheet-sheets-connection.php:1516
 msgid "Descending"
 msgstr ""
 
-#: includes/class-gs-service.php:4249
+#: includes/class-gs-service.php:4257
 #: includes/pages/multisheet-sheets-connection.php:1530
 msgid "Header Style"
 msgstr ""
 
-#: includes/class-gs-service.php:4257
+#: includes/class-gs-service.php:4265
 #: includes/pages/multisheet-sheets-connection.php:1538
 msgid "Header Appearance"
 msgstr ""
 
-#: includes/class-gs-service.php:4277 includes/class-gs-service.php:4475
+#: includes/class-gs-service.php:4285 includes/class-gs-service.php:4483
 #: includes/pages/multisheet-sheets-connection.php:1558
 #: includes/pages/multisheet-sheets-connection.php:1756
 msgid "Font Style"
 msgstr ""
 
-#: includes/class-gs-service.php:4283 includes/class-gs-service.php:4481
+#: includes/class-gs-service.php:4291 includes/class-gs-service.php:4489
 #: includes/pages/multisheet-sheets-connection.php:1564
 #: includes/pages/multisheet-sheets-connection.php:1762
 msgid "Normal"
 msgstr ""
 
-#: includes/class-gs-service.php:4287 includes/class-gs-service.php:4487
+#: includes/class-gs-service.php:4295 includes/class-gs-service.php:4495
 #: includes/pages/multisheet-sheets-connection.php:1568
 #: includes/pages/multisheet-sheets-connection.php:1768
 msgid "Italic"
 msgstr ""
 
-#: includes/class-gs-service.php:4289 includes/class-gs-service.php:4493
+#: includes/class-gs-service.php:4297 includes/class-gs-service.php:4501
 #: includes/pages/multisheet-sheets-connection.php:1570
 #: includes/pages/multisheet-sheets-connection.php:1774
 msgid "Bold"
 msgstr ""
 
-#: includes/class-gs-service.php:4299 includes/class-gs-service.php:4507
+#: includes/class-gs-service.php:4307 includes/class-gs-service.php:4515
 #: includes/pages/multisheet-sheets-connection.php:1580
 #: includes/pages/multisheet-sheets-connection.php:1788
 msgid "Font Size"
 msgstr ""
 
-#: includes/class-gs-service.php:4307 includes/class-gs-service.php:4515
+#: includes/class-gs-service.php:4315 includes/class-gs-service.php:4523
 #: includes/pages/multisheet-sheets-connection.php:1588
 #: includes/pages/multisheet-sheets-connection.php:1796
 msgid "Select size"
 msgstr ""
 
-#: includes/class-gs-service.php:4309 includes/class-gs-service.php:4517
+#: includes/class-gs-service.php:4317 includes/class-gs-service.php:4525
 #: includes/pages/multisheet-sheets-connection.php:1590
 #: includes/pages/multisheet-sheets-connection.php:1798
 msgid "11"
 msgstr ""
 
-#: includes/class-gs-service.php:4311 includes/class-gs-service.php:4519
+#: includes/class-gs-service.php:4319 includes/class-gs-service.php:4527
 #: includes/pages/multisheet-sheets-connection.php:1592
 #: includes/pages/multisheet-sheets-connection.php:1800
 msgid "12"
 msgstr ""
 
-#: includes/class-gs-service.php:4313 includes/class-gs-service.php:4521
+#: includes/class-gs-service.php:4321 includes/class-gs-service.php:4529
 #: includes/pages/multisheet-sheets-connection.php:1594
 #: includes/pages/multisheet-sheets-connection.php:1802
 msgid "13"
 msgstr ""
 
-#: includes/class-gs-service.php:4315 includes/class-gs-service.php:4523
+#: includes/class-gs-service.php:4323 includes/class-gs-service.php:4531
 #: includes/pages/multisheet-sheets-connection.php:1596
 #: includes/pages/multisheet-sheets-connection.php:1804
 msgid "14"
 msgstr ""
 
-#: includes/class-gs-service.php:4317 includes/class-gs-service.php:4525
+#: includes/class-gs-service.php:4325 includes/class-gs-service.php:4533
 #: includes/pages/multisheet-sheets-connection.php:1598
 #: includes/pages/multisheet-sheets-connection.php:1806
 msgid "15"
 msgstr ""
 
-#: includes/class-gs-service.php:4329 includes/class-gs-service.php:4541
+#: includes/class-gs-service.php:4337 includes/class-gs-service.php:4549
 #: includes/pages/multisheet-sheets-connection.php:1610
 #: includes/pages/multisheet-sheets-connection.php:1822
 msgid "Font Color"
 msgstr ""
 
-#: includes/class-gs-service.php:4353
+#: includes/class-gs-service.php:4361
 #: includes/pages/multisheet-sheets-connection.php:1634
 msgid "Row Style"
 msgstr ""
 
-#: includes/class-gs-service.php:4359
+#: includes/class-gs-service.php:4367
 #: includes/pages/multisheet-sheets-connection.php:1640
 msgid "Color Appearance"
 msgstr ""
 
-#: includes/class-gs-service.php:4387
+#: includes/class-gs-service.php:4395
 #: includes/pages/multisheet-sheets-connection.php:1668
 msgid "Header Background"
 msgstr ""
 
-#: includes/class-gs-service.php:4399
+#: includes/class-gs-service.php:4407
 #: includes/pages/multisheet-sheets-connection.php:1680
 msgid "Odd Row Color"
 msgstr ""
 
-#: includes/class-gs-service.php:4419
+#: includes/class-gs-service.php:4427
 #: includes/pages/multisheet-sheets-connection.php:1700
 msgid "Even Row Color"
 msgstr ""
 
-#: includes/class-gs-service.php:4451
+#: includes/class-gs-service.php:4459
 #: includes/pages/multisheet-sheets-connection.php:1732
 msgid "Row Appearance"
 msgstr ""
 
-#: includes/class-gs-service.php:4571
+#: includes/class-gs-service.php:4579
 #: includes/pages/multisheet-sheets-connection.php:1852
 msgid "Spreadsheet Download"
 msgstr ""
 
-#: includes/class-gs-service.php:4589
+#: includes/class-gs-service.php:4597
 #: includes/pages/multisheet-sheets-connection.php:1870
 msgid "Download"
 msgstr ""
 
-#: includes/class-gs-service.php:5233
+#: includes/class-gs-service.php:5241
 msgid "No special mail tags available."
 msgstr ""
 
-#: includes/class-gs-service.php:5496
+#: includes/class-gs-service.php:5504
 msgid ""
 "Map special mail tags with custom header name and save automatically to "
 "google sheet. "
 msgstr ""
 
-#: includes/class-gs-service.php:5644
+#: includes/class-gs-service.php:5652
 msgid "No custom mail tags available."
 msgstr ""
 
-#: includes/class-gs-service.php:5692
+#: includes/class-gs-service.php:5700
 msgid ""
 "The Enable Conditional Logic option in the field settings allows you to "
 "create rules to dynamically display or hide the submission to Google Sheet "
@@ -981,18 +981,18 @@ msgid ""
 msgstr ""
 
 #. translators: %d: form ID
-#: includes/class-gs-service.php:5909
+#: includes/class-gs-service.php:5917
 #: includes/pages/gs-entries-dashboard.php:83
 #, php-format
 msgid "Form #%d"
 msgstr ""
 
-#: includes/class-gs-service.php:5952
+#: includes/class-gs-service.php:5960
 #: includes/pages/class-gs-cf7db-formEntryList.php:407
 msgid "No entries match the selected filters."
 msgstr ""
 
-#: includes/class-gs-service.php:5965 includes/class-gs-service.php:6008
+#: includes/class-gs-service.php:5973 includes/class-gs-service.php:6016
 #: includes/pages/class-gs-cf7db-formEntryList.php:274
 #: includes/pages/class-gs-cf7db-formEntryList.php:472
 #: includes/pages/dashboard.php:487 includes/pages/dashboard.php:537
@@ -1001,7 +1001,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-#: includes/class-gs-service.php:5965 includes/class-gs-service.php:6009
+#: includes/class-gs-service.php:5973 includes/class-gs-service.php:6017
 #: includes/pages/class-gs-cf7db-formEntryList.php:275
 #: includes/pages/class-gs-cf7db-formEntryList.php:474
 #: includes/pages/dashboard.php:477 includes/pages/dashboard.php:538
@@ -1010,53 +1010,53 @@ msgstr ""
 msgid "Unread"
 msgstr ""
 
-#: includes/class-gs-service.php:5983
+#: includes/class-gs-service.php:5991
 #: includes/pages/class-gs-cf7db-formEntryList.php:338
 #: includes/pages/gs-entries-dashboard.php:176
 msgid "View"
 msgstr ""
 
-#: includes/class-gs-service.php:5984
+#: includes/class-gs-service.php:5992
 #: includes/pages/class-gs-cf7db-formEntryList.php:341
 msgid "Send To SpreadSheet"
 msgstr ""
 
-#: includes/class-gs-service.php:6005
+#: includes/class-gs-service.php:6013
 #: includes/pages/class-gs-cf7db-formEntryList.php:1013
 msgid "Select bulk action"
 msgstr ""
 
-#: includes/class-gs-service.php:6007
+#: includes/class-gs-service.php:6015
 #: includes/pages/class-gs-cf7db-formEntryList.php:1021
 msgid "Bulk Actions"
 msgstr ""
 
-#: includes/class-gs-service.php:6010
+#: includes/class-gs-service.php:6018
 #: includes/pages/class-gs-cf7db-formEntryList.php:476
 msgid "Delete"
 msgstr ""
 
-#: includes/class-gs-service.php:6011
+#: includes/class-gs-service.php:6019
 #: includes/pages/class-gs-cf7db-formEntryList.php:479
 msgid "Spread Sheet"
 msgstr ""
 
-#: includes/class-gs-service.php:6013
+#: includes/class-gs-service.php:6021
 #: includes/pages/class-gs-cf7db-formEntryList.php:1052
 msgid "Apply"
 msgstr ""
 
-#: includes/class-gs-service.php:6014
+#: includes/class-gs-service.php:6022
 #: includes/pages/class-gs-cf7db-formEntryList.php:1068
 msgid "Export CSV"
 msgstr ""
 
-#: includes/class-gs-service.php:6033
+#: includes/class-gs-service.php:6041
 #: includes/pages/class-gs-cf7db-formEntryList.php:1094
 msgid "Want to send entries to Google Sheets?"
 msgstr ""
 
-#: includes/class-gs-service.php:6034
+#: includes/class-gs-service.php:6042
 #: includes/pages/class-gs-cf7db-formEntryList.php:1098
 msgid ""
 "Export and sync your form submissions directly to Google Sheets to easily "
@@ -1064,7 +1064,7 @@ msgid ""
 "simplify your workflow and access your entries anytime."
 msgstr ""
 
-#: includes/class-gs-service.php:6036 includes/class-gs-service.php:6052
+#: includes/class-gs-service.php:6044 includes/class-gs-service.php:6060
 #: includes/pages/class-gs-cf7db-formEntryList.php:1104
 #: includes/pages/class-gs-cf7db-formEntryList.php:1141
 #: includes/pages/gs-beta-version.php:82 includes/pages/gs-integration.php:1073
@@ -1073,27 +1073,27 @@ msgstr ""
 msgid "Upgrade to Unlock"
 msgstr ""
 
-#: includes/class-gs-service.php:6049
+#: includes/class-gs-service.php:6057
 #: includes/pages/class-gs-cf7db-formEntryList.php:1131
 msgid "Want to download your form entries?"
 msgstr ""
 
-#: includes/class-gs-service.php:6050
+#: includes/class-gs-service.php:6058
 #: includes/pages/class-gs-cf7db-formEntryList.php:1135
 msgid ""
 "Export your form entries as a CSV file and use them in Sheets. You can sort, "
 "filter, and manage everything more easily."
 msgstr ""
 
-#: includes/class-gs-service.php:6139
+#: includes/class-gs-service.php:6147
 msgid "This view requires a specific form."
 msgstr ""
 
-#: includes/class-gs-service.php:6258
+#: includes/class-gs-service.php:6266
 msgid "Invalid bulk action."
 msgstr ""
 
-#: includes/class-gs-service.php:6263
+#: includes/class-gs-service.php:6271
 msgid "No entries selected."
 msgstr ""
 
@@ -1426,11 +1426,11 @@ msgid ""
 msgstr ""
 
 #: includes/pages/dashboard.php:444 includes/pages/dashboard.php:602
-#: includes/pages/gs-cf7db.php:520 includes/pages/gs-entries-dashboard.php:147
+#: includes/pages/gs-cf7db.php:521 includes/pages/gs-entries-dashboard.php:147
 msgid "Form"
 msgstr ""
 
-#: includes/pages/dashboard.php:447 includes/pages/gs-cf7db.php:523
+#: includes/pages/dashboard.php:447 includes/pages/gs-cf7db.php:524
 msgid "All Forms"
 msgstr ""
 
@@ -2113,7 +2113,7 @@ msgstr ""
 msgid "Integration"
 msgstr ""
 
-#: includes/pages/google-sheet-settings.php:411 includes/pages/gs-cf7db.php:497
+#: includes/pages/google-sheet-settings.php:411 includes/pages/gs-cf7db.php:498
 msgid "CF7 Database"
 msgstr ""
 
@@ -2276,7 +2276,7 @@ msgid ""
 msgstr ""
 
 #: includes/pages/gs-beta-version.php:145
-#: includes/pages/gs-cf7-general-setting.php:61 includes/pages/gs-cf7db.php:782
+#: includes/pages/gs-cf7-general-setting.php:61 includes/pages/gs-cf7db.php:784
 #: includes/pages/gs-privacy-gdpr.php:252
 #: includes/pages/gs-role-settings.php:154
 msgid "Save Settings"
@@ -2370,69 +2370,69 @@ msgstr ""
 msgid "Read Only"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:500
+#: includes/pages/gs-cf7db.php:501
 msgid ""
 "Browse, filter, and manage every Contact Form 7 submission stored in your "
 "database."
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:558
+#: includes/pages/gs-cf7db.php:559
 msgid "Total"
 msgstr ""
 
 #. translators: %d: number of items per page
-#: includes/pages/gs-cf7db.php:567
+#: includes/pages/gs-cf7db.php:568
 #, php-format
 msgid "%d / Page"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:575
+#: includes/pages/gs-cf7db.php:576
 msgid "Previous page"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:577
+#: includes/pages/gs-cf7db.php:578
 msgid "Next page"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:578
+#: includes/pages/gs-cf7db.php:579
 msgid "Go to"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:675
+#: includes/pages/gs-cf7db.php:677
 msgid "CF7 Database Manager"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:683
+#: includes/pages/gs-cf7db.php:685
 msgid ""
 "Store and manage Contact Form 7 submissions securely inside your WordPress "
 "dashboard. Enable database storage to keep a backup of all form entries."
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:695
+#: includes/pages/gs-cf7db.php:697
 msgid "Enable Database Storage"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:701
+#: includes/pages/gs-cf7db.php:703
 msgid "Automatically save all form submissions to your WordPress database."
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:750
+#: includes/pages/gs-cf7db.php:752
 msgid "Data Management Guidelines"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:756
+#: includes/pages/gs-cf7db.php:758
 msgid "Enable storage before launching live forms"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:758
+#: includes/pages/gs-cf7db.php:760
 msgid "Regularly remove spam entries to maintain performance"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:760
+#: includes/pages/gs-cf7db.php:762
 msgid "Delete unused form data to reduce database load"
 msgstr ""
 
-#: includes/pages/gs-cf7db.php:790
+#: includes/pages/gs-cf7db.php:792
 msgid "Save data successfully"
 msgstr ""
 
@@ -3623,26 +3623,26 @@ msgstr ""
 msgid "Enter a value"
 msgstr ""
 
-#: lib/google-sheets.php:742
+#: lib/google-sheets.php:746
 msgid "The spreadsheet returned no worksheets."
 msgstr ""
 
-#: lib/google-sheets.php:786
+#: lib/google-sheets.php:790
 msgid "Unexpected response from the Google Sheets API."
 msgstr ""
 
-#: lib/google-sheets.php:899
+#: lib/google-sheets.php:903
 msgid "The configured worksheet tab could not be found in the spreadsheet."
 msgstr ""
 
-#: lib/google-sheets.php:931
+#: lib/google-sheets.php:935
 msgid ""
 "The worksheet has no header row, so submitted fields cannot be mapped to "
 "columns."
 msgstr ""
 
 #. translators: 1: column letter reported by the API, 2: the range that was written.
-#: lib/google-sheets.php:1105
+#: lib/google-sheets.php:1109
 #, php-format
 msgid ""
 "The row was appended starting at column %1$s instead of column A (%2$s); "

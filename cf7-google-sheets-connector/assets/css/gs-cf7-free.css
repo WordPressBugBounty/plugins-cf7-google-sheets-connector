@@ -3122,3 +3122,6 @@ th.sorted a:focus {
 .gscf7-free #gscf7_form_preview .wpcf7::-webkit-scrollbar-corner {
   background: transparent;
 }
+#gscf7_form_preview input.wpcf7-form-control.wpcf7-submit.has-spinner {
+    display: none;
+}
