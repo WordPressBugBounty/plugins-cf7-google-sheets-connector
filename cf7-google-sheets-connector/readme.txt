@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.6
+Stable tag: 5.2.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,6 +441,9 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 
 == Changelog ==
 
+= 5.2.7 (07-09-2026) =
+* Fixed: On Google Sheets whose header row does not start in column A (a blank first column), new Contact Form 7 submissions were written into row 1 and pushed the header row down, and values could land in the wrong columns. The submission is now always appended below the existing header row.
+
 = 5.2.6 (05-09-2026) =
 * Fixed: Fatal error (ArgumentCountError) on the Integration page after Google authentication when translations, such as German, added a %s placeholder to the "Connected Email Account" string.
 * Improved: Updated the connected email account label to use a single translatable string with an explicit %s placeholder, ensuring compatibility with translated strings.
@@ -735,6 +738,9 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 * First public release. Integrated Contact Form 7 with Google Sheets.
 
 == Upgrade Notice ==
+
+= 5.2.7 =
+Recommended update. Fixes new form submissions being inserted above the header row (and into the wrong columns) on sheets whose header does not begin in column A.
 
 = 5.2.1 =
 Recommended update. Includes important security, performance, and stability improvements, plus fixes for multisite synchronization and simultaneous submissions. Please back up your site before updating.

@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.2.6
+ * Version: 5.2.7
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -75,8 +75,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.2.6');
-define('GS_CONNECTOR_DB_VERSION', '5.2.6');
+define('GS_CONNECTOR_VERSION', '5.2.7');
+define('GS_CONNECTOR_DB_VERSION', '5.2.7');
 define('GS_CONNECTOR_ROOT', __DIR__);
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(__DIR__) . '/google-sheet-connector.php');
@@ -209,7 +209,7 @@ class Gs_Connector_Free_Init
 		if (empty($screen) || ($screen->id !== 'contact_page_cf7-new' && strpos($screen->id, 'wpcf7') === false)) {
 			return;
 		}
-?>
+		?>
 		<script>
 			/*
 			 * Suppress the browser's "Leave site? Changes you made may not be
@@ -238,7 +238,7 @@ class Gs_Connector_Free_Init
 				window.onbeforeunload = null;
 			})();
 		</script>
-<?php
+		<?php
 	}
 
 	public function gscf7_connector_free_plugin_action_links($links)
@@ -251,8 +251,8 @@ class Gs_Connector_Free_Init
 		return array_merge(
 			array(
 				'<a href="' . esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config')) . '">' .
-					esc_html__('Settings', 'cf7-google-sheets-connector') .
-					'</a>',
+				esc_html__('Settings', 'cf7-google-sheets-connector') .
+				'</a>',
 			),
 			$links
 		);
@@ -303,10 +303,10 @@ class Gs_Connector_Free_Init
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
 		$rows = $wpdb->get_results(
 			"
-            SELECT post_id, meta_key, meta_value 
-            FROM {$wpdb->postmeta}
-            WHERE meta_key = 'gs_settings'
-            "
+			SELECT post_id, meta_key, meta_value 
+			FROM {$wpdb->postmeta}
+			WHERE meta_key = 'gs_settings'
+			"
 		);
 		if (! empty($rows)) {
 			$grouped = array();
@@ -376,10 +376,10 @@ class Gs_Connector_Free_Init
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
 		$feeds = $wpdb->get_results(
 			"
-            SELECT meta_id, post_id, meta_key
-            FROM {$wpdb->postmeta}
-            WHERE meta_value LIKE '%cf7_form_feeds%'
-            "
+			SELECT meta_id, post_id, meta_key
+			FROM {$wpdb->postmeta}
+			WHERE meta_value LIKE '%cf7_form_feeds%'
+			"
 		);
 		if (! empty($feeds)) {
 			foreach ($feeds as $feed) {
@@ -566,10 +566,10 @@ class Gs_Connector_Free_Init
 		$constraints = $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME
-                FROM information_schema.KEY_COLUMN_USAGE
-                WHERE CONSTRAINT_SCHEMA = DATABASE()
-                AND REFERENCED_TABLE_NAME IS NOT NULL
-                AND (REFERENCED_TABLE_NAME = %s OR TABLE_NAME = %s)',
+				FROM information_schema.KEY_COLUMN_USAGE
+				WHERE CONSTRAINT_SCHEMA = DATABASE()
+				AND REFERENCED_TABLE_NAME IS NOT NULL
+				AND (REFERENCED_TABLE_NAME = %s OR TABLE_NAME = %s)',
 				$table,
 				$table
 			)
@@ -756,7 +756,7 @@ class Gs_Connector_Free_Init
 					FROM `{$feeds}` f2
 					LEFT JOIN `{$settings}` s ON s.feed_id = f2.id
 					GROUP BY f2.form_id, f2.feed_name, COALESCE(s.sheet_id, ''), COALESCE(s.tab_id, '')
-				) AS gscf7_keep
+					) AS gscf7_keep
 				GROUP BY keep_id
 			) k ON f.id = k.keep_id"
 		);
@@ -984,7 +984,7 @@ class Gs_Connector_Free_Init
 		foreach (explode(',', (string) $columns) as $gscf7_col) {
 			if (preg_match('/^\s*([A-Za-z0-9_]+)\s*(?:\(\s*(\d+)\s*\))?\s*$/', $gscf7_col, $gscf7_m)) {
 				$column_sql[] = '`' . esc_sql($gscf7_m[1]) . '`'
-					. (isset($gscf7_m[2]) && '' !== $gscf7_m[2] ? '(' . (int) $gscf7_m[2] . ')' : '');
+				. (isset($gscf7_m[2]) && '' !== $gscf7_m[2] ? '(' . (int) $gscf7_m[2] . ')' : '');
 			}
 		}
 
@@ -1292,23 +1292,23 @@ class Gs_Connector_Free_Init
 			return;
 		}
 		$request_uri = isset($_SERVER['REQUEST_URI'])
-			? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
-			: '';
+		? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
+		: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$page = isset($_GET['page'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-			? sanitize_text_field(wp_unslash($_GET['page']))
-			: '';
+		? sanitize_text_field(wp_unslash($_GET['page']))
+		: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$post_type = isset($_REQUEST['post_type'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-			? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
-			: '';
+		? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
+		: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$action = isset($_REQUEST['action'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-			? sanitize_text_field(wp_unslash($_REQUEST['action']))
-			: '';
+		? sanitize_text_field(wp_unslash($_REQUEST['action']))
+		: '';
 
 		/*
 		* CF7 Admin Pages
@@ -2022,17 +2022,17 @@ class Gs_Connector_Free_Init
 		$table = $wpdb->prefix . 'gscf7_error_logs';
 		dbDelta(
 			"CREATE TABLE {$table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            error_id VARCHAR(191) NOT NULL,
-            code INT NOT NULL,
-            message TEXT NOT NULL,
-            details LONGTEXT NULL,
-            created_at DATETIME NOT NULL,
-            PRIMARY KEY (id),
-            INDEX error_id (error_id),
-            INDEX code (code),
-            INDEX created_at (created_at)
-        ) {$charset_collate};"
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				error_id VARCHAR(191) NOT NULL,
+				code INT NOT NULL,
+				message TEXT NOT NULL,
+				details LONGTEXT NULL,
+				created_at DATETIME NOT NULL,
+				PRIMARY KEY (id),
+				INDEX error_id (error_id),
+				INDEX code (code),
+				INDEX created_at (created_at)
+			) {$charset_collate};"
 		);
 
 		// Existing installs predate the created_at index used by the log screen.
@@ -2044,48 +2044,48 @@ class Gs_Connector_Free_Init
 		// NO INDEX HERE
 		dbDelta(
 			"CREATE TABLE $feeds_table (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            form_id BIGINT UNSIGNED NOT NULL,
-            feed_name VARCHAR(255),
-            status TINYINT(1) DEFAULT 1,
-            is_default TINYINT(1) DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id)
-        ) $charset_collate;"
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				form_id BIGINT UNSIGNED NOT NULL,
+				feed_name VARCHAR(255),
+				status TINYINT(1) DEFAULT 1,
+				is_default TINYINT(1) DEFAULT 0,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+				PRIMARY KEY (id)
+			) $charset_collate;"
 		);
 
 		dbDelta(
 			"CREATE TABLE {$settings_table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            form_id BIGINT UNSIGNED NOT NULL,
-            feed_id BIGINT UNSIGNED NOT NULL,
-            sheet_name VARCHAR(255) DEFAULT NULL,
-            tab_name VARCHAR(255) DEFAULT NULL,
-            sheet_id VARCHAR(255) DEFAULT NULL,
-            tab_id VARCHAR(255) DEFAULT NULL,
-            is_manual TINYINT(1) DEFAULT 0,
-            google_drive_link LONGTEXT DEFAULT NULL,
-            freeze_header TINYINT(1) DEFAULT 0,
-            enable_colors TINYINT(1) DEFAULT 0,
-            header_color VARCHAR(20) DEFAULT NULL,
-            odd_color VARCHAR(20) DEFAULT NULL,
-            even_color VARCHAR(20) DEFAULT NULL,
-            enable_sorting TINYINT(1) DEFAULT 0,
-            sort_column VARCHAR(255) DEFAULT NULL,
-            sort_order VARCHAR(20) DEFAULT NULL,
-            header_enable TINYINT(1) DEFAULT 0,
-            font_styles TEXT DEFAULT NULL,
-            font_size VARCHAR(50) DEFAULT NULL,
-            font_color VARCHAR(50) DEFAULT NULL,
-            row_enable TINYINT(1) DEFAULT 0,
-            row_styles TEXT DEFAULT NULL,
-            row_font_size VARCHAR(50) DEFAULT NULL,
-            row_font_color VARCHAR(50) DEFAULT NULL,
-            created_at DATETIME DEFAULT NULL,
-            updated_at DATETIME DEFAULT NULL,
-            PRIMARY KEY  (id)
-        ) {$charset_collate};"
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				form_id BIGINT UNSIGNED NOT NULL,
+				feed_id BIGINT UNSIGNED NOT NULL,
+				sheet_name VARCHAR(255) DEFAULT NULL,
+				tab_name VARCHAR(255) DEFAULT NULL,
+				sheet_id VARCHAR(255) DEFAULT NULL,
+				tab_id VARCHAR(255) DEFAULT NULL,
+				is_manual TINYINT(1) DEFAULT 0,
+				google_drive_link LONGTEXT DEFAULT NULL,
+				freeze_header TINYINT(1) DEFAULT 0,
+				enable_colors TINYINT(1) DEFAULT 0,
+				header_color VARCHAR(20) DEFAULT NULL,
+				odd_color VARCHAR(20) DEFAULT NULL,
+				even_color VARCHAR(20) DEFAULT NULL,
+				enable_sorting TINYINT(1) DEFAULT 0,
+				sort_column VARCHAR(255) DEFAULT NULL,
+				sort_order VARCHAR(20) DEFAULT NULL,
+				header_enable TINYINT(1) DEFAULT 0,
+				font_styles TEXT DEFAULT NULL,
+				font_size VARCHAR(50) DEFAULT NULL,
+				font_color VARCHAR(50) DEFAULT NULL,
+				row_enable TINYINT(1) DEFAULT 0,
+				row_styles TEXT DEFAULT NULL,
+				row_font_size VARCHAR(50) DEFAULT NULL,
+				row_font_color VARCHAR(50) DEFAULT NULL,
+				created_at DATETIME DEFAULT NULL,
+				updated_at DATETIME DEFAULT NULL,
+				PRIMARY KEY  (id)
+			) {$charset_collate};"
 		);
 
 		// STEP 2: ADD INDEXES MANUALLY
@@ -2158,10 +2158,10 @@ class Gs_Connector_Free_Init
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT COUNT(1)
-                FROM INFORMATION_SCHEMA.STATISTICS
-                WHERE table_schema = DATABASE()
-                AND table_name = %s
-                AND column_name = %s',
+				FROM INFORMATION_SCHEMA.STATISTICS
+				WHERE table_schema = DATABASE()
+				AND table_name = %s
+				AND column_name = %s',
 				$table,
 				$column
 			)
@@ -2180,10 +2180,10 @@ class Gs_Connector_Free_Init
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT CONSTRAINT_NAME
-                FROM information_schema.TABLE_CONSTRAINTS
-                WHERE CONSTRAINT_SCHEMA = DATABASE()
-                AND TABLE_NAME = %s
-                AND CONSTRAINT_NAME = %s',
+				FROM information_schema.TABLE_CONSTRAINTS
+				WHERE CONSTRAINT_SCHEMA = DATABASE()
+				AND TABLE_NAME = %s
+				AND CONSTRAINT_NAME = %s',
 				$table,
 				$constraint
 			)
@@ -2197,10 +2197,10 @@ class Gs_Connector_Free_Init
 		$index_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT COUNT(1)
-                FROM INFORMATION_SCHEMA.STATISTICS
-                WHERE table_schema = DATABASE()
-                AND table_name = %s
-                AND column_name = %s',
+				FROM INFORMATION_SCHEMA.STATISTICS
+				WHERE table_schema = DATABASE()
+				AND table_name = %s
+				AND column_name = %s',
 				$table,
 				$column
 			)
@@ -2215,11 +2215,11 @@ class Gs_Connector_Free_Init
 
 		$wpdb->query(
 			'ALTER TABLE `' . esc_sql($table) . '`
-            ADD CONSTRAINT `' . esc_sql($constraint) . '`
-            FOREIGN KEY (`' . esc_sql($column) . '`)
-            REFERENCES `' . esc_sql($ref_table) . '`(id)
-            ON DELETE CASCADE
-            ON UPDATE CASCADE'
+			ADD CONSTRAINT `' . esc_sql($constraint) . '`
+			FOREIGN KEY (`' . esc_sql($column) . '`)
+			REFERENCES `' . esc_sql($ref_table) . '`(id)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE'
 		);
 	}
 	/**

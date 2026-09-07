@@ -357,12 +357,12 @@ class CF7GSC_googlesheet {
 			}
 
 			if ( ! isset( $tokenData['expire'] ) ) {
-					return false;
+				return false;
 			}
 
 			if ( time() > intval( $tokenData['expire'] ) ) {
 
-							$newToken = $this->refresh( $tokenData );
+				$newToken = $this->refresh( $tokenData );
 
 				if ( ! empty( $newToken['access_token'] ) ) {
 
@@ -482,8 +482,8 @@ class CF7GSC_googlesheet {
 						'oauth_error'            => '' !== $google_error ? $google_error : 'unknown',
 						'client_fingerprint'     => $utility->creds_fingerprint( $creds ),
 						'message'                => self::is_client_credential_error( $google_error )
-							? 'The Google API credentials stored for this site are no longer accepted. Please reconnect your Google account.'
-							: 'The stored Google refresh token was rejected. Please reconnect your Google account.',
+						? 'The Google API credentials stored for this site are no longer accepted. Please reconnect your Google account.'
+						: 'The stored Google refresh token was rejected. Please reconnect your Google account.',
 					)
 				);
 			}
@@ -611,7 +611,7 @@ class CF7GSC_googlesheet {
 			);
 
 			$base64 = function ( $data ) {
-					return rtrim( strtr( base64_encode( json_encode( $data ) ), '+/', '-_' ), '=' );
+				return rtrim( strtr( base64_encode( json_encode( $data ) ), '+/', '-_' ), '=' );
 			};
 
 			$jwt_header  = $base64( $header );
@@ -634,7 +634,7 @@ class CF7GSC_googlesheet {
 			);
 
 			if ( is_wp_error( $response ) ) {
-						return false;
+				return false;
 			}
 
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -1064,15 +1064,29 @@ class CF7GSC_googlesheet {
 
 			} else {
 
-				// The range is anchored at A1 on purpose. Passing the bare tab name let
-				// Sheets re-detect the "table" across the whole tab on every submission,
-				// and append always starts at the first column of the table it finds --
-				// so a single row with empty leading cells moved that start column right
-				// and every later row drifted further across. Anchoring at A1 pins the
-				// table to the header row, so values are always written from column A.
+				// The search range spans the whole header row (A1 through the last
+				// header column) on purpose.
+				//
+				// Passing the bare tab name let Sheets re-detect the "table" across
+				// the whole tab on every submission, and append starts at the first
+				// column of the table it finds -- so a single row with empty leading
+				// cells moved that start column right and every later row drifted
+				// across. Passing the single cell A1 fixed that but broke sheets
+				// whose header does not start in column A (a blank first column):
+				// append treats an empty anchor cell as the start of a brand-new
+				// table and writes into row 1, pushing the real header row down.
+				//
+				// Anchoring the range on the full header row A1:<last>1 covers both
+				// cases: the range always overlaps the real header (so the row is
+				// appended below it, never on top of it) and it always begins at
+				// column A (so values are written from column A). The step 5 safety
+				// net below still realigns the row if Sheets reports any other start
+				// column.
+				$header_span = $sheet_title . '!A1:' . self::gsc_column_letter( count( $headers ) - 1 ) . '1';
+
 				$response = wp_remote_post(
 					"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
-					rawurlencode( $sheet_title . '!A1' ) .
+					rawurlencode( $header_span ) .
 					':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
 					self::gsc_request_args(
 						$token,
@@ -1139,8 +1153,8 @@ class CF7GSC_googlesheet {
 						if ( $spill_end >= $spill_start ) {
 
 							$clear_range = $sheet_title . '!' .
-								self::gsc_column_letter( $spill_start ) . $row_number . ':' .
-								self::gsc_column_letter( $spill_end ) . $row_number;
+							self::gsc_column_letter( $spill_start ) . $row_number . ':' .
+							self::gsc_column_letter( $spill_end ) . $row_number;
 
 							$clear_response = wp_remote_post(
 								"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
@@ -1306,7 +1320,7 @@ class CF7GSC_googlesheet {
 
 					$rewrite_data[] = array(
 						'range'  => "'" . str_replace( "'", "''", $sheet_title ) . "'!" .
-							self::gsc_column_letter( $rewrite_col_index ) . $row_number,
+						self::gsc_column_letter( $rewrite_col_index ) . $row_number,
 						'values' => array( array( $text_columns[ $rewrite_col_index ] ) ),
 					);
 				}
