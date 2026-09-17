@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.7
+Stable tag: 5.2.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,10 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.2.8 (17-09-2026) =
+* Fixed: Fixed the Enable/Disable toggle functionality for Database Storage.
+* Fixed: Number values now display correctly as numeric values in Google Sheets.
 
 = 5.2.7 (07-09-2026) =
 * Fixed: On Google Sheets whose header row does not start in column A (a blank first column), new Contact Form 7 submissions were written into row 1 and pushed the header row down, and values could land in the wrong columns. The submission is now always appended below the existing header row.

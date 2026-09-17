@@ -1254,10 +1254,10 @@ class Gs_Connector_Service
 	public function cfdb7_before_send_mail($form_tag)
 	{
 		$gs_cf7db_setting = get_option('gs_cf7db_setting');
-		if ($gs_cf7db_setting == 1) {
+		// if ($gs_cf7db_setting == 1) {
 			$cf7db = new GS_CF7DB();
 			$cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
-		}
+		// }
 	}
 
 	/**
@@ -2365,7 +2365,7 @@ class Gs_Connector_Service
 
 		$form_id = $form->id();
 
-		$enable_entry_id = get_option('gs_cf7db_setting') == '1';
+		$enable_entry_id = 1;
 
 		$next_entry_id = 0;
 

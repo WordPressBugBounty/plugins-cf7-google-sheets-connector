@@ -499,7 +499,7 @@ jQuery(document).ready(function ($) {
   });
 
   $btn.on("click", function (e) {
-    var isChecked = $toggle.is(":checked") ? 1 : 1;
+    var isChecked = $toggle.is(":checked") ? 1 : 0;
 
     var nonce = $("#gs-ajax-nonce").val();
 

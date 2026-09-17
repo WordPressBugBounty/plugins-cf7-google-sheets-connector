@@ -25,12 +25,12 @@ class GS_CF7DB
 	public function create_gsheet_table()
 	{
 		try {
-			$gs_cf7db_setting = get_option('gs_cf7db_setting');
-			if ($gs_cf7db_setting == 1) {
-				global $wpdb;
-				// set the default character set and collation for the table
-				$charset_collate = $wpdb->get_charset_collate();
-				/*
+			// $gs_cf7db_setting = get_option('gs_cf7db_setting');
+			// if ($gs_cf7db_setting == 1) {
+			global $wpdb;
+			// set the default character set and collation for the table
+			$charset_collate = $wpdb->get_charset_collate();
+			/*
 				 * Use the site prefix, not the network prefix.
 				 *
 				 * Every read and write in this plugin uses $wpdb->prefix, so
@@ -38,9 +38,9 @@ class GS_CF7DB
 				 * multisite each sub-site wrote to a table that was never
 				 * created, and its submissions were silently discarded.
 				 */
-				$tbl_name = $wpdb->prefix . 'cf7db_gsheet_forms';
-				// Check that the table does not already exist before continuing
-				$sql = "CREATE TABLE IF NOT EXISTS `$tbl_name` (
+			$tbl_name = $wpdb->prefix . 'cf7db_gsheet_forms';
+			// Check that the table does not already exist before continuing
+			$sql = "CREATE TABLE IF NOT EXISTS `$tbl_name` (
 				  		id bigint(20) NOT NULL AUTO_INCREMENT,
 			            form_id bigint(20) NOT NULL,
 			            value longtext NOT NULL COLLATE utf8mb4_unicode_520_ci,
@@ -50,12 +50,12 @@ class GS_CF7DB
 			            KEY form_id_date (form_id, date),
 			            KEY form_id_id (form_id, id)
 				  ) $charset_collate;";
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-				dbDelta($sql);
-				$this->gscf7_add_entry_indexes($tbl_name);
-				$is_error = empty($wpdb->last_error);
-				return $is_error;
-			}
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta($sql);
+			$this->gscf7_add_entry_indexes($tbl_name);
+			$is_error = empty($wpdb->last_error);
+			return $is_error;
+			// }
 		} catch (Exception $e) {
 			$data['ERROR_MSG'] = $e->getMessage();
 			$data['TRACE_STK'] = $e->getTraceAsString();

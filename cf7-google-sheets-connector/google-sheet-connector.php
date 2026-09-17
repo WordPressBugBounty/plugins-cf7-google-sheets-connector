@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.2.7
+ * Version: 5.2.8
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -75,8 +75,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.2.7');
-define('GS_CONNECTOR_DB_VERSION', '5.2.7');
+define('GS_CONNECTOR_VERSION', '5.2.8');
+define('GS_CONNECTOR_DB_VERSION', '5.2.8');
 define('GS_CONNECTOR_ROOT', __DIR__);
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(__DIR__) . '/google-sheet-connector.php');
@@ -209,7 +209,7 @@ class Gs_Connector_Free_Init
 		if (empty($screen) || ($screen->id !== 'contact_page_cf7-new' && strpos($screen->id, 'wpcf7') === false)) {
 			return;
 		}
-		?>
+?>
 		<script>
 			/*
 			 * Suppress the browser's "Leave site? Changes you made may not be
@@ -227,8 +227,8 @@ class Gs_Connector_Free_Init
 			 * beforeunload listener is first in line. It stops the event, so
 			 * CF7's listener never runs and never calls preventDefault().
 			 */
-			(function () {
-				var gscf7SwallowBeforeUnload = function (event) {
+			(function() {
+				var gscf7SwallowBeforeUnload = function(event) {
 					event.stopImmediatePropagation();
 				};
 
@@ -238,7 +238,7 @@ class Gs_Connector_Free_Init
 				window.onbeforeunload = null;
 			})();
 		</script>
-		<?php
+<?php
 	}
 
 	public function gscf7_connector_free_plugin_action_links($links)
@@ -251,8 +251,8 @@ class Gs_Connector_Free_Init
 		return array_merge(
 			array(
 				'<a href="' . esc_url(admin_url('admin.php?page=wpcf7-google-sheet-config')) . '">' .
-				esc_html__('Settings', 'cf7-google-sheets-connector') .
-				'</a>',
+					esc_html__('Settings', 'cf7-google-sheets-connector') .
+					'</a>',
 			),
 			$links
 		);
@@ -984,7 +984,7 @@ class Gs_Connector_Free_Init
 		foreach (explode(',', (string) $columns) as $gscf7_col) {
 			if (preg_match('/^\s*([A-Za-z0-9_]+)\s*(?:\(\s*(\d+)\s*\))?\s*$/', $gscf7_col, $gscf7_m)) {
 				$column_sql[] = '`' . esc_sql($gscf7_m[1]) . '`'
-				. (isset($gscf7_m[2]) && '' !== $gscf7_m[2] ? '(' . (int) $gscf7_m[2] . ')' : '');
+					. (isset($gscf7_m[2]) && '' !== $gscf7_m[2] ? '(' . (int) $gscf7_m[2] . ')' : '');
 			}
 		}
 
@@ -1008,10 +1008,10 @@ class Gs_Connector_Free_Init
 	public function cfdb7_before_send_mail($form_tag)
 	{
 		$gs_cf7db_setting = get_option('gs_cf7db_setting');
-		if ($gs_cf7db_setting == 1) {
+		// if ($gs_cf7db_setting == 1) {
 			$cf7db = new GS_CF7DB();
 			// $cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
-		}
+		// }
 	}
 	/**
 	 * Plugin row meta.
@@ -1176,10 +1176,10 @@ class Gs_Connector_Free_Init
 		check_ajax_referer('gs-ajax-nonce', 'security');
 		$value = isset($_POST['gs_cf7db_setting']) ? intval($_POST['gs_cf7db_setting']) : 0;
 		update_option('gs_cf7db_setting', $value);
-		if ($value == 1) {
-			$Gs_cf7db = new GS_CF7DB();
-			$Gs_cf7db->create_gsheet_table();
-		}
+		// if ($value == 1) {
+		$Gs_cf7db = new GS_CF7DB();
+		$Gs_cf7db->create_gsheet_table();
+		// }
 		wp_send_json_success();
 	}
 	/**
@@ -1292,23 +1292,23 @@ class Gs_Connector_Free_Init
 			return;
 		}
 		$request_uri = isset($_SERVER['REQUEST_URI'])
-		? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
-		: '';
+			? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']))
+			: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$page = isset($_GET['page'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-		? sanitize_text_field(wp_unslash($_GET['page']))
-		: '';
+			? sanitize_text_field(wp_unslash($_GET['page']))
+			: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$post_type = isset($_REQUEST['post_type'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-		? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
-		: '';
+			? sanitize_text_field(wp_unslash($_REQUEST['post_type']))
+			: '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 		$action = isset($_REQUEST['action'])
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
-		? sanitize_text_field(wp_unslash($_REQUEST['action']))
-		: '';
+			? sanitize_text_field(wp_unslash($_REQUEST['action']))
+			: '';
 
 		/*
 		* CF7 Admin Pages
