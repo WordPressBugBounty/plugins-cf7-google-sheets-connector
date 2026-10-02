@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.2.8
+ * Version: 5.2.9
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -75,8 +75,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.2.8');
-define('GS_CONNECTOR_DB_VERSION', '5.2.8');
+define('GS_CONNECTOR_VERSION', '5.2.9');
+define('GS_CONNECTOR_DB_VERSION', '5.2.9');
 define('GS_CONNECTOR_ROOT', __DIR__);
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(__DIR__) . '/google-sheet-connector.php');
@@ -1967,7 +1967,7 @@ class Gs_Connector_Free_Init
 			update_option('gs_cf7_auth_method', '');
 		}
 		// CF7 Database Settings
-		if (! get_option('gs_cf7db_setting')) {
+		if (false === get_option('gs_cf7db_setting')) {
 			update_option('gs_cf7db_setting', 1);
 		}
 		if (! get_option('gs_cf7db_database')) {

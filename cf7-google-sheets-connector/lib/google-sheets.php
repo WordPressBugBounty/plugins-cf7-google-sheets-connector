@@ -847,9 +847,13 @@ class CF7GSC_googlesheet {
 	 *                           asks for the re-write described in step 7,
 	 *                           needed only by values Sheets recognises as a
 	 *                           date/time (the [_date] / [_time] columns).
+	 * @param array $date_fields Column header => true, for the CF7 [date] field
+	 *                           columns whose value is an ISO yyyy-mm-dd. They
+	 *                           are stored as real dates and displayed in the
+	 *                           pattern from write_date_cells().
 	 * @return true|WP_Error
 	 */
-	public function add_row( $data, $text_fields = array() ) {
+	public function add_row( $data, $text_fields = array(), $date_fields = array() ) {
 		try {
 
 			$spreadsheetId = $this->getSpreadsheetId();
@@ -945,10 +949,18 @@ class CF7GSC_googlesheet {
 			$insert_data     = array();
 			$text_columns    = array();
 			$rewrite_columns = array();
+			$date_cells      = array();
 
 			foreach ( $headers as $col_index => $colName ) {
 
 				$cell_value = isset( $data[ $colName ] ) ? $data[ $colName ] : '';
+
+				// CF7 [date] field: keep the ISO value and re-write it as a real
+				// date once the row is in place (write_date_cells(), below).
+				if ( isset( $date_fields[ $colName ] ) && '' !== $cell_value ) {
+
+					$date_cells[ $col_index ] = (string) $cell_value;
+				}
 
 				// Columns listed in $text_fields (the submission date/time
 				// columns and any [date] field) hold a value that is already
@@ -1349,6 +1361,12 @@ class CF7GSC_googlesheet {
 					// submission.
 					self::gsc_parse_response( $rewrite_response, 'rewrite date/time cells as plain text' );
 				}
+
+				// CF7 [date] field cells: real dates, display format pinned.
+				if ( ! empty( $date_cells ) ) {
+
+					$this->write_date_cells( $spreadsheetId, $sheet_title, $sheet_id, array( $row_number => $date_cells ), $token );
+				}
 			}
 
 			return $result;
@@ -1363,6 +1381,178 @@ class CF7GSC_googlesheet {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Translate a PHP date() format string (such as the WordPress "date_format"
+	 * option) into the closest Google Sheets date pattern.
+	 *
+	 * Only date-relevant tokens are mapped; separators and any token with no
+	 * Sheets equivalent pass through unchanged. A leading backslash escapes the
+	 * next character to a literal, as in PHP's own date().
+	 *
+	 * @param string $php_format PHP date() format string, e.g. "d/m/Y" or "F j, Y".
+	 * @return string Google Sheets date pattern, e.g. "dd/mm/yyyy".
+	 */
+	private static function php_date_format_to_sheets_pattern( $php_format ) {
+
+		static $map = array(
+			'd' => 'dd',
+			'j' => 'd',
+			'D' => 'ddd',
+			'l' => 'dddd',
+			'm' => 'mm',
+			'n' => 'm',
+			'M' => 'mmm',
+			'F' => 'mmmm',
+			'Y' => 'yyyy',
+			'y' => 'yy',
+		);
+
+		$php_format = (string) $php_format;
+		$pattern    = '';
+		$length     = strlen( $php_format );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+
+			$char = $php_format[ $i ];
+
+			if ( '\\' === $char && $i + 1 < $length ) {
+				$pattern .= $php_format[ ++$i ];
+				continue;
+			}
+
+			$pattern .= isset( $map[ $char ] ) ? $map[ $char ] : $char;
+		}
+
+		return $pattern;
+	}
+
+	/**
+	 * Rewrite the collected date cells as real Google Sheets dates.
+	 *
+	 * The cells' number format is set to a date pattern first, so a cell that
+	 * inherited Plain text from the row above cannot swallow the value, then the
+	 * ISO strings are written with USER_ENTERED, which Sheets parses exactly as if
+	 * typed into the sheet: a true date value, no apostrophe, still sortable.
+	 *
+	 * The display pattern is dd-mm-yyyy for CF7 date FIELD columns and follows
+	 * WordPress > Settings > General > Date Format when $use_wp_format is true.
+	 * Filterable via gscf7_pro_date_cell_format, which only changes how the date
+	 * is displayed, never the date itself.
+	 *
+	 * @param string $spreadsheet_id Target spreadsheet.
+	 * @param string $sheet_title    Worksheet title.
+	 * @param int    $sheet_id       Numeric worksheet id, for the format request.
+	 * @param array  $cells_by_row   Map of row number => (column index => Y-m-d).
+	 * @param string $token          OAuth access token.
+	 * @param bool   $use_wp_format  True to follow the WordPress date format
+	 *                               instead of the fixed dd-mm-yyyy.
+	 * @return void
+	 */
+	private function write_date_cells( $spreadsheet_id, $sheet_title, $sheet_id, $cells_by_row, $token, $use_wp_format = false ) {
+
+		// sheetId 0 is the first worksheet and is valid; only a missing id is not.
+		if ( '' === $sheet_id || null === $sheet_id ) {
+			return;
+		}
+
+		if ( $use_wp_format ) {
+			$wp_date_format  = get_option( 'date_format' );
+			$default_pattern = self::php_date_format_to_sheets_pattern( ! empty( $wp_date_format ) ? $wp_date_format : 'Y-m-d' );
+		} else {
+			$default_pattern = 'dd-mm-yyyy';
+		}
+
+		/**
+		 * Filters the number format applied to date cells.
+		 *
+		 * Defaults to dd-mm-yyyy for CF7 date field columns, or to the site's
+		 * WordPress > Settings > General > Date Format (translated to Sheets
+		 * pattern tokens) when $use_wp_format is true. The same hook name and
+		 * parameters are used by the Pro plugin.
+		 *
+		 * @param string $pattern       Google Sheets date pattern.
+		 * @param bool   $use_wp_format Whether this write follows the WordPress date format.
+		 */
+		$pattern = apply_filters( 'gscf7_pro_date_cell_format', $default_pattern, $use_wp_format );
+
+		if ( ! is_string( $pattern ) || '' === trim( $pattern ) ) {
+			$pattern = $default_pattern;
+		}
+
+		// A1 notation: wrap the title and double any embedded quote.
+		$quoted_title    = "'" . str_replace( "'", "''", $sheet_title ) . "'";
+		$payload         = array();
+		$format_requests = array();
+
+		foreach ( $cells_by_row as $row_number => $cells ) {
+
+			foreach ( $cells as $col_index => $iso_date ) {
+
+				$payload[] = array(
+					'range'  => $quoted_title . '!' . self::gsc_column_letter( (int) $col_index ) . (int) $row_number,
+					'values' => array( array( $iso_date ) ),
+				);
+
+				$format_requests[] = array(
+					'repeatCell' => array(
+						'range'  => array(
+							'sheetId'          => (int) $sheet_id,
+							'startRowIndex'    => (int) $row_number - 1,
+							'endRowIndex'      => (int) $row_number,
+							'startColumnIndex' => (int) $col_index,
+							'endColumnIndex'   => (int) $col_index + 1,
+						),
+						'cell'   => array(
+							'userEnteredFormat' => array(
+								'numberFormat' => array(
+									'type'    => 'DATE',
+									'pattern' => $pattern,
+								),
+							),
+						),
+						'fields' => 'userEnteredFormat.numberFormat',
+					),
+				);
+			}
+		}
+
+		if ( empty( $payload ) ) {
+			return;
+		}
+
+		$format_response = wp_remote_post(
+			"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}:batchUpdate",
+			self::gsc_request_args(
+				$token,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode( array( 'requests' => $format_requests ) ),
+				)
+			)
+		);
+
+		// Cosmetic like step 6: a failure is logged rather than failing the submission.
+		self::gsc_parse_response( $format_response, 'format date cells' );
+
+		$value_response = wp_remote_post(
+			"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheet_id}/values:batchUpdate",
+			self::gsc_request_args(
+				$token,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode(
+						array(
+							'valueInputOption' => 'USER_ENTERED',
+							'data'             => $payload,
+						)
+					),
+				)
+			)
+		);
+
+		self::gsc_parse_response( $value_response, 'write date cells' );
 	}
 
 	/**

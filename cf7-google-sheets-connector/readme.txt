@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.8
+Stable tag: 5.2.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,12 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.2.9 (02-10-2026) =
+* Fixed: Improved CF7 database storage handling and added a filter hook to conditionally control database entry storage while maintaining sequential Entry IDs for Google Sheets submissions.
+* Fixed: Improved CF7 database storage handling to prevent duplicate Entry IDs when database storage is disabled.
+* Fixed: Fixed an issue where an unwanted apostrophe appeared before CF7 date field values in Google Sheets.
+* Fixed: Added a filter hook to customize the Google Sheets display format for CF7 date fields while preserving the date as a real date value.
 
 = 5.2.8 (17-09-2026) =
 * Fixed: Fixed the Enable/Disable toggle functionality for Database Storage.

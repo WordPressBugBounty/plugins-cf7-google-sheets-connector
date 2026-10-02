@@ -2355,6 +2355,57 @@ class Gs_Connector_Service
 	}
 
 	/**
+	 * Issue the next Google Sheets "Entry ID" for a form.
+	 *
+	 * The ID used to be MAX(id) + 1 from the entries table, so it only advanced
+	 * when a row was stored and repeated while Database Storage was off. It now
+	 * comes from a per-form counter option that advances on every submission
+	 * whether or not a row is stored.
+	 *
+	 * $floor is the highest entry id already in the table, so the result is never
+	 * lower than the old MAX(id) + 1 and existing installs continue where they
+	 * were. The counter is bumped by a single UPDATE (LAST_INSERT_ID(expr) hands
+	 * the new value back to this connection), which MySQL serialises on the row,
+	 * so concurrent submissions cannot receive the same ID.
+	 *
+	 * @param int $form_id Contact Form ID.
+	 * @param int $floor   Highest existing entry id for the form (0 if none).
+	 * @return int
+	 */
+	private function gscf7_next_entry_id($form_id, $floor)
+	{
+		global $wpdb;
+
+		$floor       = max(0, (int) $floor);
+		$option_name = 'gscf7_entry_id_counter_' . (int) $form_id;
+
+		// No-op when the option already exists; atomic on the unique option_name.
+		add_option($option_name, 0, '', 'no');
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic counter increment; a get/update_option pair would race.
+		$updated = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE `{$wpdb->options}` SET option_value = LAST_INSERT_ID(GREATEST(CAST(option_value AS UNSIGNED), %d) + 1) WHERE option_name = %s",
+				$floor,
+				$option_name
+			)
+		);
+
+		if (false === $updated) {
+			return $floor + 1;
+		}
+
+		$next = (int) $wpdb->get_var('SELECT LAST_INSERT_ID()'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// The raw UPDATE bypassed the options cache.
+		wp_cache_delete($option_name, 'options');
+		wp_cache_delete('notoptions', 'options');
+		wp_cache_delete('alloptions', 'options');
+
+		return $next > 0 ? $next : $floor + 1;
+	}
+
+	/**
 	 * Function - To send contact form data to google spreadsheet
 	 *
 	 * @param object $form
@@ -2604,11 +2655,10 @@ class Gs_Connector_Service
 
 				// CF7's [date] field submits the browser's native input value,
 				// which is always ISO "yyyy-mm-dd". Track which posted field
-				// names come from a [date] tag so their value can be rewritten
-				// to the dd-mm-yyyy the field itself presents (below, once the
-				// posted data has been copied into $data) and kept as literal
-				// text, so the cell and the formula bar both read that exact
-				// string.
+				// names come from a [date] tag: add_row() writes those cells as
+				// real Sheets dates and pins their display format (default
+				// dd-mm-yyyy, filterable via gscf7_pro_date_cell_format), so the
+				// value itself is left as the ISO date CF7 supplied.
 				$cf7_date_field_names = array();
 
 				foreach ($form->scan_form_tags(array('basetype' => 'date')) as $date_tag) {
@@ -2616,11 +2666,6 @@ class Gs_Connector_Service
 					if (! empty($date_tag->name)) {
 
 						$cf7_date_field_names[$date_tag->name] = true;
-
-						// Listed as text, but false: dd-mm-yyyy is not a form
-						// Sheets reads as a date, so these cells never grew the
-						// apostrophe and must not be re-written by add_row().
-						$text_field_names[$date_tag->name] = false;
 					}
 				}
 
@@ -2662,10 +2707,12 @@ class Gs_Connector_Service
 					}
 				}
 
-				// Rewrite the [date] field values copied above from the ISO
-				// "yyyy-mm-dd" the browser posts to the dd-mm-yyyy the field
-				// presents. A value that isn't ISO (a filter supplied its own,
-				// say) is left exactly as it is rather than guessed at.
+				// Collect the [date] fields whose posted value is a valid ISO
+				// "yyyy-mm-dd" for add_row() to write as real dates. A value that
+				// isn't ISO (a filter supplied its own, say) is left exactly as it
+				// is, as ordinary text, rather than guessed at.
+				$cf7_date_columns = array();
+
 				foreach ($cf7_date_field_names as $cf7_date_field_name => $unused) {
 
 					if (empty($data[$cf7_date_field_name])) {
@@ -2683,7 +2730,7 @@ class Gs_Connector_Service
 						&& $cf7_date_object->format('Y-m-d') === $data[$cf7_date_field_name]
 					) {
 
-						$data[$cf7_date_field_name] = $cf7_date_object->format('d-m-Y');
+						$cf7_date_columns[$cf7_date_field_name] = true;
 					}
 				}
 
@@ -2729,6 +2776,9 @@ class Gs_Connector_Service
 
 				if ($enable_entry_id) {
 
+					// $next_entry_id is MAX(id) + 1 read before this submission was stored; use it as the floor.
+					$next_entry_id = $this->gscf7_next_entry_id($form_id, $next_entry_id - 1);
+
 					$data = array_merge(
 						array(
 
@@ -2744,7 +2794,7 @@ class Gs_Connector_Service
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- CF7 core hook, not defined by this plugin.
 				$data = apply_filters('gsc_filter_form_data', $data, $form);
 
-				$gsc_result = $doc->add_row($data, $text_field_names);
+				$gsc_result = $doc->add_row($data, $text_field_names, $cf7_date_columns);
 
 				/*
 				* Surface a failed write. add_row() previously returned silently on

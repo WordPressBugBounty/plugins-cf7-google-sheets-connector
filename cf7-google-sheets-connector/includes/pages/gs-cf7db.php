@@ -935,6 +935,25 @@ class GS_CF7DB
 	function cfdb7_before_send_mail($form_tag, $gs_uploads)
 	{
 
+		/**
+		 * Filter whether this submission is stored in the CF7 database table.
+		 *
+		 * Opt-in override that only applies while "Enable Database Storage" is OFF
+		 * (a missing option, i.e. older installs, counts as ON). It defaults to
+		 * true, so the existing insert behaviour is unchanged; a callback returning
+		 * false skips the table insert, and only when the toggle is OFF. With the
+		 * toggle ON the filter is not consulted and the row is always stored.
+		 * Skipping only skips the table insert.
+		 *
+		 * @param bool   $store    Whether to store the submission.
+		 * @param object $form_tag Contact Form instance.
+		 */
+		$gscf7_db_enabled = 1 === (int) get_option('gs_cf7db_setting', 1);
+
+		if (! $gscf7_db_enabled && ! apply_filters('gscf7_cf7db_store_submission', true, $form_tag)) {
+			return;
+		}
+
 		global $wpdb;
 
 		$cfdb = apply_filters('cfdb7_database', $wpdb);
