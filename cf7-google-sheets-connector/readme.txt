@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.9
+Stable tag: 5.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,11 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.6.0 (03-10-2026) =
+* Fixed: Google Sheet submissions being inserted into the wrong row when the header row is hidden.
+* Fixed: Number field values being stored with an unwanted apostrophe in Google Sheets.
+* Fixed: Filesystem permission status not being included when copying System Status information.
 
 = 5.2.9 (02-10-2026) =
 * Fixed: Improved CF7 database storage handling and added a filter hook to conditionally control database entry storage while maintaining sequential Entry IDs for Google Sheets submissions.

@@ -51,7 +51,13 @@ jQuery(document).ready(function ($) {
 
         if (cols.length >= 2) {
           const key = (cols[0].innerText || "").trim();
-          const value = (cols[1].innerText || "").trim();
+          // Rows with more than two cells (Filesystem Permission: label, path,
+          // status) keep every cell after the label, not just the first.
+          const value = Array.from(cols)
+            .slice(1)
+            .map((col) => (col.innerText || "").trim())
+            .filter(Boolean)
+            .join(" - ");
 
           if (key && value) {
             output += `${key}: ${value}\n`;

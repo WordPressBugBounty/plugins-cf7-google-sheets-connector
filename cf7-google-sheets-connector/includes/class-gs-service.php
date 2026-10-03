@@ -2740,6 +2740,54 @@ class Gs_Connector_Service
 
 				// ========================
 
+				// Names of the [number] / [range] fields. A value that really is a
+				// number in one of these (e.g. -5) is not formula text, so it is
+				// written as-is instead of getting the apostrophe below.
+				$gscf7_number_field_names = array();
+
+				foreach ($form->scan_form_tags(array('basetype' => array('number', 'range'))) as $gscf7_number_tag) {
+
+					if (! empty($gscf7_number_tag->name)) {
+
+						$gscf7_number_field_names[$gscf7_number_tag->name] = true;
+					}
+				}
+
+				// [tel] fields: an international number such as +1234567890 starts
+				// with "+" legitimately. Only that shape (a leading +, a digit, then
+				// digits and the usual separators) is exempt, never "+hello".
+				$gscf7_tel_field_names = array();
+
+				foreach ($form->scan_form_tags(array('basetype' => 'tel')) as $gscf7_tel_tag) {
+
+					if (! empty($gscf7_tel_tag->name)) {
+
+						$gscf7_tel_field_names[$gscf7_tel_tag->name] = true;
+					}
+				}
+
+				// Register the genuine numbers / phone numbers as text columns, the
+				// same way the date and time columns are: add_row() writes the value
+				// unchanged, pins the cell to Plain text and re-writes it, so Sheets
+				// shows exactly the value in the cell and the formula bar, with no
+				// leading apostrophe. A value starting with "+" is left out: the
+				// re-write would turn it into a formula (+1234567890 => 1234567890).
+				// The loop below skips registered columns; any other value (e.g.
+				// "=1+1" or "+hello") is still neutralised there.
+				foreach ($data as $key => $value) {
+
+					if (
+						is_string($value)
+						&& (
+							(isset($gscf7_number_field_names[$key]) && preg_match('/^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/', $value))
+							|| (isset($gscf7_tel_field_names[$key]) && preg_match('/^[0-9][0-9 ().-]*$/', $value))
+						)
+					) {
+
+						$text_field_names[$key] = true;
+					}
+				}
+
 				foreach ($data as $key => $value) {
 
 					// Date/time values are generated here, never formulas, and
@@ -2762,7 +2810,12 @@ class Gs_Connector_Service
 					* A leading apostrophe tells Google Sheets to treat the cell as
 					* text while preserving the value exactly as submitted.
 					*/
-					if ('' !== $value && false !== strpos("=+-@\t\r", $value[0])) {
+					if (
+						'' !== $value
+						&& false !== strpos("=+-@\t\r", $value[0])
+						&& ! (isset($gscf7_number_field_names[$key]) && preg_match('/^[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/', $value))
+						&& ! (isset($gscf7_tel_field_names[$key]) && preg_match('/^\+[0-9][0-9 ().-]*$/', $value))
+					) {
 
 						$data[$key] = "'" . $value;
 					}

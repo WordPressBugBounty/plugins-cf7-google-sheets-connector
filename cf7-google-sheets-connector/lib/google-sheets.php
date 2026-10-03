@@ -1088,13 +1088,16 @@ class CF7GSC_googlesheet {
 				// append treats an empty anchor cell as the start of a brand-new
 				// table and writes into row 1, pushing the real header row down.
 				//
-				// Anchoring the range on the full header row A1:<last>1 covers both
+				// Anchoring the range on the column span A:<last> covers both
 				// cases: the range always overlaps the real header (so the row is
 				// appended below it, never on top of it) and it always begins at
-				// column A (so values are written from column A). The step 5 safety
-				// net below still realigns the row if Sheets reports any other start
-				// column.
-				$header_span = $sheet_title . '!A1:' . self::gsc_column_letter( count( $headers ) - 1 ) . '1';
+				// column A (so values are written from column A). A span rather than
+				// the row-1 cells A1:<last>1, because Sheets ignores hidden rows when
+				// it detects the table: with row 1 hidden, a range lying wholly in
+				// row 1 finds no table and the row is inserted on top of the header.
+				// The step 5 safety net below still realigns the row if Sheets
+				// reports any other start column.
+				$header_span = $sheet_title . '!A:' . self::gsc_column_letter( count( $headers ) - 1 );
 
 				$response = wp_remote_post(
 					"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
