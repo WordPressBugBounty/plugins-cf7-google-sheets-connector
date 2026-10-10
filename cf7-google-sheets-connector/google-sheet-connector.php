@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.6.0
+ * Version: 5.6.1
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -75,8 +75,8 @@ if (! function_exists('cgsc_fs')) {
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.6.0');
-define('GS_CONNECTOR_DB_VERSION', '5.6.0');
+define('GS_CONNECTOR_VERSION', '5.6.1');
+define('GS_CONNECTOR_DB_VERSION', '5.6.1');
 define('GS_CONNECTOR_ROOT', __DIR__);
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(__DIR__) . '/google-sheet-connector.php');
@@ -1140,8 +1140,16 @@ class Gs_Connector_Free_Init
 	 */
 	public function register_gs_menu_pages()
 	{
+		// CF7 6.2+ registers its top-level menu as 'wpcf7-dashboard' ('wpcf7' is
+		// now only the "Contact Forms" submenu); older versions use 'wpcf7'.
+		// CF7 registers on admin_menu priority 9, so it is already in place here.
+		global $admin_page_hooks;
+		$gscf7_parent_slug = (is_array($admin_page_hooks) && isset($admin_page_hooks['wpcf7-dashboard']))
+			? 'wpcf7-dashboard'
+			: 'wpcf7';
+
 		add_submenu_page(
-			'wpcf7',
+			$gscf7_parent_slug,
 			__('Google Sheets', 'cf7-google-sheets-connector'),
 			__('Google Sheets', 'cf7-google-sheets-connector'),
 			'manage_options', // capability
