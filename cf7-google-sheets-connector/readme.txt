@@ -4,7 +4,7 @@ Tags: cf7, contact form 7, google sheets, google sheets integration, form submis
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.6.1
+Stable tag: 5.6.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -440,6 +440,23 @@ See the [Free vs PRO feature comparison](https://www.gsheetconnector.com/cf7-goo
 10. Plugin and System Information – View GSheetConnector, WordPress, PHP, and server environment information for troubleshooting and support.
 
 == Changelog ==
+
+= 5.6.2 (21-11-2026) =
+* Added: Added "Powered by GSheetConnector" credit setting, shown after the form notice.
+* Improved: GDPR notice text size is now 10px, and blank GDPR/Privacy text saves the default text.
+* Improved: This plugin can stay activated with CF7 Google Sheet Connector PRO 2.6.2 or later. It stays idle while PRO is active and takes over again if PRO is deactivated.
+* Fixed: Privacy Policy notice now shows only on the designated Privacy Policy page.
+* Fixed: Entry ID in Google Sheets now matches the entry's ID in the CF7 Database, so upgrading to Pro no longer creates duplicate or overwritten rows.
+* Fixed: Google connection breaking after switching back from Pro to Free.
+* Fixed: "Delete Plugin Data on Uninstall" not working; data is now kept when it is off or the Pro plugin is installed.
+* Fixed: Fatal error when deleting the plugin while the Pro plugin is active.
+* Fixed: On multisite, a sub-site without Contact Form 7 deactivating the network-activated plugin on all sites.
+* Fixed: User special mail tags ([_user_login], [_user_email], etc.) being blank in Google Sheets and the CF7 Database.
+* Fixed: Error Log hiding different errors that occurred within 30 minutes of each other.
+* Fixed: WP Dashboard widget not showing when the Avada GSheetConnector plugin is active.
+* Fixed: Numbers entered in text fields (e.g. an age) showing a leading apostrophe in Google Sheets.
+* Fixed: New rows taking the highlight or background color of the row above.
+* Fixed: A failed Google sign-in leaving no way to retry. The error now offers "Sign in with Google again".
 
 = 5.6.1 (10-10-2026) =
 * Fixed: Google Sheets menu visibility issue with Contact Form 7 6.2 and later, while maintaining backward compatibility with older versions.

@@ -42,11 +42,7 @@ jQuery(document).ready(function ($) {
           (response.data && response.data.message) ||
           "Something went wrong. Please try again.";
 
-        $("<div/>", {
-          class:
-            "gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin",
-          text: errorMessage,
-        }).appendTo("#gs-validation-message");
+        gscf7AuthFailed(errorMessage);
       } else {
         $(
           "<div class='gsc-msg gsc-success fw-400 text-dark text-center pt-10 pb-10 manual-margin'>Your Google Access Code is Authorized and Saved.</div>",
@@ -56,8 +52,31 @@ jQuery(document).ready(function ($) {
           window.location.href = $("#redirect_auth").val();
         }, 2000);
       }
+    }).fail(function () {
+      $(".loading-sign").removeClass("loading");
+      gscf7AuthFailed("Could not reach your site. Please try again.");
     });
   });
+
+  // Since 5.6.2: a failed sign-in can be retried; Google accepts a code only once.
+  function gscf7AuthFailed(message) {
+    var $button = $("#save-gs-code");
+
+    $("#gs-validation-message")
+      .empty()
+      .append(
+        $("<div/>", {
+          class: "gsc-msg gsc-error fw-400 text-dark text-center pt-10 pb-10 manual-margin",
+          text: message + " ",
+        }).append($("<a/>", { href: $button.data("retry-url"), text: $button.data("retry-label") })),
+      );
+
+    if (window.history.replaceState) {
+      var url = new URL(window.location.href);
+      url.searchParams.delete("code");
+      window.history.replaceState(null, "", url.toString());
+    }
+  }
 
   $(document).on("click", "#gscf7-free-deactivate-log", function (e) {
     e.preventDefault();
@@ -1439,13 +1458,15 @@ jQuery(function ($) {
   "use strict";
 
   /**
-   * Wires up the GDPR notice block: editor (Visual/Code) -> live preview
-   * below the "Form Preview" CF7 embed.
+   * Wires up one notice block (editor, live preview, enable toggle) so
+   * Privacy Policy and GDPR behave identically.
    *
-   * The preview node (identified by cssClass) is looked up fresh on every
-   * edit -- and created on the fly when the saved notice is empty -- because
-   * the CF7 embed's HTML is swapped wholesale whenever the previewed form
-   * changes or the settings are saved.
+   * The live preview target is the actual notice markup rendered inside the
+   * "Form Preview" CF7 embed by gscf7_append_frontend_privacy_notice()
+   * (identified by cssClass). That embed's HTML can be swapped wholesale
+   * when the previewed form changes, so the node is looked up fresh on
+   * every edit (and created on the fly if the notice isn't enabled/saved
+   * yet) instead of being cached once at init time.
    */
   function initNoticeBlock(prefix, editorId, cssClass) {
     var $editorTextarea = $("#" + editorId);
@@ -1453,24 +1474,14 @@ jQuery(function ($) {
     if (!$editorTextarea.length) {
       return null;
     }
-
-    // Return the notice node for the live preview, creating it if needed and
-    // always keeping it as a direct child of #gscf7_form_preview -- i.e. below
-    // the scrollable .wpcf7 box, never clipped by the form's max-height.
     function getPreviewNode() {
       if (!cssClass) {
         return $();
       }
       var $wrap = $("#gscf7_form_preview");
-      if (!$wrap.length) {
-        return $();
-      }
-      var $node = $wrap.find("." + cssClass).first();
-      if (!$node.length) {
-        $node = $('<div class="' + cssClass + '"></div>');
-      }
-      if (!$node.parent().is($wrap)) {
-        $node.appendTo($wrap);
+      var $node = $wrap.find("." + cssClass);
+      if (!$node.length && $wrap.length) {
+        $node = $('<div class="' + cssClass + '"></div>').appendTo($wrap);
       }
       return $node;
     }
@@ -1487,58 +1498,32 @@ jQuery(function ($) {
       return $editorTextarea.val();
     }
 
-    // Text with no visible characters (e.g. "<p><br></p>" left by TinyMCE
-    // after deleting everything) counts as empty.
-    function isBlank(html) {
-      return (
-        $("<div>")
-          .html(html || "")
-          .text()
-          .trim() === ""
-      );
-    }
-
     function applyText() {
-      // An empty editor shows an empty preview: on the front end an empty
-      // notice renders nothing at all (no fallback to the default text).
-      var html = getContent();
-      getPreviewNode().html(isBlank(html) ? "" : html);
+      getPreviewNode().html(getContent());
     }
     function applyEnabled() {
       var isOn = !$enable.length || $enable.is(":checked");
-      getPreviewNode().toggle(isOn && !isBlank(getContent()));
+      getPreviewNode().toggle(isOn);
     }
 
+    // applyAll() runs on initial setup and after every preview reload (form
+    // switch, save), when the preview node is either freshly server-rendered
+    // with the correct saved text or not yet touched by the user at all.
+    // Calling applyText() here too would immediately overwrite that correct
+    // text with whatever getContent() reads back at that exact moment --
+    // often stale or empty right after a TinyMCE (re)initialization -- so
+    // only visibility is synced automatically. Text stays in sync purely
+    // through the real input/change listeners below, which only fire once
+    // the admin actually edits the notice.
     function applyAll() {
-      applyText();
       applyEnabled();
     }
 
-    // Keep the preview in sync from every edit path: the raw textarea (Code
-    // tab / quicktags) and TinyMCE (Visual tab). applyAll() (not just
-    // applyText) so an edit that empties/refills the notice also re-runs the
-    // show/hide check. TinyMCE may already be initialised by the time this
-    // runs, so bind directly as well as on the init event.
-    $editorTextarea.on("input keyup change", applyAll);
-
-    function bindTinyEditor(editor) {
-      if (editor && editor.id === editorId) {
-        editor.on(
-          "input keyup change SetContent Undo Redo ExecCommand",
-          applyAll,
-        );
-      }
-    }
+    $editorTextarea.on("input", applyText);
     $(document).on("tinymce-editor-init", function (e, editor) {
-      bindTinyEditor(editor);
-      applyAll();
-    });
-    if (typeof tinymce !== "undefined" && tinymce.get) {
-      bindTinyEditor(tinymce.get(editorId));
-    }
-    // Visual <-> Code tab switch.
-    $(document).on("click", ".wp-switch-editor", function () {
-      setTimeout(applyAll, 50);
+      if (editor.id === editorId) {
+        editor.on("input change keyup SetContent Undo Redo", applyText);
+      }
     });
 
     $enable.on("change", applyEnabled);
@@ -1553,15 +1538,85 @@ jQuery(function ($) {
     };
   }
 
-  function syncSectionVisibility() {
-    var $gdprToggle = $("#gscf7_gdpr_enable");
-    var gdprOn = $gdprToggle.length && $gdprToggle.is(":checked");
-    $(".gdpr-section").toggleClass("d-none", !gdprOn);
+  // The GDPR/Privacy notice is rendered by wpcf7_form_elements, so it ends
+  // up inside .wpcf7-form -- and therefore inside the .wpcf7 box that gets a
+  // fixed max-height + overflow-y:auto to keep the form preview compact.
+  // That drags the notice text into the scrollable area along with the form
+  // fields. Pull it out so it always renders fully visible below the form
+  // preview instead of being scrolled.
+  function moveNoticesOutOfPreviewScroll() {
+    var $wrap = $("#gscf7_form_preview");
+    if (!$wrap.length) {
+      return;
+    }
+    $wrap
+      .find(".gscf7-frontend-gdpr-notice, .gscf7-frontend-privacy-notice")
+      .appendTo($wrap);
   }
 
-  $("#gscf7_gdpr_enable").on("change", syncSectionVisibility);
+  function syncSectionVisibility() {
+    var $gdprToggle = $("#gscf7_gdpr_enable");
+    var $privacyToggle = $("#gscf7_privacy_enable");
+    var $gdprSection = $(".gdpr-section");
+    var $privacySection = $(".gdpr-privacy-section");
+    var $brandingToggle = $("#gscf7_branding_enable");
+    var brandingOn = $brandingToggle.length && $brandingToggle.is(":checked");
+    $(".gsc-branding-section").toggleClass("d-none", !brandingOn);
+
+    var gdprOn = $gdprToggle.length && $gdprToggle.is(":checked");
+    var privacyOn = $privacyToggle.length && $privacyToggle.is(":checked");
+
+    $gdprSection.toggleClass("d-none", !gdprOn);
+    $privacySection.toggleClass("d-none", !privacyOn);
+  }
+
+  // A TinyMCE editor that initializes while its container is display:none
+  // (the toggle for this notice was off on page load) never renders its
+  // iframe correctly -- getContent() then keeps returning an empty string
+  // even though the underlying textarea has the right value, so Save
+  // silently stores empty text. Re-creating the editor once its section
+  // becomes visible fixes that; this is the standard WordPress pattern for
+  // an editor inside a tab/accordion that starts hidden.
+  function refreshHiddenEditor(editorId) {
+    if (typeof tinymce === "undefined" || !editorId) {
+      return;
+    }
+    var editor = tinymce.get(editorId);
+    if (!editor || !editor.initialized) {
+      return;
+    }
+    tinymce.execCommand("mceRemoveEditor", false, editorId);
+    tinymce.execCommand("mceAddEditor", false, editorId);
+  }
+
+  $("#gscf7_gdpr_enable").on("change", function () {
+    if ($(this).is(":checked")) {
+      syncSectionVisibility();
+      refreshHiddenEditor("gscf7gdprtext");
+    } else {
+      syncSectionVisibility();
+    }
+  });
+
+  $("#gscf7_privacy_enable").on("change", function () {
+    if ($(this).is(":checked")) {
+      syncSectionVisibility();
+      refreshHiddenEditor("gscf7privacytext");
+    } else {
+      syncSectionVisibility();
+    }
+  });
+  $("#gscf7_branding_enable").on("change", syncSectionVisibility);
+
   syncSectionVisibility();
 
+  // Privacy Policy notice is intentionally not live-previewed here: on the
+  // real front end it only ever appears on the site's designated Privacy
+  // Policy page, never on this generic form preview, so injecting it here
+  // would be misleading.
+  moveNoticesOutOfPreviewScroll();
+
+  var privacyBlock = initNoticeBlock("gscf7_privacy", "gscf7privacytext");
   var gdprBlock = initNoticeBlock(
     "gscf7_gdpr",
     "gscf7gdprtext",
@@ -1583,9 +1638,27 @@ jQuery(function ($) {
       action: "gscf7_save_privacy_setting",
       nonce: $("#gscf7-privacy-setting-ajax-nonce").val(),
     };
+    if ($("#gscf7_branding_enable").length) {
+      data.gscf7_branding_enable = $("#gscf7_branding_enable").is(":checked")
+        ? 1
+        : 0;
+      data.gscf7_branding_display =
+        $('input[name="gscf7_branding_display"]:checked').val() || "visible";
+      data.gscf7_branding_nofollow = $(
+        'input[name="gscf7_branding_nofollow"]',
+      ).is(":checked")
+        ? 1
+        : 0;
+    }
+    if (privacyBlock) {
+      data.gscf7_privacy_enable = privacyBlock.enable.is(":checked") ? 1 : 0;
+
+      data.gscf7_privacy_text = privacyBlock.getContent();
+    }
 
     if (gdprBlock) {
-      data.gscf7_gdpr_enable = 1;
+      data.gscf7_gdpr_enable = gdprBlock.enable.is(":checked") ? 1 : 0;
+
       data.gscf7_gdpr_text = gdprBlock.getContent();
     }
 
@@ -1602,7 +1675,7 @@ jQuery(function ($) {
           message = response.data.message;
         }
 
-        $msg.removeClass("d-none").addClass("gsc-success");
+        $msg.removeClass("d-none");
       },
 
       error: function (xhr) {
@@ -1627,33 +1700,25 @@ jQuery(function ($) {
         // Enable Save button again.
         $btn.prop("disabled", false);
 
-        // Re-render the Form Preview from the server so it reflects exactly
-        // what was just saved (an empty notice disappears, new text shows),
-        // without a full page reload that would reset the form selection.
-        loadFormPreview();
-
-        // Hide the confirmation message after 2.5 seconds.
+        // Hide message after 2.5 seconds.
         setTimeout(function () {
           $msg.addClass("d-none");
+          location.reload();
         }, 2500);
       },
     });
   });
 
-  function loadFormPreview() {
-    var formId = $("#gscf7_preview_form").val();
+  $("#gscf7_preview_form").on("change", function () {
+    var formId = $(this).val();
     var $preview = $("#gscf7_form_preview");
-
-    if (!$preview.length) {
-      return;
-    }
 
     if (!formId) {
       $preview.html("");
       return;
     }
 
-    $preview.html('<span class="loading"></span>');
+    $preview.html('<span class="loading"></span>' + "</span>");
 
     $.ajax({
       url: ajaxurl,
@@ -1677,8 +1742,13 @@ jQuery(function ($) {
           $preview.html("<p>Unable to load form preview.</p>");
         }
 
-        // Place the notice below the form and fill it with the current
-        // editor content (getPreviewNode() moves it out of the scroll box).
+        moveNoticesOutOfPreviewScroll();
+
+        // The freshly loaded preview reflects saved settings only -- reapply
+        // any unsaved live edits (text/enabled) on top of it.
+        if (privacyBlock) {
+          privacyBlock.applyAll();
+        }
         if (gdprBlock) {
           gdprBlock.applyAll();
         }
@@ -1692,13 +1762,7 @@ jQuery(function ($) {
         $preview.removeClass("loading");
       },
     });
-  }
-
-  $("#gscf7_preview_form").on("change", loadFormPreview);
-
-  // Initial render (the server sends an empty #gscf7_form_preview so the CF7
-  // form markup never has to be echoed unescaped from PHP).
-  loadFormPreview();
+  });
 });
 
 jQuery(function ($) {

@@ -878,6 +878,7 @@ class CF7GSC_googlesheet {
 
 			$sheet_id    = null;
 			$sheet_title = null;
+			$grid_rows   = 0;
 
 			foreach ( $meta['sheets'] as $sheet ) {
 
@@ -893,6 +894,7 @@ class CF7GSC_googlesheet {
 
 				$sheet_id    = $properties['sheetId'];
 				$sheet_title = $properties['title'];
+				$grid_rows   = isset( $properties['gridProperties']['rowCount'] ) ? (int) $properties['gridProperties']['rowCount'] : 0;
 				break;
 			}
 
@@ -1102,7 +1104,7 @@ class CF7GSC_googlesheet {
 				$response = wp_remote_post(
 					"https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/" .
 					rawurlencode( $header_span ) .
-					':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+					':append?valueInputOption=RAW&insertDataOption=OVERWRITE',
 					self::gsc_request_args(
 						$token,
 						array(
@@ -1226,7 +1228,11 @@ class CF7GSC_googlesheet {
 								),
 							),
 						),
-						'fields' => 'userEnteredFormat.textFormat',
+						// Since 5.6.2 the next empty row is filled and keeps its own format. A row
+						// Google added past the last row copied the row above, so its background is reset.
+						'fields' => ( $grid_rows > 0 && $row_number > $grid_rows )
+							? 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor'
+							: 'userEnteredFormat.textFormat',
 					),
 				);
 

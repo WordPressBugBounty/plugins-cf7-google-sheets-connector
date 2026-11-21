@@ -930,7 +930,7 @@ class GS_CF7DB
 
 	 * @param array  $gs_uploads Uploaded files data.
 	 *
-	 * @return void
+	 * @return int Saved entry ID, or 0 when the entry was not saved.
 	 */
 	function cfdb7_before_send_mail($form_tag, $gs_uploads)
 	{
@@ -951,7 +951,7 @@ class GS_CF7DB
 		$gscf7_db_enabled = 1 === (int) get_option('gs_cf7db_setting', 1);
 
 		if (! $gscf7_db_enabled && ! apply_filters('gscf7_cf7db_store_submission', true, $form_tag)) {
-			return;
+			return 0;
 		}
 
 		global $wpdb;
@@ -989,6 +989,10 @@ class GS_CF7DB
 			);
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- CF7 core hook, not defined by this plugin.
 			$SpMailTag[$tagname] = apply_filters('wpcf7_special_mail_tags', '', $_tagname, false, $mail_tag);
+
+			if ('' === $SpMailTag[$tagname]) {
+				$SpMailTag[$tagname] = Gs_Connector_Service::gscf7_resolve_user_tag($tagname, $form_tag->id());
+			}
 		}
 
 		if ($submission) {
@@ -1066,7 +1070,7 @@ class GS_CF7DB
 
 			$date = current_time('Y-m-d H:i:s');
 
-			$cfdb->insert(
+			$inserted = $cfdb->insert(
 				$table_name,
 				array(
 
@@ -1079,12 +1083,61 @@ class GS_CF7DB
 				)
 			);
 
+			// On failure insert_id may hold another table's ID.
+			if (false === $inserted) {
+				return 0;
+			}
+
 			/* cfdb7 after save data */
 
 			$insert_id = $cfdb->insert_id;
 
 			do_action('cfdb7_after_save_data', $insert_id);
+
+			return (int) $insert_id;
 		}
+
+		return 0;
+	}
+
+	/**
+	 * One-time Entry ID upgrade.
+	 *
+	 * Entry IDs used to come from a per-form counter; they now match the saved
+	 * entry's ID, as in the Pro plugin. Records the last entry numbered the old
+	 * way (Pro uses it to find those rows) and moves the entries table past the
+	 * old counters, so a new entry never reuses an Entry ID already in the sheet.
+	 *
+	 * @since 5.6.2
+	 * @return void
+	 */
+	public static function gscf7_migrate_entry_ids()
+	{
+		if (get_option('gscf7_entry_id_migrated')) {
+			return;
+		}
+
+		global $wpdb;
+		$cfdb    = apply_filters('cfdb7_database', $wpdb);
+		$table   = $cfdb->prefix . 'cf7db_gsheet_forms';
+		$like    = $wpdb->esc_like('gscf7_entry_id_counter_') . '%';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- One-time migration on the plugin's own table; identifiers pass through esc_sql().
+		$counter = $wpdb->get_col($wpdb->prepare("SELECT option_value FROM `{$wpdb->options}` WHERE option_name LIKE %s", $like));
+
+		if ($table === $cfdb->get_var($cfdb->prepare('SHOW TABLES LIKE %s', $table))) {
+			$max_id = (int) $cfdb->get_var('SELECT MAX(id) FROM `' . esc_sql($table) . '`');
+			$floor  = empty($counter) ? 0 : max(array_map('intval', $counter));
+
+			if ($floor > $max_id) {
+				$cfdb->query('ALTER TABLE `' . esc_sql($table) . '` AUTO_INCREMENT = ' . ($floor + 1));
+			}
+
+			add_option('gscf7_legacy_entry_id_max', $max_id, '', 'no');
+		}
+
+		$wpdb->query($wpdb->prepare("DELETE FROM `{$wpdb->options}` WHERE option_name LIKE %s", $like));
+		// phpcs:enable
+		update_option('gscf7_entry_id_migrated', 1);
 	}
 }
 

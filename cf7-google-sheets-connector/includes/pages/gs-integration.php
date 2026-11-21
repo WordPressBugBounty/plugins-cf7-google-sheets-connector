@@ -436,6 +436,8 @@ $gscf7_auth_method = get_option( 'gs_cf7_auth_method', 'cf7_existing' );
 								<?php if ( $gscf7_code != '' ) { ?>
 
 									<input type="button" name="save-gs-code" id="save-gs-code"
+										data-retry-url="<?php echo esc_url( GS_CONNECTOR_AUTH_REDIRECT_URI ); ?>"
+										data-retry-label="<?php esc_attr_e( 'Sign in with Google again', 'cf7-google-sheets-connector' ); ?>"
 
 										value="<?php esc_attr_e( 'Save Client Token', 'cf7-google-sheets-connector' ); ?>"
 

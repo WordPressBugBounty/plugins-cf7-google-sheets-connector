@@ -2,46 +2,65 @@
 	exit; // Exit if accessed directly
 }
 
-$gscf7_saved_settings = get_option('gscf7_privacy_settings');
-$gscf7_saved_settings = is_array($gscf7_saved_settings) ? $gscf7_saved_settings : array();
+$gscf7_privacy_settings = get_option('gscf7_privacy_settings', array(
+	'privacy'  => array('enabled' => 0, 'text' => '', 'page_id' => 0),
+	'gdpr'     => array('enabled' => 0, 'text' => '', 'page_id' => 0),
+	'branding' => array('enabled' => 0, 'display' => 'visible', 'nofollow' => 1),
+));
 
-$gscf7_stored_gdpr = (isset($gscf7_saved_settings['gdpr']) && is_array($gscf7_saved_settings['gdpr']))
-	? $gscf7_saved_settings['gdpr']
-	: array();
-$gscf7_configured  = ! empty($gscf7_stored_gdpr['configured']);
+$gscf7_privacy = wp_parse_args($gscf7_privacy_settings['privacy'] ?? array(), array(
+	'enabled' => 0,
+	'text'    => '',
+	'page_id' => 0,
+));
 
-$gscf7_gdpr = wp_parse_args(
-	$gscf7_stored_gdpr,
-	array(
-		'enabled'    => 1,
-		'text'       => '',
-		'page_id'    => 0,
-	)
+$gscf7_gdpr = wp_parse_args($gscf7_privacy_settings['gdpr'] ?? array(), array(
+	'enabled' => 0,
+	'text'    => '',
+	'page_id' => 0,
+));
+
+$gscf7_branding = wp_parse_args(
+	isset($gscf7_privacy_settings['branding']) && is_array($gscf7_privacy_settings['branding'])
+		? $gscf7_privacy_settings['branding']
+		: array(),
+	array('enabled' => 0, 'display' => 'visible', 'nofollow' => 1)
 );
 
-$gscf7_gdpr['enabled'] = 1;
+$gscf7_google_link = '<a href="' . esc_url('https://policies.google.com/privacy') . '" target="_blank" rel="noopener noreferrer">'
+	. esc_html__('Privacy Policy', 'cf7-google-sheets-connector') . '</a>';
 
-$gscf7_privacy = wp_parse_args(
-	(isset($gscf7_saved_settings['privacy']) && is_array($gscf7_saved_settings['privacy'])) ? $gscf7_saved_settings['privacy'] : array(),
-	array(
-		'enabled'    => 0,
-		'text'       => '',
-		'page_id'    => 0,
-	)
-);
+$gscf7_gsc_link = '<a href="' . esc_url('https://www.gsheetconnector.com/privacy-policy') . '" target="_blank" rel="noopener noreferrer">'
+	. esc_html__('GSheetConnector Privacy Policy', 'cf7-google-sheets-connector') . '</a>';
 
-$gscf7_privacy_page_id  = (int) get_option('wp_page_for_privacy_policy');
-$gscf7_privacy_page_url = $gscf7_privacy_page_id ? get_permalink($gscf7_privacy_page_id) : '';
+$gscf7_default_privacy_text  = '<p><strong>' . esc_html__('Contact Form Submissions and Google Sheets Integration', 'cf7-google-sheets-connector') . '</strong></p>';
+$gscf7_default_privacy_text .= '<p>' . esc_html__('When you submit an inquiry through our website\'s contact forms, we collect the personal information you provide, such as your name, email address, phone number, and message details, for the purpose of processing your submission, responding to your inquiry, and providing relevant support.', 'cf7-google-sheets-connector') . '</p>';
 
-$gscf7_default_privacy_text = esc_html__('Information submitted through this form may be stored in Google Sheets and processed by the website owner in accordance with applicable privacy laws.', 'cf7-google-sheets-connector');
+$gscf7_default_privacy_text .= '<p><strong>' . esc_html__('Use of Third-Party Services', 'cf7-google-sheets-connector') . '</strong></p>';
+$gscf7_default_privacy_text .= '<p>' . esc_html__('To manage and process form submissions, we may use the following third-party services:', 'cf7-google-sheets-connector') . '</p>';
+$gscf7_default_privacy_text .= '<ul>';
+$gscf7_default_privacy_text .= '<li><strong>' . esc_html__('Google Sheets (Google LLC):', 'cf7-google-sheets-connector') . '</strong> '
+	. esc_html__('When a form is connected to Google Sheets, the submitted information may be transmitted to and stored in the connected Google spreadsheet. This allows us to organize submissions, manage inquiries, and follow up on requests. Google\'s handling of personal information is described in its', 'cf7-google-sheets-connector')
+	. ' ' . $gscf7_google_link . '.</li>';
+$gscf7_default_privacy_text .= '<li><strong>' . esc_html__('GSheetConnector:', 'cf7-google-sheets-connector') . '</strong> '
+	. esc_html__('We use GSheetConnector to integrate supported website forms with Google Sheets. The integration facilitates the transfer of form submission data between the website and the connected Google services. For more information about GSheetConnector\'s data handling practices, please review the', 'cf7-google-sheets-connector')
+	. ' ' . $gscf7_gsc_link . '.</li>';
+$gscf7_default_privacy_text .= '</ul>';
 
-$gscf7_privacy_text = trim(wp_strip_all_tags($gscf7_privacy['text'])) !== '' ? $gscf7_privacy['text'] : $gscf7_default_privacy_text;
+$gscf7_default_privacy_text .= '<p><strong>' . esc_html__('Data Sharing and Retention', 'cf7-google-sheets-connector') . '</strong></p>';
+$gscf7_default_privacy_text .= '<p>' . esc_html__('We do not sell personal information collected through our contact forms. Access to submitted information is limited to authorized personnel and service providers as necessary for the purposes described in this policy.', 'cf7-google-sheets-connector') . '</p>';
+$gscf7_default_privacy_text .= '<p>' . esc_html__('We retain personal information only for as long as reasonably necessary to fulfill the purpose for which it was collected, provide support, maintain relevant records, or comply with applicable legal obligations. When the information is no longer required, we take appropriate steps to delete it, subject to applicable retention requirements.', 'cf7-google-sheets-connector') . '</p>';
 
-$gscf7_default_gdpr_text =
-	'<span>'
-	. esc_html__('Your information will be securely sent to and stored in Google Sheets for the purpose of processing your form submission.', 'cf7-google-sheets-connector')
-	. '</span>';
-$gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr_text;
+$gscf7_default_privacy_text .= '<p><strong>' . esc_html__('Your Privacy Rights', 'cf7-google-sheets-connector') . '</strong></p>';
+$gscf7_default_privacy_text .= '<p>' . esc_html__('Depending on your location and applicable data protection laws, you may have the right to request access to, correction of, or deletion of your personal information, or to object to or restrict certain processing activities. To exercise applicable rights or ask questions about how your information is handled, please contact us using the contact details provided on this website.', 'cf7-google-sheets-connector') . '</p>';
+
+$gscf7_default_gdpr_text = esc_html__('Your form submission will be securely sent to and stored in Google Sheets to help us process your request and respond to your inquiry.', 'cf7-google-sheets-connector');
+
+
+
+$gscf7_privacy_text = $gscf7_privacy['text'] ?: $gscf7_default_privacy_text;
+$gscf7_gdpr_text    = $gscf7_gdpr['text'] ?: $gscf7_default_gdpr_text;
+
 ?>
 <div class="wrap w-100 m-0 gs-form" id="opener">
 	<div class="system-general_setting inner-wrap w-100 bg-white p-40" id="googlesheet">
@@ -51,15 +70,15 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 					<div class="heading mt-0">
 						<?php echo esc_html__('GDPR & Privacy Policy', 'cf7-google-sheets-connector'); ?>
 					</div>
-					<p><?php echo esc_html__('The GDPR notice is shown below every Contact Form 7 form connected to a Google Sheet; clear the editor and save to hide it. The Privacy Policy notice is a Pro feature shown here for reference only.', 'cf7-google-sheets-connector'); ?></p>
+					<p><?php echo esc_html__('Manage the notices displayed on your connected forms and your website’s Privacy Policy page. Customize the messages to explain how submitted information may be used and stored.', 'cf7-google-sheets-connector'); ?></p>
 					<div class="gsc-setting-text justify-between align-center pt-15 pb-15 mt-30 bg-white">
-						<div class="d-flex">
+						<div class="d-flex justify-between">
 							<div>
 								<div class="systemifo fw-600 text-dark">
 									<?php echo esc_html__('Enable GDPR Notice', 'cf7-google-sheets-connector'); ?>
 								</div>
 								<label for="gscf7_gdpr_enable" class="fw-400">
-									<?php echo esc_html__('When enabled, the GDPR notice will be shown below all Contact Form 7 forms connected with Google Sheets using GSheetConnector.', 'cf7-google-sheets-connector'); ?>
+									<?php echo esc_html__('Display a notice below Contact Form 7 forms connected to Google Sheets through GSheetConnector.', 'cf7-google-sheets-connector'); ?>
 								</label>
 							</div>
 							<div>
@@ -70,7 +89,7 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 										id="gscf7_gdpr_enable"
 										name="gscf7_gdpr_enable"
 										value="1"
-										<?php checked((int) $gscf7_gdpr['enabled'], 1); ?> disabled>
+										<?php checked((int) $gscf7_gdpr['enabled'], 1); ?>>
 									<label for="gscf7_gdpr_enable" class="button-toggle"></label>
 								</div>
 							</div>
@@ -99,22 +118,86 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 								?>
 
 								<p class="gsc-hint mt-10">
-									<?php echo esc_html__('You can use HTML links in the notice text. This notice is shown below every Contact Form 7 form connected to a Google Sheet. Leave the editor empty and save to hide the notice.', 'cf7-google-sheets-connector'); ?>
+									<?php echo esc_html__('You can customize this message using the text editor below. The notice is displayed only when this setting is enabled.', 'cf7-google-sheets-connector'); ?>
 								</p>
 							</div>
 						</div>
 
 					</div>
 
-					<div class="gsc-setting-text justify-between align-center pt-15 pb-15 mt-30 bg-white blur-pro-feature">
+					<div class="gsc-setting-text justify-between align-center pt-15 pb-15 mt-30 bg-white">
+						<div class="d-flex justify-between">
+							<div>
+								<div class="systemifo fw-600 text-dark">
+									<?php esc_html_e('Enable “Powered by GSheetConnector” credit', 'cf7-google-sheets-connector'); ?>
+								</div>
+								<label for="gscf7_branding_enable" class="fw-400">
+									<?php esc_html_e('Show a small credit link below your Contact Form 7 forms.', 'cf7-google-sheets-connector'); ?>
+								</label>
+							</div>
+							<div>
+								<div class="custom-check">
+									<input type="checkbox"
+										class="check-toggle"
+										id="gscf7_branding_enable"
+										name="gscf7_branding_enable"
+										value="1"
+										<?php checked((int) $gscf7_branding['enabled'], 1); ?>>
+									<label for="gscf7_branding_enable" class="button-toggle"></label>
+								</div>
+							</div>
+						</div>
+
+						<div class="gsc-branding-section <?php echo empty($gscf7_branding['enabled']) ? 'd-none' : ''; ?>">
+
+							<!-- Preview -->
+							<div class="mb-30 mt-30 msg-inner gs-info-box-blue text-dark fw-600 mt-10 mb-10">
+								<div class="gsc-branding-preview">
+									<?php esc_html_e('Powered by', 'cf7-google-sheets-connector'); ?>
+									<a href="https://www.gsheetconnector.com/" target="_blank" rel="noopener noreferrer">GSheetConnector ↗</a>
+								</div>
+								<p class="gsc-hint mt-10 mb-0">
+									<?php esc_html_e('Preview of the branding credit', 'cf7-google-sheets-connector'); ?>
+								</p>
+							</div>
+
+							<!-- Display -->
+							<div class="mb-30 mt-30">
+								<div class="systemifo fw-600 text-dark mb-10">
+									<?php esc_html_e('Display', 'cf7-google-sheets-connector'); ?>
+								</div>
+								<label class="d-block mb-10">
+									<input type="radio" name="gscf7_branding_display" value="visible"
+										<?php checked($gscf7_branding['display'], 'visible'); ?>>
+									<?php esc_html_e('Visible beneath the form notice', 'cf7-google-sheets-connector'); ?>
+								</label>
+								<label class="d-block">
+									<input type="radio" name="gscf7_branding_display" value="hidden"
+										<?php checked($gscf7_branding['display'], 'hidden'); ?>>
+									<?php esc_html_e('Hidden', 'cf7-google-sheets-connector'); ?>
+								</label>
+							</div>
+
+							<!-- nofollow -->
+							<div class="mb-30 mt-30">
+								<label class="d-block">
+									<input type="checkbox" name="gscf7_branding_nofollow" value="1"
+										<?php checked((int) $gscf7_branding['nofollow'], 1); ?>>
+									<?php esc_html_e('Add rel="nofollow" to the branding link', 'cf7-google-sheets-connector'); ?>
+								</label>
+							</div>
+
+						</div>
+					</div>
+
+					<div class="gsc-setting-text justify-between align-center pt-15 pb-15 mt-30 bg-white">
 						<div class="d-flex justify-between">
 							<div>
 								<div class="systemifo fw-600 text-dark">
 									<?php echo esc_html__('Enable Privacy Policy Notice', 'cf7-google-sheets-connector'); ?>
-									<span class="gsc-pro-badge"><?php echo esc_html__('PRO', 'cf7-google-sheets-connector'); ?></span>
 								</div>
 								<label for="gscf7_privacy_enable" class="fw-400">
-									<?php echo esc_html__('Choose where to show the Privacy Policy notice using the "Display On" option below, or turn it off.', 'cf7-google-sheets-connector'); ?>
+									<?php echo esc_html__('Choose where to display a privacy notice on your website’s designated Privacy Policy page.', 'cf7-google-sheets-connector'); ?>
 								</label>
 							</div>
 							<div>
@@ -123,7 +206,7 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 										class="check-toggle"
 										id="gscf7_privacy_enable"
 										value="1"
-										<?php checked((int) $gscf7_privacy['enabled'], 1); ?> disabled>
+										<?php checked((int) $gscf7_privacy['enabled'], 1); ?>>
 									<label for="gscf7_privacy_enable" class="button-toggle"></label>
 								</div>
 							</div>
@@ -136,6 +219,12 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 									<div class="systemifo fw-600 text-dark mb-10">
 										<?php esc_html_e('Display On', 'cf7-google-sheets-connector'); ?>
 									</div>
+									<?php
+									$gscf7_privacy_page_id  = (int) get_option('wp_page_for_privacy_policy');
+									$gscf7_privacy_page_url = $gscf7_privacy_page_id
+										? get_permalink($gscf7_privacy_page_id)
+										: '';
+									?>
 
 									<?php if ($gscf7_privacy_page_url) : ?>
 										<div class="d-flex justify-between">
@@ -186,7 +275,7 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 								?>
 
 								<p class="gsc-hint mt-10">
-									<?php echo esc_html__('You can use HTML links in the notice text. This text appears only when the Privacy Policy Notice is not set to "Disabled" above.', 'cf7-google-sheets-connector'); ?>
+									<?php echo esc_html__('Customize this message to match your website`s data practices. The notice is displayed according to the setting selected above.', 'cf7-google-sheets-connector'); ?>
 								</p>
 							</div>
 						</div>
@@ -214,7 +303,6 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 										'order'          => 'ASC',
 									)
 								);
-
 								foreach ($gscf7_forms as $gscf7_index => $gscf7_form) :
 								?>
 									<option
@@ -227,17 +315,31 @@ $gscf7_gdpr_text = $gscf7_configured ? $gscf7_gdpr['text'] : $gscf7_default_gdpr
 								?>
 							</select>
 						</div>
-
 						<div id="gscf7_form_preview">
-							<?php if (empty($gscf7_forms)) : ?>
+							<?php
+							if (! empty($gscf7_forms)) {
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is rendered by Contact Form 7.
+								echo preg_replace(
+									'/<h[1-6][^>]*>\s*Basic Fields\s*<\/h[1-6]>/i',
+									'',
+									do_shortcode(
+										'[contact-form-7 id="' . absint($gscf7_forms[0]->ID) . '"]'
+									)
+								);
+							} else {
+							?>
 								<p>
-									<?php esc_html_e('No Contact Form 7 forms found.', 'cf7-google-sheets-connector'); ?>
+									<?php
+									esc_html_e(
+										'No Contact Form 7 forms found.',
+										'cf7-google-sheets-connector'
+									);
+									?>
 								</p>
-							<?php else : ?>
-								<span class="loading"></span>
-							<?php endif; ?>
+							<?php
+							}
+							?>
 						</div>
-
 					</div>
 
 

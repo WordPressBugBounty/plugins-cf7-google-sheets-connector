@@ -602,4 +602,37 @@ class Gs_Connector_Free_Utility {
 			gscf7_error_logs::log_from_debug( $error );
 		}
 	}
+
+	/**
+	 * Decrypts a credential encrypted by the Pro plugin (Gs_Connector_Credential_Crypto).
+	 *
+	 * Pro 2.6.0+ stores gs_token and the service account JSON encrypted; without
+	 * this, moving back from Pro to Free breaks the Google connection.
+	 *
+	 * @since 5.6.2
+	 * @param mixed $value Stored option value.
+	 * @return mixed Plain value; '' when it cannot be decrypted.
+	 */
+	public static function decrypt_pro_credential( $value ) {
+		$prefix = 'gscf7enc:v1:';
+
+		if ( ! is_string( $value ) || 0 !== strpos( $value, $prefix ) ) {
+			return $value;
+		}
+
+		if ( ! function_exists( 'openssl_decrypt' ) ) {
+			return '';
+		}
+
+		$decoded = base64_decode( substr( $value, strlen( $prefix ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decodes the Pro plugin's encrypted credential.
+
+		if ( false === $decoded || strlen( $decoded ) < 28 ) {
+			return '';
+		}
+
+		$key   = hash( 'sha256', wp_salt( 'auth' ), true );
+		$plain = openssl_decrypt( substr( $decoded, 28 ), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, substr( $decoded, 0, 12 ), substr( $decoded, 12, 16 ) );
+
+		return false === $plain ? '' : $plain;
+	}
 }

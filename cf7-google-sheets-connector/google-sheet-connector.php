@@ -6,7 +6,7 @@
  * Description: Connect Contact Form 7 to Google Sheets and send form submissions to Google Sheets in a Real-Time
  * Requires at least: 6.7
  * Requires PHP: 7.4
- * Version: 5.6.1
+ * Version: 5.6.2
  * Author: GSheetConnector
  * Author URI: https://www.gsheetconnector.com/
  * Text Domain: cf7-google-sheets-connector
@@ -33,6 +33,48 @@ if (! defined('ABSPATH')) {
  * These are suppressed file-wide rather than with dozens of per-line ignores.
  */
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+
+/**
+ * Whether the Pro plugin is active on this site, in any folder and whichever plugin loads first.
+ *
+ * @since 5.6.2
+ * @return bool
+ */
+function gscf7_free_pro_is_active()
+{
+	$active = (array) get_option('active_plugins', array());
+
+	if (is_multisite()) {
+		$active = array_merge($active, array_keys((array) get_site_option('active_sitewide_plugins', array())));
+	}
+
+	foreach ($active as $plugin_file) {
+		if ('google-sheet-connector-pro.php' === basename($plugin_file) && file_exists(WP_PLUGIN_DIR . '/' . $plugin_file)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// Since 5.6.2: with Pro active, Pro does the work and this plugin stays idle until Pro is deactivated.
+// Uninstalling is the exception: WordPress needs this plugin's classes to run its uninstall callback.
+if (gscf7_free_pro_is_active() && ! did_action('pre_uninstall_plugin')) {
+	add_filter(
+		'plugin_row_meta',
+		function ($meta, $plugin_file) {
+			if (plugin_basename(__FILE__) === $plugin_file) {
+				$meta[] = '<strong>' . esc_html__('Idle while CF7 Google Sheet Connector PRO is active.', 'cf7-google-sheets-connector') . '</strong>';
+			}
+
+			return $meta;
+		},
+		10,
+		2
+	);
+
+	return;
+}
 
 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Freemius SDK boilerplate.
 global $cgsc_fs;
@@ -72,11 +114,14 @@ if (! function_exists('cgsc_fs')) {
 	cgsc_fs();
 	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Freemius SDK boilerplate.
 	do_action('cgsc_fs_loaded');
+
+	// Freemius takes over the uninstall hook; run the plugin's cleanup from it.
+	cgsc_fs()->add_action('after_uninstall', array('Gs_Connector_Free_Init', 'gs_connector_free_uninstall'));
 }
 
 // Declare some global constants
-define('GS_CONNECTOR_VERSION', '5.6.1');
-define('GS_CONNECTOR_DB_VERSION', '5.6.1');
+define('GS_CONNECTOR_VERSION', '5.6.2');
+define('GS_CONNECTOR_DB_VERSION', '5.6.2');
 define('GS_CONNECTOR_ROOT', __DIR__);
 define('GS_CONNECTOR_URL', plugins_url('/', __FILE__));
 define('GS_CONNECTOR_BASE_FILE', basename(__DIR__) . '/google-sheet-connector.php');
@@ -117,16 +162,24 @@ function gsfff_connector_free_load_textdomain()
 if (! class_exists('Gs_Connector_Free_Utility')) {
 	include GS_CONNECTOR_ROOT . '/includes/class-gs-utility.php';
 }
+// Since 5.6.2: read credentials left encrypted by the Pro plugin.
+add_filter('option_gs_token', array('Gs_Connector_Free_Utility', 'decrypt_pro_credential'));
+add_filter('option_gs_cf7_service_account_json', array('Gs_Connector_Free_Utility', 'decrypt_pro_credential'));
 if (! class_exists('Gs_Connector_Service')) {
 	include GS_CONNECTOR_ROOT . '/includes/class-gs-service.php';
 }
-Gs_Connector_Service::instance();
+// Pro's class of the same name is loaded instead when Free is deleted while Pro is active.
+if (method_exists('Gs_Connector_Service', 'instance')) {
+	Gs_Connector_Service::instance();
+}
 
 require_once GS_CONNECTOR_ROOT . '/lib/google-sheets.php';
 
 if (! class_exists('GS_CF7DB')) {
 	include GS_CONNECTOR_PATH . '/includes/pages/gs-cf7db.php';
 }
+// Since 5.6.2: Entry ID now matches the saved entry's ID.
+add_action('plugins_loaded', array('GS_CF7DB', 'gscf7_migrate_entry_ids'));
 /*
  * Main GS connector class
  * @class Gs_Connector_Free_Init
@@ -1009,8 +1062,8 @@ class Gs_Connector_Free_Init
 	{
 		$gs_cf7db_setting = get_option('gs_cf7db_setting');
 		// if ($gs_cf7db_setting == 1) {
-			$cf7db = new GS_CF7DB();
-			// $cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
+		$cf7db = new GS_CF7DB();
+		// $cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
 		// }
 	}
 	/**
@@ -1079,9 +1132,12 @@ class Gs_Connector_Free_Init
 	{
 		global $wpdb;
 		self::run_on_uninstall_free();
-		if (! is_plugin_active('cf7-google-sheets-connector-pro/cf7-google-sheets-connector.php') || (! file_exists(plugin_dir_path(__DIR__) . 'cf7-google-sheets-connector-pro/cf7-google-sheets-connector.php'))) {
+
+		// Pro shares the settings, feeds, entries and Google connection: keep them.
+		if (self::gscf7_pro_installed()) {
 			return;
 		}
+
 		if (function_exists('is_multisite') && is_multisite()) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
 			$blog_ids = $wpdb->get_col("SELECT blog_id FROM {$wpdb->base_prefix}blogs");
@@ -1107,7 +1163,14 @@ class Gs_Connector_Free_Init
 		if ((! is_plugin_active('contact-form-7/wp-contact-form-7.php')) || (! file_exists(plugin_dir_path(__DIR__) . 'contact-form-7/wp-contact-form-7.php'))) {
 			add_action('admin_notices', array($this, 'contact_form_7_missing_notice'));
 			add_action('network_admin_notices', array($this, 'contact_form_7_missing_notice'));
-			deactivate_plugins($plugin);
+
+			// Network-activated: a sub-site without CF7 only gets the notice.
+			if (is_multisite() && is_plugin_active_for_network($plugin)) {
+				return;
+			}
+
+			// Site-level only, so this never becomes a network deactivation.
+			deactivate_plugins($plugin, false, false);
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth callback from Google.
 			if (isset($_GET['activate'])) {
 				// Do not sanitize it because we are destroying the variables from URL
@@ -1209,8 +1272,22 @@ class Gs_Connector_Free_Init
 	{
 		add_action('admin_print_styles', array($this, 'add_css_files'));
 		add_action('admin_print_scripts', array($this, 'add_js_files'));
-		add_action('wp_enqueue_scripts', array($this, 'add_frontend_css_files'));
+		add_action('wp_enqueue_scripts', array($this, 'gscf7_register_frontend_style'));
 	}
+	/**
+	 * Load frontend.
+	 *
+	 */
+	public function gscf7_register_frontend_style()
+	{
+		wp_register_style(
+			'gscf7-frontend',
+			GS_CONNECTOR_URL . 'assets/css/gscf7-frontend.css',
+			array(),
+			GS_CONNECTOR_VERSION
+		);
+	}
+
 	/**
 	 * enqueue CSS files
 	 *
@@ -1271,23 +1348,7 @@ class Gs_Connector_Free_Init
 			wp_enqueue_media();
 		}
 	}
-	/**
-	 * enqueue front-end CSS — only on pages that actually contain a CF7 form.
-	 *
-	 * @since 5.2.4
-	 */
-	public function add_frontend_css_files()
-	{
-		global $post;
 
-		$has_form = is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'contact-form-7');
-
-		if (! $has_form) {
-			return;
-		}
-
-		wp_enqueue_style('gs-connector-frontend-css', GS_CONNECTOR_URL . 'assets/css/gs-connector-frontend.css', array(), GS_CONNECTOR_VERSION);
-	}
 	/**
 	 * enqueue JS files
 	 *
@@ -1416,7 +1477,6 @@ class Gs_Connector_Free_Init
 					'loading'          => esc_html__('Loading…', 'cf7-google-sheets-connector'),
 					'error'            => esc_html__('Unable to load entries.', 'cf7-google-sheets-connector'),
 					'confirmDelete'     => esc_html__('Delete the selected entries? This cannot be undone.', 'cf7-google-sheets-connector'),
-					'noEntriesSelected' => esc_html__('Select at least one entry first.', 'cf7-google-sheets-connector'),
 					'selectAll'         => esc_html__('Select All', 'cf7-google-sheets-connector'),
 				)
 			);
@@ -1906,7 +1966,7 @@ class Gs_Connector_Free_Init
 		);
 
 		wp_add_dashboard_widget(
-			'gs_dashboard',
+			'gscf7_dashboard',
 			$title,
 			array($this, 'gs_connector_summary_dashboard')
 		);
@@ -2262,54 +2322,85 @@ class Gs_Connector_Free_Init
 
 		global $wpdb;
 
-		if (
-			! is_plugin_active('cf7-google-sheets-connector-pro/cf7-google-sheets-connector.php') ||
-			(! file_exists(plugin_dir_path(__DIR__) . 'cf7-google-sheets-connector-pro/cf7-google-sheets-connector.php'))
-		) {
-
-			$saved_value = get_option('gscf7_uninstall_settings_free', 'No');
-			if ($saved_value === 'Yes') {
-				// Delete options
-				delete_option('gs_access_code');
-			}
-			delete_option('gs_verify');
-			delete_option('gs_cf7db_setting');
-			delete_option('gs_cf7db_database');
-			delete_option('gs_token');
-			delete_option('google_sheet_info_free');
-			delete_option('gs_close_add_interval');
-			delete_option('gs_auth_expired_display_add_interval');
-			delete_option('gs_auth_expired_close_add_interval');
-			delete_option('gscf7_uninstall_settings_free');
-			delete_option('cf7gsc_free_api_creds');
-			delete_option('cf7gsc_free_api_creds_pending');
-			delete_option('cf7gsc_free_api_creds_meta');
-			delete_option('gscf7_creds_bootstrap_version');
-			delete_option('gscf7_token_client_fp');
-			delete_option('gscf7_token_repaired');
-			delete_transient('cf7gsc_free_creds_lock');
-			delete_transient('cf7gsc_free_creds_backoff');
-			delete_option('gs_debug_log_file');
-			delete_option('gscf7_autoload_migrated');
-			delete_option('gscf7_entry_indexes_added');
-			delete_option('gscf7_error_log_utc_migrated');
-			delete_option('gscf7_db_schema_version');
-
-			// Delete post meta
-			delete_post_meta_by_key('gs_settings');
-
-			$wpdb->query(
-				'DROP TABLE IF EXISTS `' . esc_sql($wpdb->prefix . 'gscf7_error_logs') . '`'
-			);
-
-			$wpdb->query(
-				'DROP TABLE IF EXISTS `' . esc_sql($wpdb->prefix . 'cf7gs_settings') . '`'
-			);
-
-			$wpdb->query(
-				'DROP TABLE IF EXISTS `' . esc_sql($wpdb->prefix . 'cf7gs_feeds') . '`'
-			);
+		// Only when "Delete Plugin Data on Uninstall" is on.
+		if ('Yes' !== get_option('gscf7_uninstall_settings_free', 'No')) {
+			return;
 		}
+
+		$options = array(
+			'gs_access_code',
+			'gs_verify',
+			'gs_verify_service',
+			'gs_token',
+			'gs_cf7_auth_method',
+			'gs_cf7_service_account_json',
+			'gs_cf7db_setting',
+			'gs_cf7db_database',
+			'google_sheet_info_free',
+			'cf7gf_email_account',
+			'cf7gs_auth_expired_free',
+			'gs_close_add_interval',
+			'gs_display_add_interval',
+			'gs_auth_expired_display_add_interval',
+			'gs_auth_expired_close_add_interval',
+			'gs_upgrade_notice_interval',
+			'gs_close_upgrade_notice',
+			'cf7gsc_free_api_creds',
+			'cf7gsc_free_api_creds_pending',
+			'cf7gsc_free_api_creds_meta',
+			'gscf7_creds_bootstrap_version',
+			'gscf7_token_client_fp',
+			'gscf7_token_repaired',
+			'gs_debug_log_file',
+			'gscf7_autoload_migrated',
+			'gscf7_options_migrated',
+			'gscf7_free_dupes_repaired',
+			'gscf7_entry_indexes_added',
+			'gscf7_error_log_utc_migrated',
+			'gscf7_db_schema_version',
+			'gscf7_entry_id_migrated',
+			'gscf7_legacy_entry_id_max',
+			'gscf7_privacy_settings',
+			'gscf7_privacy_consent_log',
+			'gscf7_free_install_time',
+			'gscf7_uninstall_settings_free',
+		);
+
+		foreach ($options as $option) {
+			delete_option($option);
+		}
+
+		delete_transient('cf7gsc_free_creds_lock');
+		delete_transient('cf7gsc_free_creds_backoff');
+		delete_post_meta_by_key('gs_settings');
+
+		// Child tables first: tables left by Pro reference cf7gs_feeds by foreign key.
+		$tables = array('cf7gs_conditional_rules', 'cf7gs_conditional_logic', 'cf7gs_settings', 'cf7gs_tag_mappings', 'cf7gs_headers', 'cf7gs_pipes', 'cf7gs_feeds', 'gscf7_error_logs', 'cf7db_gsheet_forms');
+
+		foreach ($tables as $table) {
+			$wpdb->query('DROP TABLE IF EXISTS `' . esc_sql($wpdb->prefix . $table) . '`');
+		}
+	}
+
+	/**
+	 * Whether the Pro plugin is installed (active or not), in any folder.
+	 *
+	 * @since 5.6.2
+	 * @return bool
+	 */
+	private static function gscf7_pro_installed()
+	{
+		if (! function_exists('get_plugins')) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		foreach (array_keys(get_plugins()) as $plugin_file) {
+			if ('google-sheet-connector-pro.php' === basename($plugin_file)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 

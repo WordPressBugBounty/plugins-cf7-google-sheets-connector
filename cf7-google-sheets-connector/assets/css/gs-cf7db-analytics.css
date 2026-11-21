@@ -5,7 +5,6 @@
   gap: 20px;
 }
 
-
 .gscf7-free .gscf7-stat-card {
   display: flex;
   align-items: center;
@@ -173,6 +172,7 @@ th.gscf7-sort-desc .gscf7-sort-arrow::after {
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+  cursor: pointer;
 }
 .gscf7-free .gscf7-menu-db {
   align-items: baseline;
@@ -443,18 +443,18 @@ th.gscf7-sort-desc .gscf7-sort-arrow::after {
 }
 
 @media (max-width: 1180px) {
-.gscf7-free #normal-sortables {
+  .gscf7-free #normal-sortables {
     display: block;
-}
-.gscf7-free .postbox {
-	margin-bottom: 20px;
-}
+  }
+  .gscf7-free .postbox {
+    margin-bottom: 20px;
+  }
 }
 
 @media (max-width: 1024px) {
-.gscf7-free .gscf7-chart-grid {
-	    grid-template-columns: 1fr;
-}
+  .gscf7-free .gscf7-chart-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -467,13 +467,10 @@ th.gscf7-sort-desc .gscf7-sort-arrow::after {
   .gscf7-free .gscf7-stat-grid {
     grid-template-columns: 1fr;
   }
-
 }
 @media (max-width: 420px) {
-	.gscf7-free .inner-wrap #gscf7-entries-line-chart,
-	.gscf7-free .inner-wrap #gscf7-entries-pie-chart {
-        width: 240px !important;
-    }
+  .gscf7-free .inner-wrap #gscf7-entries-line-chart,
+  .gscf7-free .inner-wrap #gscf7-entries-pie-chart {
+    width: 240px !important;
+  }
 }
-
-

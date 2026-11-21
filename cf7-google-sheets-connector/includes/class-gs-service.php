@@ -35,6 +35,10 @@ class Gs_Connector_Service
 
 	private static $gscf7_rendered_notices = array();
 
+	// Hidden field / action for the user-tags token (same as Pro).
+	const USER_TAGS_FIELD  = '_gscf7_user_token';
+	const USER_TAGS_ACTION = 'gscf7_user_tags';
+
 	/**
 	 * Get the shared instance, creating it on first use.
 	 *
@@ -93,6 +97,9 @@ class Gs_Connector_Service
 		// Send Contact Form 7 submission data to Google Sheets after successful submission.
 		add_action('wpcf7_mail_sent', array($this, 'cf7_save_to_google_sheets'));
 
+		// Signed token so [_user_*] tags resolve for logged-in submitters.
+		add_filter('wpcf7_form_hidden_fields', array($this, 'gscf7_user_tags_hidden_field'));
+
 		// AJAX action to save plugin uninstall settings.
 		add_action('wp_ajax_gscf7_save_uninstall_settings', array($this, 'gscf7_save_uninstall_settings'));
 
@@ -118,6 +125,9 @@ class Gs_Connector_Service
 
 		// Output the GDPR notice below the form on the front end.
 		add_filter('wpcf7_form_elements', array($this, 'gscf7_append_frontend_privacy_notice'));
+
+		// fallback can bow out instead of printing a duplicate.
+		add_filter('the_content', array($this, 'gscf7_append_page_notice_fallback'), 20);
 
 		// AJAX handler for rendering a live preview of a CF7 form.
 		add_action('wp_ajax_gscf7_preview_form', array($this, 'gscf7_preview_form_callback'));
@@ -635,8 +645,7 @@ class Gs_Connector_Service
 	 */
 	public function gscf7_default_gdpr_text()
 	{
-		return /* translators: default GDPR notice */
-			'<span>Your information will be securely sent to and stored in Google Sheets for the purpose of processing your form submission.</span>';
+		return '<span>' . esc_html__('Your form submission will be securely sent to and stored in Google Sheets to help us process your request and respond to your inquiry.', 'cf7-google-sheets-connector') . '</span>';
 	}
 
 	/**
@@ -655,8 +664,15 @@ class Gs_Connector_Service
 			return '';
 		}
 
-		// No fallback to the default text: once the admin clears the editor and
-		// saves, the notice is stored empty and nothing is rendered.
+		// The Privacy Policy notice belongs only on the site's designated
+		// Privacy Policy page (Settings > Privacy). Never show it elsewhere,
+		// and never in the admin form preview.
+		if ('privacy' === $type) {
+			if (is_admin() || ! function_exists('is_privacy_policy') || ! is_privacy_policy()) {
+				return '';
+			}
+		}
+
 		$text = (string) ($settings['text'] ?? '');
 		if (trim(wp_strip_all_tags($text)) === '') {
 			return '';
@@ -671,6 +687,7 @@ class Gs_Connector_Service
 		);
 	}
 
+
 	/**
 	 * Read the gdpr settings out of the gscf7_privacy_settings option.
 	 *
@@ -680,36 +697,25 @@ class Gs_Connector_Service
 	private function gscf7_get_notice_settings()
 	{
 		$settings = get_option('gscf7_privacy_settings', array());
-		$stored   = (is_array($settings) && isset($settings['gdpr']) && is_array($settings['gdpr']))
-			? $settings['gdpr']
-			: array();
 
 		$defaults = array(
-			'enabled'    => 1,
+			'enabled'    => 0,
 			'text'       => '',
 			'page_id'    => 0,
 		);
 
-		$gdpr = wp_parse_args($stored, $defaults);
+		$privacy = wp_parse_args($settings['privacy'] ?? array(), $defaults);
+		$gdpr    = wp_parse_args($settings['gdpr'] ?? array(), $defaults);
 
-		// The 'configured' flag is written the first time the admin saves the
-		// GDPR settings. Until then the built-in default text is shown. Once
-		// configured, the stored text is used verbatim -- so an editor the
-		// admin cleared and saved stays empty and the notice is hidden.
-		if (empty($stored['configured'])) {
-			$gdpr['text'] = $this->gscf7_default_gdpr_text();
+		if (! empty($gdpr['enabled']) && (int) $gdpr['enabled'] === 1) {
+			$gdpr['page_id'] = 0;
 		}
 
-		// The GDPR notice is always "enabled"; it is hidden only by saving an
-		// empty editor. Ignore any stale enabled=0 from older data.
-		$gdpr['enabled'] = 1;
-		$gdpr['page_id'] = 0;
-
 		return array(
-			'gdpr' => $gdpr,
+			'privacy' => $privacy,
+			'gdpr'    => $gdpr,
 		);
 	}
-
 	/**
 	 * Whether a Contact Form 7 form is connected to a Google Sheet.
 	 *
@@ -746,6 +752,128 @@ class Gs_Connector_Service
 	}
 
 	/**
+	 * Adds a signed user token to the form for logged-in users.
+	 *
+	 * CF7 submits over REST without a nonce, so the submission runs as logged out
+	 * and [_user_*] tags come back empty. CF7 drops "_" fields from posted data,
+	 * so the token never reaches mail or other plugins.
+	 *
+	 * @since 5.6.2
+	 * @param array $fields CF7 hidden fields.
+	 * @return array
+	 */
+	public function gscf7_user_tags_hidden_field($fields)
+	{
+		$fields = (array) $fields;
+
+		if (! is_user_logged_in() || ! class_exists('WPCF7_ContactForm')) {
+			return $fields;
+		}
+
+		$contact_form = WPCF7_ContactForm::get_current();
+		$form_id      = $contact_form instanceof WPCF7_ContactForm ? absint($contact_form->id()) : 0;
+
+		if ($form_id) {
+			$fields[self::USER_TAGS_FIELD] = self::gscf7_user_tags_token(
+				$form_id,
+				get_current_user_id(),
+				wp_get_session_token(),
+				wp_nonce_tick(self::USER_TAGS_ACTION)
+			);
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Builds the user-tags token like wp_create_nonce(), bound to form and user.
+	 *
+	 * @since 5.6.2
+	 */
+	private static function gscf7_user_tags_token($form_id, $user_id, $session_token, $tick)
+	{
+		return substr(
+			wp_hash($tick . '|' . self::USER_TAGS_ACTION . '|' . absint($form_id) . '|' . absint($user_id) . '|' . $session_token, 'nonce'),
+			-12,
+			10
+		);
+	}
+
+	/**
+	 * Logged-in user who submitted the form (verified by the token), or 0.
+	 *
+	 * @since 5.6.2
+	 * @param int $form_id CF7 form ID.
+	 * @return int
+	 */
+	public static function gscf7_get_submitter_user_id($form_id)
+	{
+		static $cache = array();
+
+		$form_id = absint($form_id);
+
+		if (isset($cache[$form_id])) {
+			return $cache[$form_id];
+		}
+
+		$cache[$form_id] = 0;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This field is the token, verified below.
+		$token = isset($_POST[self::USER_TAGS_FIELD]) ? sanitize_text_field(wp_unslash($_POST[self::USER_TAGS_FIELD])) : '';
+
+		if (! $form_id || '' === $token) {
+			return 0;
+		}
+
+		$user_id = (int) wp_validate_auth_cookie('', 'logged_in');
+
+		if ($user_id <= 0) {
+			return 0;
+		}
+
+		$session_token = wp_get_session_token();
+		$tick          = wp_nonce_tick(self::USER_TAGS_ACTION);
+
+		// Current and previous tick, as wp_verify_nonce() accepts.
+		foreach (array($tick, $tick - 1) as $t) {
+			if (hash_equals(self::gscf7_user_tags_token($form_id, $user_id, $session_token, $t), $token)) {
+				$cache[$form_id] = $user_id;
+				break;
+			}
+		}
+
+		return $cache[$form_id];
+	}
+
+	/**
+	 * Resolves a [_user_*] tag for the verified submitter, like CF7's wpcf7_user_related_smt().
+	 *
+	 * @since 5.6.2
+	 * @param string $tag_key Tag name, with or without the leading underscore.
+	 * @param int    $form_id CF7 form ID.
+	 * @return string
+	 */
+	public static function gscf7_resolve_user_tag($tag_key, $form_id)
+	{
+		$tag_key = ltrim(trim((string) $tag_key), '_');
+
+		if (0 !== strpos($tag_key, 'user_') || 'user_agent' === $tag_key) {
+			return '';
+		}
+
+		$user_id = self::gscf7_get_submitter_user_id($form_id);
+
+		if (! $user_id) {
+			return '';
+		}
+
+		$prop = in_array($tag_key, array('user_login', 'user_email', 'user_url'), true) ? $tag_key : substr($tag_key, 5);
+		$user = get_userdata($user_id);
+
+		return ($user && $user->has_prop($prop)) ? (string) $user->get($prop) : '';
+	}
+
+	/**
 	 * Append the saved GDPR notice below the Contact Form 7 form.
 	 *
 	 * The GDPR notice is only appended when the form being rendered is
@@ -758,31 +886,84 @@ class Gs_Connector_Service
 	 */
 	public function gscf7_append_frontend_privacy_notice($form_html)
 	{
+		$current_form = null;
+		if (function_exists('wpcf7_get_current_contact_form')) {
+			$current_form = wpcf7_get_current_contact_form();
+		} elseif (class_exists('WPCF7_ContactForm') && method_exists('WPCF7_ContactForm', 'get_current')) {
+			$current_form = WPCF7_ContactForm::get_current();
+		}
+		$form_id = ($current_form && method_exists($current_form, 'id')) ? (int) $current_form->id() : 0;
 
+		if (! is_admin() && ! $this->gscf7_form_is_connected($form_id)) {
+			return $form_html;
+		}
+		wp_enqueue_style('gscf7-frontend');
 		$notice_settings = $this->gscf7_get_notice_settings();
+		$gdpr_notice = $this->gscf7_build_notice_markup(
+			$notice_settings['gdpr'],
+			$this->gscf7_default_gdpr_text(),
+			'gscf7-frontend-gdpr-notice',
+			'gdpr'
+		);
+		// $privacy_notice = $this->gscf7_build_notice_markup(
+		// 	$notice_settings['privacy'],
+		// 	$this->gscf7_default_privacy_text(),
+		// 	'gscf7-frontend-privacy-notice',
+		// 	'privacy'
+		// );
+		$branding_notice = $this->gscf7_get_branding_html();
 
-		$gdpr_notice = '';
+		// Order: form, privacy notice, GDPR notice, branding credit.
+		return $form_html . $gdpr_notice . $branding_notice;
+	}
+	public function gscf7_get_branding_html()
+	{
+		$all      = get_option('gscf7_privacy_settings', array());
+		$branding = wp_parse_args(
+			isset($all['branding']) && is_array($all['branding']) ? $all['branding'] : array(),
+			array('enabled' => 0, 'display' => 'visible', 'nofollow' => 1)
+		);
 
-		$current_form = function_exists('wpcf7_get_current_contact_form') ? wpcf7_get_current_contact_form() : null;
-
-		// In wp-admin the only place a CF7 form is rendered is this plugin's
-		// "Form Preview" on the GDPR tab, where the notice is always shown so
-		// its text can be previewed and edited regardless of which form is
-		// selected. On the front end it is gated to forms that are actually
-		// connected to a Google Sheet.
-		$show_gdpr = is_admin()
-			|| ($current_form && $this->gscf7_form_is_connected($current_form->id()));
-
-		if ($show_gdpr) {
-			$gdpr_notice = $this->gscf7_build_notice_markup(
-				$notice_settings['gdpr'],
-				$this->gscf7_default_gdpr_text(),
-				'gscf7-frontend-gdpr-notice',
-				'gdpr'
-			);
+		if (empty($branding['enabled']) || 'visible' !== $branding['display']) {
+			return '';
 		}
 
-		return $form_html . $gdpr_notice;
+		$rel =  (!empty($branding['nofollow']) ? 'nofollow' : '');
+
+		return '<p class="gscf7-branding">'
+			. esc_html__('Powered by', 'cf7-google-sheets-connector') . ' '
+			. '<a href="' . esc_url('https://www.gsheetconnector.com/') . '" target="_blank" rel="' . esc_attr($rel) . '">GSheetConnector</a>'
+			. '</p>';
+	}
+	/**
+	 * Append the Privacy Policy notice to the end of the Privacy Policy page's
+	 * own content, so it renders as part of the page (above the theme's
+	 * footer) rather than after it.
+	 *
+	 * This is the fallback for that page when it has no Contact Form 7
+	 * shortcode of its own -- gscf7_append_frontend_privacy_notice() (hooked
+	 * to wpcf7_form_elements) already covers the case where the page does
+	 * have a form.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	public function gscf7_append_page_notice_fallback($content)
+	{
+		if (! is_page() || ! in_the_loop() || ! is_main_query()) {
+			return $content;
+		}
+		// Already emitted below a connected form on this page -- don't repeat it.
+		if (! empty(self::$gscf7_rendered_notices['privacy'])) {
+			return $content;
+		}
+		$notice_settings = $this->gscf7_get_notice_settings();
+		$privacy_notice  = $this->gscf7_build_notice_markup($notice_settings['privacy'], $this->gscf7_default_privacy_text(), 'gscf7-frontend-privacy-notice', 'privacy');
+
+		if (! $privacy_notice) {
+			return $content;
+		}
+		return $content . $privacy_notice;
 	}
 
 	/**
@@ -796,30 +977,56 @@ class Gs_Connector_Service
 	public function gscf7_log_privacy_consent($contact_form)
 	{
 		$notice_settings = $this->gscf7_get_notice_settings();
+		$privacy         = $notice_settings['privacy'];
 		$gdpr            = $notice_settings['gdpr'];
+		$branding        = wp_parse_args(
+			isset($notice_settings['branding']) && is_array($notice_settings['branding'])
+				? $notice_settings['branding']
+				: array(),
+			array('enabled' => 0, 'display' => 'visible', 'nofollow' => 1)
+		);
 
-		// The GDPR notice counts as shown only when it is enabled and has
-		// non-empty text (an empty editor means the admin hid the notice).
-		$gdpr_enabled = ! empty($gdpr['enabled'])
-			&& (int) $gdpr['enabled'] === 1
-			&& trim(wp_strip_all_tags($gdpr['text'] ?? '')) !== '';
+		$privacy_enabled  = ! empty($privacy['enabled']) && (int) $privacy['enabled'] === 1;
+		$gdpr_enabled     = ! empty($gdpr['enabled']) && (int) $gdpr['enabled'] === 1;
+		$branding_enabled = ! empty($branding['enabled']) && (int) $branding['enabled'] === 1;
+		$branding_shown   = $branding_enabled && 'visible' === $branding['display'];
 
-		if (! $gdpr_enabled) {
+		if (! $privacy_enabled && ! $gdpr_enabled) {
 			return;
 		}
+
+		// The notices only render below forms connected to Google Sheets,
+		// so only those submissions carry consent evidence to log.
+		if (! $this->gscf7_form_is_connected($contact_form->id())) {
+			return;
+		}
+
 		$submission = WPCF7_Submission::get_instance();
 		if (! $submission) {
 			return;
 		}
+
 		$consent_log = get_option('gscf7_privacy_consent_log', array());
 		$entry = array(
-			'form_id'    => $contact_form->id(),
-			'timestamp'  => current_time('mysql'),
-			'ip'         => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '',
-			'gdpr_shown' => 1,
+			'form_id'        => $contact_form->id(),
+			'timestamp'      => current_time('mysql'),
+			'ip'             => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '',
+			'privacy_shown'  => $privacy_enabled ? 1 : 0,
+			'gdpr_shown'     => $gdpr_enabled ? 1 : 0,
+			'branding_shown' => $branding_shown ? 1 : 0,
 		);
 
-		$entry['gdpr_notice'] = wp_strip_all_tags($gdpr['text']);
+		if ($privacy_enabled) {
+			$entry['privacy_notice'] = wp_strip_all_tags($privacy['text'] ?: $this->gscf7_default_privacy_text());
+		}
+
+		if ($gdpr_enabled) {
+			$entry['gdpr_notice'] = wp_strip_all_tags($gdpr['text'] ?: $this->gscf7_default_gdpr_text());
+		}
+
+		if ($branding_shown) {
+			$entry['branding_nofollow'] = ! empty($branding['nofollow']) ? 1 : 0;
+		}
 
 		$consent_log[] = $entry;
 		if (count($consent_log) > 500) {
@@ -828,6 +1035,43 @@ class Gs_Connector_Service
 
 		update_option('gscf7_privacy_consent_log', $consent_log, false);
 	}
+	/**
+	 * Return the default Privacy Policy notice text.
+	 *
+	 * @return string
+	 */
+	public function gscf7_default_privacy_text()
+	{
+		$google_link = '<a href="' . esc_url('https://policies.google.com/privacy') . '" target="_blank" rel="noopener noreferrer">'
+			. esc_html__('Privacy Policy', 'cf7-google-sheets-connector') . '</a>';
+
+		$gsc_link = '<a href="' . esc_url('https://www.gsheetconnector.com/privacy-policy') . '" target="_blank" rel="noopener noreferrer">'
+			. esc_html__('GSheetConnector Privacy Policy', 'cf7-google-sheets-connector') . '</a>';
+
+		$html  = '<p><strong>' . esc_html__('Contact Form Submissions and Google Sheets Integration', 'cf7-google-sheets-connector') . '</strong></p>';
+		$html .= '<p>' . esc_html__('When you submit an inquiry through our website\'s contact forms, we collect the personal information you provide, such as your name, email address, phone number, and message details, for the purpose of processing your submission, responding to your inquiry, and providing relevant support.', 'cf7-google-sheets-connector') . '</p>';
+
+		$html .= '<p><strong>' . esc_html__('Use of Third-Party Services', 'cf7-google-sheets-connector') . '</strong></p>';
+		$html .= '<p>' . esc_html__('To manage and process form submissions, we may use the following third-party services:', 'cf7-google-sheets-connector') . '</p>';
+		$html .= '<ul>';
+		$html .= '<li><strong>' . esc_html__('Google Sheets (Google LLC):', 'cf7-google-sheets-connector') . '</strong> '
+			. esc_html__('When a form is connected to Google Sheets, the submitted information may be transmitted to and stored in the connected Google spreadsheet. This allows us to organize submissions, manage inquiries, and follow up on requests. Google\'s handling of personal information is described in its', 'cf7-google-sheets-connector')
+			. ' ' . $google_link . '.</li>';
+		$html .= '<li><strong>' . esc_html__('GSheetConnector:', 'cf7-google-sheets-connector') . '</strong> '
+			. esc_html__('We use GSheetConnector to integrate supported website forms with Google Sheets. The integration facilitates the transfer of form submission data between the website and the connected Google services. For more information about GSheetConnector\'s data handling practices, please review the', 'cf7-google-sheets-connector')
+			. ' ' . $gsc_link . '.</li>';
+		$html .= '</ul>';
+
+		$html .= '<p><strong>' . esc_html__('Data Sharing and Retention', 'cf7-google-sheets-connector') . '</strong></p>';
+		$html .= '<p>' . esc_html__('We do not sell personal information collected through our contact forms. Access to submitted information is limited to authorized personnel and service providers as necessary for the purposes described in this policy.', 'cf7-google-sheets-connector') . '</p>';
+		$html .= '<p>' . esc_html__('We retain personal information only for as long as reasonably necessary to fulfill the purpose for which it was collected, provide support, maintain relevant records, or comply with applicable legal obligations. When the information is no longer required, we take appropriate steps to delete it, subject to applicable retention requirements.', 'cf7-google-sheets-connector') . '</p>';
+
+		$html .= '<p><strong>' . esc_html__('Your Privacy Rights', 'cf7-google-sheets-connector') . '</strong></p>';
+		$html .= '<p>' . esc_html__('Depending on your location and applicable data protection laws, you may have the right to request access to, correction of, or deletion of your personal information, or to object to or restrict certain processing activities. To exercise applicable rights or ask questions about how your information is handled, please contact us using the contact details provided on this website.', 'cf7-google-sheets-connector') . '</p>';
+
+		return $html;
+	}
+
 
 	/**
 	 * AJAX handler: save the GDPR notice settings from the admin screen.
@@ -846,31 +1090,49 @@ class Gs_Connector_Service
 			wp_send_json_error(array('message' => __('Permission denied.', 'cf7-google-sheets-connector')));
 		}
 
-		$gscf7_normalize_notice_text = function ($html) {
-			// Treat whitespace/empty-tag-only content (e.g. after the user
-			// deletes all visible text but stray markup remains) as blank.
-			return trim(wp_strip_all_tags($html)) === '' ? '' : $html;
-		};
+		$privacy_enabled = isset($_POST['gscf7_privacy_enable']) && (int) $_POST['gscf7_privacy_enable'] === 1;
 
-		// Preserve any legacy 'privacy' block already stored so a downgrade
-		// doesn't lose it; only the 'gdpr' block is editable now.
-		$existing = get_option('gscf7_privacy_settings', array());
-		$settings = is_array($existing) ? $existing : array();
+		$branding_display = isset($_POST['gscf7_branding_display'])
+			? sanitize_key(wp_unslash($_POST['gscf7_branding_display']))
+			: 'visible';
 
-		$settings['gdpr'] = array(
-			'enabled'    => 1,
-			// Marks that the admin has saved at least once: from now on the
-			// stored text is used as-is (an empty editor hides the notice
-			// instead of falling back to the default).
-			'configured' => 1,
-			'text'       => isset($_POST['gscf7_gdpr_text']) ? $gscf7_normalize_notice_text(wp_kses_post(wp_unslash($_POST['gscf7_gdpr_text']))) : '',
-			'page_id'    => 0,
+		// GDPR text: if left blank, save the default text instead of an empty value.
+		$gdpr_text = isset($_POST['gscf7_gdpr_text'])
+			? wp_kses_post(wp_unslash($_POST['gscf7_gdpr_text']))
+			: '';
+
+		if (trim(wp_strip_all_tags($gdpr_text)) === '') {
+			$gdpr_text = $this->gscf7_default_gdpr_text();
+		}
+		// Privacy Policy text: if left blank, save the default text instead of an empty value.
+		$privacy_text = isset($_POST['gscf7_privacy_text'])
+			? wp_kses_post(wp_unslash($_POST['gscf7_privacy_text']))
+			: '';
+
+		if (trim(wp_strip_all_tags($privacy_text)) === '') {
+			$privacy_text = $this->gscf7_default_privacy_text();
+		}
+		$settings = array(
+			'privacy' => array(
+				'enabled' => $privacy_enabled ? 1 : 0,
+				'text'    => $privacy_text,
+				'page_id' => 0,
+			),
+			'gdpr' => array(
+				'enabled' => isset($_POST['gscf7_gdpr_enable']) && (int) $_POST['gscf7_gdpr_enable'] === 1 ? 1 : 0,
+				'text'    => $gdpr_text,
+				'page_id' => 0,
+			),
+			'branding' => array(
+				'enabled'  => isset($_POST['gscf7_branding_enable']) && (int) $_POST['gscf7_branding_enable'] === 1 ? 1 : 0,
+				'display'  => ('hidden' === $branding_display) ? 'hidden' : 'visible',
+				'nofollow' => isset($_POST['gscf7_branding_nofollow']) && (int) $_POST['gscf7_branding_nofollow'] === 1 ? 1 : 0,
+			),
 		);
 
 		update_option('gscf7_privacy_settings', $settings);
-		wp_send_json_success(array('message' => __('GDPR notice settings saved successfully.', 'cf7-google-sheets-connector')));
+		wp_send_json_success(array('message' => __('Privacy, GDPR & Branding settings saved successfully.', 'cf7-google-sheets-connector')));
 	}
-
 	/**
 	 * Remove error log
 	 *
@@ -1255,8 +1517,8 @@ class Gs_Connector_Service
 	{
 		$gs_cf7db_setting = get_option('gs_cf7db_setting');
 		// if ($gs_cf7db_setting == 1) {
-			$cf7db = new GS_CF7DB();
-			$cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
+		$cf7db = new GS_CF7DB();
+		return $cf7db->cfdb7_before_send_mail($form_tag, $this->gs_uploads);
 		// }
 	}
 
@@ -2355,57 +2617,6 @@ class Gs_Connector_Service
 	}
 
 	/**
-	 * Issue the next Google Sheets "Entry ID" for a form.
-	 *
-	 * The ID used to be MAX(id) + 1 from the entries table, so it only advanced
-	 * when a row was stored and repeated while Database Storage was off. It now
-	 * comes from a per-form counter option that advances on every submission
-	 * whether or not a row is stored.
-	 *
-	 * $floor is the highest entry id already in the table, so the result is never
-	 * lower than the old MAX(id) + 1 and existing installs continue where they
-	 * were. The counter is bumped by a single UPDATE (LAST_INSERT_ID(expr) hands
-	 * the new value back to this connection), which MySQL serialises on the row,
-	 * so concurrent submissions cannot receive the same ID.
-	 *
-	 * @param int $form_id Contact Form ID.
-	 * @param int $floor   Highest existing entry id for the form (0 if none).
-	 * @return int
-	 */
-	private function gscf7_next_entry_id($form_id, $floor)
-	{
-		global $wpdb;
-
-		$floor       = max(0, (int) $floor);
-		$option_name = 'gscf7_entry_id_counter_' . (int) $form_id;
-
-		// No-op when the option already exists; atomic on the unique option_name.
-		add_option($option_name, 0, '', 'no');
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic counter increment; a get/update_option pair would race.
-		$updated = $wpdb->query(
-			$wpdb->prepare(
-				"UPDATE `{$wpdb->options}` SET option_value = LAST_INSERT_ID(GREATEST(CAST(option_value AS UNSIGNED), %d) + 1) WHERE option_name = %s",
-				$floor,
-				$option_name
-			)
-		);
-
-		if (false === $updated) {
-			return $floor + 1;
-		}
-
-		$next = (int) $wpdb->get_var('SELECT LAST_INSERT_ID()'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-		// The raw UPDATE bypassed the options cache.
-		wp_cache_delete($option_name, 'options');
-		wp_cache_delete('notoptions', 'options');
-		wp_cache_delete('alloptions', 'options');
-
-		return $next > 0 ? $next : $floor + 1;
-	}
-
-	/**
 	 * Function - To send contact form data to google spreadsheet
 	 *
 	 * @param object $form
@@ -2416,38 +2627,8 @@ class Gs_Connector_Service
 
 		$form_id = $form->id();
 
-		$enable_entry_id = 1;
-
-		$next_entry_id = 0;
-
-		if ($enable_entry_id) {
-
-			global $wpdb;
-
-			$cfdb = apply_filters('cfdb7_database', $wpdb);
-
-			$table_name = $cfdb->prefix . 'cf7db_gsheet_forms';
-
-			$latest_entry_id = $cfdb->get_var(
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
-				$cfdb->prepare(
-					"SELECT MAX(id) FROM $table_name WHERE form_id = %d",
-					$form_id
-				)
-			);
-
-			$latest_entry_id = intval($latest_entry_id);
-
-			if ($latest_entry_id <= 0) {
-
-				$next_entry_id = 1;
-			} else {
-
-				$next_entry_id = $latest_entry_id + 1;
-			}
-		}
-
-		$this->cfdb7_before_send_mail($form);
+		// Since 5.6.2: Entry ID is the saved entry's ID (as in Pro); none when the entry is not saved.
+		$next_entry_id = (int) $this->cfdb7_before_send_mail($form);
 
 		$submission = WPCF7_Submission::get_instance();
 
@@ -2561,6 +2742,10 @@ class Gs_Connector_Service
 					$mail_tag = new WPCF7_MailTag(sprintf('[%s]', $tagname), $tagname, '');
 					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- CF7 core hook, not defined by this plugin.
 					$meta[$smt] = apply_filters('wpcf7_special_mail_tags', '', $tagname, false, $mail_tag);
+
+					if ('' === $meta[$smt]) {
+						$meta[$smt] = self::gscf7_resolve_user_tag($smt, $form_id);
+					}
 				}
 
 				// Submission date/time columns are taken from CF7's own [_date]
@@ -2781,6 +2966,8 @@ class Gs_Connector_Service
 						&& (
 							(isset($gscf7_number_field_names[$key]) && preg_match('/^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/', $value))
 							|| (isset($gscf7_tel_field_names[$key]) && preg_match('/^[0-9][0-9 ().-]*$/', $value))
+							// Since 5.6.2: a plain number in any field, e.g. an age in a text field.
+							|| preg_match('/^[0-9]+(?:\.[0-9]+)?$/', $value)
 						)
 					) {
 
@@ -2827,10 +3014,7 @@ class Gs_Connector_Service
 
 				// ========================
 
-				if ($enable_entry_id) {
-
-					// $next_entry_id is MAX(id) + 1 read before this submission was stored; use it as the floor.
-					$next_entry_id = $this->gscf7_next_entry_id($form_id, $next_entry_id - 1);
+				if ($next_entry_id > 0) {
 
 					$data = array_merge(
 						array(
@@ -3340,7 +3524,7 @@ class Gs_Connector_Service
 
 										<div class="form-group field-row mr-10">
 
-											<label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?>
+											<label><?php echo esc_html(__('Google Spreadsheet Name', 'cf7-google-sheets-connector')); ?>
 
 												<span class="tooltip"
 
@@ -3372,7 +3556,7 @@ class Gs_Connector_Service
 
 										<div class="form-group field-row mr-10">
 
-											<label><?php echo esc_html(__('Sheet ID', 'cf7-google-sheets-connector')); ?>
+											<label><?php echo esc_html(__('Google Spreadsheet ID', 'cf7-google-sheets-connector')); ?>
 
 												<span class="tooltip"
 
@@ -3406,7 +3590,7 @@ class Gs_Connector_Service
 
 											<label
 
-												for="edit-tab-name"><?php echo esc_html(__('Tab Name', 'cf7-google-sheets-connector')); ?>
+												for="edit-tab-name"><?php echo esc_html(__('Google Spreadsheet Tab Name', 'cf7-google-sheets-connector')); ?>
 
 												<span class="tooltip"
 
@@ -3438,7 +3622,7 @@ class Gs_Connector_Service
 
 										<div class="form-group field-row mr-10">
 
-											<label><?php echo esc_html(__('Tab ID', 'cf7-google-sheets-connector')); ?>
+											<label><?php echo esc_html(__('Google Spreadsheet Tab ID', 'cf7-google-sheets-connector')); ?>
 
 												<span class="tooltip"
 
@@ -3997,7 +4181,7 @@ class Gs_Connector_Service
 
 													<div class="mr-10">
 
-														<label><?php echo esc_html(__('Sheet Name', 'cf7-google-sheets-connector')); ?></label>
+														<label><?php echo esc_html(__('Google Spreadsheet Name', 'cf7-google-sheets-connector')); ?></label>
 
 														<select name="gscf-ff[gsc-fluentform-sheet-id]" class="auto-select-display w-100 mt-5" id="gsc-fluentform-sheet-id">
 
@@ -4023,7 +4207,7 @@ class Gs_Connector_Service
 
 												<div class="col-4">
 
-													<label><?php echo esc_html(__('Sheet Tab Name', 'cf7-google-sheets-connector')); ?></label>
+													<label><?php echo esc_html(__('Google Spreadsheet Tab Name', 'cf7-google-sheets-connector')); ?></label>
 
 													<select name="gscf-ff[gs-sheet-tab-name]" class="auto-select-display w-100 mt-5" id="gscf7-sheet-tab-name">
 
@@ -4071,7 +4255,7 @@ class Gs_Connector_Service
 
 												<div class="color-ffgs field-type-system">
 
-													<span class="align-center fw-700"><?php echo esc_html(__('Submission Info', 'cf7-google-sheets-connector')); ?></span>
+													<span class="align-center fw-700"><?php echo esc_html(__('Special Mail Tags', 'cf7-google-sheets-connector')); ?></span>
 
 												</div>
 

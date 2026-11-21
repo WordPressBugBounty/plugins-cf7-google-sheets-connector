@@ -134,8 +134,10 @@ jQuery(document).ready(function (jQuery) {
    */
 
   let selectedPluginSlug = "";
+  let gscf7DeactivateButton = null;
   // Open popup on deactivate click
   jQuery(".gscf7-free-deactivate-plugin").on("click", function (e) {
+    gscf7DeactivateButton = jQuery(this);
     selectedPluginSlug = jQuery(this).data("plugin");
     jQuery("#gscf7-confirm-dective-popup-free").removeClass("d-none");
   });
@@ -147,6 +149,14 @@ jQuery(document).ready(function (jQuery) {
   // Confirm deactivate
   jQuery("#gscf7-deactive-popup-confirm-free").on("click", function () {
     if (!selectedPluginSlug) return;
+
+    // Get the loader belonging to the selected plugin card
+    var loaderSpan = gscf7DeactivateButton.siblings(".loading-sign-deactive");
+
+    // Show loader
+    loaderSpan.addClass("loading");
+    jQuery("#gscf7-confirm-dective-popup-free").addClass("d-none");
+
     jQuery.ajax({
       url: ajaxurl,
       type: "POST",

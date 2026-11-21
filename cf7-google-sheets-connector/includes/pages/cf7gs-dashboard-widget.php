@@ -30,7 +30,7 @@ if ( ! current_user_can( 'manage_options' ) ) {
 	</div>
 </div>
 <style type="text/css">
-	#gs_dashboard .postbox-header .hndle {
+	#gscf7_dashboard .postbox-header .hndle {
 		justify-content: flex-start !important;
 	}
 	.gscf7-dashboard-widget .gscf7-widget-intro {

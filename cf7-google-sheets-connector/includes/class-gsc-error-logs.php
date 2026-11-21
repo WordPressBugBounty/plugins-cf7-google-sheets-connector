@@ -47,13 +47,17 @@ if ( ! class_exists( 'gscf7_error_logs' ) ) {
 				}
 			}
 			// IMPORTANT FIX END
+			// Skip only exact repeats: debug-log errors share one ID and message.
+			$details_json = (string) wp_json_encode( $details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Checking whether a custom plugin table exists.
 			$recent_log = $wpdb->get_var(
 				$wpdb->prepare(
-					'SELECT COUNT(*) FROM `' . esc_sql( $table ) . '` WHERE error_id = %s AND code = %d AND message = %s AND created_at >= %s',
+					'SELECT COUNT(*) FROM `' . esc_sql( $table ) . '` WHERE error_id = %s AND code = %d AND message = %s AND details = %s AND created_at >= %s',
 					$error_id,
 					$code,
 					$message,
+					$details_json,
 					gmdate( 'Y-m-d H:i:s', strtotime( '-30 minutes' ) )
 				)
 			);
@@ -68,7 +72,7 @@ if ( ! class_exists( 'gscf7_error_logs' ) ) {
 					'error_id'   => (string) $error_id,
 					'code'       => (int) $code,
 					'message'    => (string) $message,
-					'details'    => wp_json_encode( $details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+					'details'    => $details_json,
 					// Store in UTC/GMT; converted to the site timezone on display.
 					// Storing local time meant that changing Settings > General >
 					// Timezone silently reinterpreted every historical row.
@@ -100,7 +104,6 @@ if ( ! class_exists( 'gscf7_error_logs' ) ) {
 				'referrer'       => isset( $_SERVER['HTTP_REFERER'] )
 					? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) )
 					: '',
-				'timestamp'      => current_time( 'mysql' ),
 			);
 		}
 
